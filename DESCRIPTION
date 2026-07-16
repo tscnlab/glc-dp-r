@@ -1,0 +1,51 @@
+Package: glcdp
+Title: Discover, Access, and Import Global Light Commons Data Packages
+Version: 0.0.0.9000
+Authors@R: c(
+    person(
+      "Johannes", "Zauner",
+      email = "johannes.zauner@tum.de",
+      role = c("aut", "cre"),
+      comment = c(ORCID = "0000-0003-2171-4566")
+    ),
+    person(
+      "Salma M.", "Thalji",
+      email = "salma.thalji@tum.de",
+      role = "aut",
+      comment = c(ORCID = "0009-0002-7320-9289")
+    ),
+    person(
+      "Manuel", "Spitschan",
+      email = "manuel.spitschan@tum.de",
+      role = "aut",
+      comment = c(ORCID = "0000-0002-8572-9268")
+    )
+  )
+Description: Discovers Global Light Commons data packages through their
+    registry, opens immutable passing revisions, and provides searchable
+    inventories of package metadata. Selected metadata and measurement files
+    can be downloaded or imported with metadata-defined columns, types, factor
+    levels, datetimes, and time zones. Git Large File Storage objects are
+    resolved without requiring an external Git LFS installation, and imported
+    file groups can be explicitly collected into data suitable for personal
+    light exposure analysis workflows.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Depends:
+    R (>= 4.1.0)
+Imports:
+    cli,
+    digest,
+    dplyr,
+    httr2,
+    jsonlite,
+    lubridate,
+    readr,
+    tibble
+Suggests:
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
+URL: https://github.com/tscnlab/glc-dp-r
+BugReports: https://github.com/tscnlab/glc-dp-r/issues
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
