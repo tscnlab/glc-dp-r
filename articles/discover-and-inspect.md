@@ -33,7 +33,7 @@ packages[, c(
   "attestation_verified"
 )]
 #> <GLC registry>
-#> Generated: 2026-07-17T09:19:59.070332+00:00 
+#> Generated: 2026-07-17T11:01:56.184661+00:00 
 #> # A tibble: 2 × 5
 #>   id              repository current_status has_latest_pass attestation_verified
 #>   <chr>           <chr>      <chr>          <lgl>           <lgl>               
@@ -55,9 +55,9 @@ Searches are fixed and case-insensitive by default:
 
 glc_search_packages("guidolin", packages)
 #> <GLC registry>
-#> Generated: 2026-07-17T09:19:59.070332+00:00 
+#> Generated: 2026-07-17T11:01:56.184661+00:00 
 #> <GLC registry>
-#> Generated: 2026-07-17T09:19:59.070332+00:00 
+#> Generated: 2026-07-17T11:01:56.184661+00:00 
 #> # A tibble: 1 × 17
 #>   id           repository branch repository_status current_status current_commit
 #>   <chr>        <chr>      <chr>  <chr>             <chr>          <chr>         
@@ -69,9 +69,9 @@ glc_search_packages("guidolin", packages)
 #> #   registry_generated_at <chr>
 glc_search_packages(packages = packages, status = c("pass", "fail"))
 #> <GLC registry>
-#> Generated: 2026-07-17T09:19:59.070332+00:00 
+#> Generated: 2026-07-17T11:01:56.184661+00:00 
 #> <GLC registry>
-#> Generated: 2026-07-17T09:19:59.070332+00:00 
+#> Generated: 2026-07-17T11:01:56.184661+00:00 
 #> # A tibble: 2 × 17
 #>   id           repository branch repository_status current_status current_commit
 #>   <chr>        <chr>      <chr>  <chr>             <chr>          <chr>         
@@ -84,9 +84,9 @@ glc_search_packages(packages = packages, status = c("pass", "fail"))
 #> #   registry_generated_at <chr>
 glc_search_packages(packages = packages, has_pass = FALSE)
 #> <GLC registry>
-#> Generated: 2026-07-17T09:19:59.070332+00:00 
+#> Generated: 2026-07-17T11:01:56.184661+00:00 
 #> <GLC registry>
-#> Generated: 2026-07-17T09:19:59.070332+00:00 
+#> Generated: 2026-07-17T11:01:56.184661+00:00 
 #> # A tibble: 1 × 17
 #>   id           repository branch repository_status current_status current_commit
 #>   <chr>        <chr>      <chr>  <chr>             <chr>          <chr>         

@@ -50,7 +50,7 @@ silently hiding packages with problems.
 packages <- glc_packages()
 packages
 #> <GLC registry>
-#> Generated: 2026-07-17T09:19:59.070332+00:00 
+#> Generated: 2026-07-17T11:01:56.184661+00:00 
 #> # A tibble: 2 × 17
 #>   id           repository branch repository_status current_status current_commit
 #>   <chr>        <chr>      <chr>  <chr>             <chr>          <chr>         
@@ -64,9 +64,9 @@ packages
 
 glc_search_packages("guidolin", packages)
 #> <GLC registry>
-#> Generated: 2026-07-17T09:19:59.070332+00:00 
+#> Generated: 2026-07-17T11:01:56.184661+00:00 
 #> <GLC registry>
-#> Generated: 2026-07-17T09:19:59.070332+00:00 
+#> Generated: 2026-07-17T11:01:56.184661+00:00 
 #> # A tibble: 1 × 17
 #>   id           repository branch repository_status current_status current_commit
 #>   <chr>        <chr>      <chr>  <chr>             <chr>          <chr>         
@@ -85,9 +85,9 @@ recorded passing revision:
 
 glc_search_packages(packages = packages, status = "pass")
 #> <GLC registry>
-#> Generated: 2026-07-17T09:19:59.070332+00:00 
+#> Generated: 2026-07-17T11:01:56.184661+00:00 
 #> <GLC registry>
-#> Generated: 2026-07-17T09:19:59.070332+00:00 
+#> Generated: 2026-07-17T11:01:56.184661+00:00 
 #> # A tibble: 1 × 17
 #>   id           repository branch repository_status current_status current_commit
 #>   <chr>        <chr>      <chr>  <chr>             <chr>          <chr>         
@@ -99,9 +99,9 @@ glc_search_packages(packages = packages, status = "pass")
 #> #   registry_generated_at <chr>
 glc_search_packages(packages = packages, has_pass = TRUE)
 #> <GLC registry>
-#> Generated: 2026-07-17T09:19:59.070332+00:00 
+#> Generated: 2026-07-17T11:01:56.184661+00:00 
 #> <GLC registry>
-#> Generated: 2026-07-17T09:19:59.070332+00:00 
+#> Generated: 2026-07-17T11:01:56.184661+00:00 
 #> # A tibble: 1 × 17
 #>   id           repository branch repository_status current_status current_commit
 #>   <chr>        <chr>      <chr>  <chr>             <chr>          <chr>         

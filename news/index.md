@@ -1,5 +1,11 @@
 # Changelog
 
+## glcdp 0.90.1
+
+- Corrected the package logo, removed its exterior background for
+  transparent display, and refreshed the pkgdown logo and favicon
+  assets.
+
 ## glcdp 0.90.0
 
 - Initial package implementation for registry discovery, metadata

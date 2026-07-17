@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">glcdp</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.90.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.90.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -115,7 +115,7 @@ silently hiding packages with problems.</p>
 <code class="sourceCode R"><span><span class="va">packages</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/glc_packages.html">glc_packages</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="va">packages</span></span>
 <span><span class="co">#&gt; &lt;GLC registry&gt;</span></span>
-<span><span class="co">#&gt; Generated: 2026-07-17T09:19:59.070332+00:00 </span></span>
+<span><span class="co">#&gt; Generated: 2026-07-17T11:01:56.184661+00:00 </span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 2 × 17</span></span></span>
 <span><span class="co">#&gt;   id           repository branch repository_status current_status current_commit</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         </span></span>
@@ -129,9 +129,9 @@ silently hiding packages with problems.</p>
 <span></span>
 <span><span class="fu"><a href="../reference/glc_search_packages.html">glc_search_packages</a></span><span class="op">(</span><span class="st">"guidolin"</span>, <span class="va">packages</span><span class="op">)</span></span>
 <span><span class="co">#&gt; &lt;GLC registry&gt;</span></span>
-<span><span class="co">#&gt; Generated: 2026-07-17T09:19:59.070332+00:00 </span></span>
+<span><span class="co">#&gt; Generated: 2026-07-17T11:01:56.184661+00:00 </span></span>
 <span><span class="co">#&gt; &lt;GLC registry&gt;</span></span>
-<span><span class="co">#&gt; Generated: 2026-07-17T09:19:59.070332+00:00 </span></span>
+<span><span class="co">#&gt; Generated: 2026-07-17T11:01:56.184661+00:00 </span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 17</span></span></span>
 <span><span class="co">#&gt;   id           repository branch repository_status current_status current_commit</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         </span></span>
@@ -146,9 +146,9 @@ a recorded passing revision:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/glc_search_packages.html">glc_search_packages</a></span><span class="op">(</span>packages <span class="op">=</span> <span class="va">packages</span>, status <span class="op">=</span> <span class="st">"pass"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; &lt;GLC registry&gt;</span></span>
-<span><span class="co">#&gt; Generated: 2026-07-17T09:19:59.070332+00:00 </span></span>
+<span><span class="co">#&gt; Generated: 2026-07-17T11:01:56.184661+00:00 </span></span>
 <span><span class="co">#&gt; &lt;GLC registry&gt;</span></span>
-<span><span class="co">#&gt; Generated: 2026-07-17T09:19:59.070332+00:00 </span></span>
+<span><span class="co">#&gt; Generated: 2026-07-17T11:01:56.184661+00:00 </span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 17</span></span></span>
 <span><span class="co">#&gt;   id           repository branch repository_status current_status current_commit</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         </span></span>
@@ -160,9 +160,9 @@ a recorded passing revision:</p>
 <span><span class="co">#&gt; <span style="color: #949494;">#   registry_generated_at &lt;chr&gt;</span></span></span>
 <span><span class="fu"><a href="../reference/glc_search_packages.html">glc_search_packages</a></span><span class="op">(</span>packages <span class="op">=</span> <span class="va">packages</span>, has_pass <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="co">#&gt; &lt;GLC registry&gt;</span></span>
-<span><span class="co">#&gt; Generated: 2026-07-17T09:19:59.070332+00:00 </span></span>
+<span><span class="co">#&gt; Generated: 2026-07-17T11:01:56.184661+00:00 </span></span>
 <span><span class="co">#&gt; &lt;GLC registry&gt;</span></span>
-<span><span class="co">#&gt; Generated: 2026-07-17T09:19:59.070332+00:00 </span></span>
+<span><span class="co">#&gt; Generated: 2026-07-17T11:01:56.184661+00:00 </span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 17</span></span></span>
 <span><span class="co">#&gt;   id           repository branch repository_status current_status current_commit</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         </span></span>
