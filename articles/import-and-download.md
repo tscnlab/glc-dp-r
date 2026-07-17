@@ -306,23 +306,23 @@ glc_download(x, metadata_dir)
 #> # A tibble: 17 × 6
 #>    path                                 destination storage bytes sha256 lfs_oid
 #>    <chr>                                <chr>       <chr>   <dbl> <chr>  <chr>  
-#>  1 datapackage.json                     /tmp/Rtmp9… git      2363 e841f… NA     
-#>  2 data/study.json                      /tmp/Rtmp9… git      3644 fb165… NA     
-#>  3 data/participants.json               /tmp/Rtmp9… git       379 1a7ae… NA     
-#>  4 data/participant_characteristics.csv /tmp/Rtmp9… git       218 554b8… NA     
-#>  5 data/datasets.json                   /tmp/Rtmp9… git     17835 4df6d… NA     
-#>  6 data/devices.json                    /tmp/Rtmp9… git      2148 53076… NA     
-#>  7 data/datasheets/device_datasheet.js… /tmp/Rtmp9… git      1343 50acf… NA     
-#>  8 data/datasheets/sensor_datasheet.js… /tmp/Rtmp9… git      1213 0185f… NA     
-#>  9 schemas/2.0.0/gleam-dp-profile.json  /tmp/Rtmp9… git     12715 755e1… NA     
-#> 10 schemas/json-entity-resource.json    /tmp/Rtmp9… git       743 a6442… NA     
-#> 11 schemas/2.0.0/study.schema.json      /tmp/Rtmp9… git      4361 861e8… NA     
-#> 12 schemas/2.0.0/participants.schema.j… /tmp/Rtmp9… git       932 135aa… NA     
-#> 13 schemas/2.0.0/participant_character… /tmp/Rtmp9… git      1244 b3b53… NA     
-#> 14 schemas/2.0.0/dataset.schema.json    /tmp/Rtmp9… git     12431 6d1ef… NA     
-#> 15 schemas/2.0.0/device.schema.json     /tmp/Rtmp9… git      3193 c5efc… NA     
-#> 16 schemas/2.0.0/device_datasheet.sche… /tmp/Rtmp9… git      5499 358e3… NA     
-#> 17 schemas/light_data.schema.json       /tmp/Rtmp9… git      1653 ce2f6… NA
+#>  1 datapackage.json                     /tmp/RtmpN… git      2363 e841f… NA     
+#>  2 data/study.json                      /tmp/RtmpN… git      3644 fb165… NA     
+#>  3 data/participants.json               /tmp/RtmpN… git       379 1a7ae… NA     
+#>  4 data/participant_characteristics.csv /tmp/RtmpN… git       218 554b8… NA     
+#>  5 data/datasets.json                   /tmp/RtmpN… git     17835 4df6d… NA     
+#>  6 data/devices.json                    /tmp/RtmpN… git      2148 53076… NA     
+#>  7 data/datasheets/device_datasheet.js… /tmp/RtmpN… git      1343 50acf… NA     
+#>  8 data/datasheets/sensor_datasheet.js… /tmp/RtmpN… git      1213 0185f… NA     
+#>  9 schemas/2.0.0/gleam-dp-profile.json  /tmp/RtmpN… git     12715 755e1… NA     
+#> 10 schemas/json-entity-resource.json    /tmp/RtmpN… git       743 a6442… NA     
+#> 11 schemas/2.0.0/study.schema.json      /tmp/RtmpN… git      4361 861e8… NA     
+#> 12 schemas/2.0.0/participants.schema.j… /tmp/RtmpN… git       932 135aa… NA     
+#> 13 schemas/2.0.0/participant_character… /tmp/RtmpN… git      1244 b3b53… NA     
+#> 14 schemas/2.0.0/dataset.schema.json    /tmp/RtmpN… git     12431 6d1ef… NA     
+#> 15 schemas/2.0.0/device.schema.json     /tmp/RtmpN… git      3193 c5efc… NA     
+#> 16 schemas/2.0.0/device_datasheet.sche… /tmp/RtmpN… git      5499 358e3… NA     
+#> 17 schemas/light_data.schema.json       /tmp/RtmpN… git      1653 ce2f6… NA
 ```
 
 Request data explicitly and apply the same kinds of selectors used
@@ -341,24 +341,24 @@ downloads
 #> # A tibble: 18 × 6
 #>    path                                destination storage  bytes sha256 lfs_oid
 #>    <chr>                               <chr>       <chr>    <dbl> <chr>  <chr>  
-#>  1 datapackage.json                    /tmp/Rtmp9… git     2.36e3 e841f… NA     
-#>  2 data/study.json                     /tmp/Rtmp9… git     3.64e3 fb165… NA     
-#>  3 data/participants.json              /tmp/Rtmp9… git     3.79e2 1a7ae… NA     
-#>  4 data/participant_characteristics.c… /tmp/Rtmp9… git     2.18e2 554b8… NA     
-#>  5 data/datasets.json                  /tmp/Rtmp9… git     1.78e4 4df6d… NA     
-#>  6 data/devices.json                   /tmp/Rtmp9… git     2.15e3 53076… NA     
-#>  7 data/datasheets/device_datasheet.j… /tmp/Rtmp9… git     1.34e3 50acf… NA     
-#>  8 data/datasheets/sensor_datasheet.j… /tmp/Rtmp9… git     1.21e3 0185f… NA     
-#>  9 schemas/2.0.0/gleam-dp-profile.json /tmp/Rtmp9… git     1.27e4 755e1… NA     
-#> 10 schemas/json-entity-resource.json   /tmp/Rtmp9… git     7.43e2 a6442… NA     
-#> 11 schemas/2.0.0/study.schema.json     /tmp/Rtmp9… git     4.36e3 861e8… NA     
-#> 12 schemas/2.0.0/participants.schema.… /tmp/Rtmp9… git     9.32e2 135aa… NA     
-#> 13 schemas/2.0.0/participant_characte… /tmp/Rtmp9… git     1.24e3 b3b53… NA     
-#> 14 schemas/2.0.0/dataset.schema.json   /tmp/Rtmp9… git     1.24e4 6d1ef… NA     
-#> 15 schemas/2.0.0/device.schema.json    /tmp/Rtmp9… git     3.19e3 c5efc… NA     
-#> 16 schemas/2.0.0/device_datasheet.sch… /tmp/Rtmp9… git     5.50e3 358e3… NA     
-#> 17 schemas/light_data.schema.json      /tmp/Rtmp9… git     1.65e3 ce2f6… NA     
-#> 18 data/datasets/201_actlumus_Log_102… /tmp/Rtmp9… git     1.03e7 6893b… NA
+#>  1 datapackage.json                    /tmp/RtmpN… git     2.36e3 e841f… NA     
+#>  2 data/study.json                     /tmp/RtmpN… git     3.64e3 fb165… NA     
+#>  3 data/participants.json              /tmp/RtmpN… git     3.79e2 1a7ae… NA     
+#>  4 data/participant_characteristics.c… /tmp/RtmpN… git     2.18e2 554b8… NA     
+#>  5 data/datasets.json                  /tmp/RtmpN… git     1.78e4 4df6d… NA     
+#>  6 data/devices.json                   /tmp/RtmpN… git     2.15e3 53076… NA     
+#>  7 data/datasheets/device_datasheet.j… /tmp/RtmpN… git     1.34e3 50acf… NA     
+#>  8 data/datasheets/sensor_datasheet.j… /tmp/RtmpN… git     1.21e3 0185f… NA     
+#>  9 schemas/2.0.0/gleam-dp-profile.json /tmp/RtmpN… git     1.27e4 755e1… NA     
+#> 10 schemas/json-entity-resource.json   /tmp/RtmpN… git     7.43e2 a6442… NA     
+#> 11 schemas/2.0.0/study.schema.json     /tmp/RtmpN… git     4.36e3 861e8… NA     
+#> 12 schemas/2.0.0/participants.schema.… /tmp/RtmpN… git     9.32e2 135aa… NA     
+#> 13 schemas/2.0.0/participant_characte… /tmp/RtmpN… git     1.24e3 b3b53… NA     
+#> 14 schemas/2.0.0/dataset.schema.json   /tmp/RtmpN… git     1.24e4 6d1ef… NA     
+#> 15 schemas/2.0.0/device.schema.json    /tmp/RtmpN… git     3.19e3 c5efc… NA     
+#> 16 schemas/2.0.0/device_datasheet.sch… /tmp/RtmpN… git     5.50e3 358e3… NA     
+#> 17 schemas/light_data.schema.json      /tmp/RtmpN… git     1.65e3 ce2f6… NA     
+#> 18 data/datasets/201_actlumus_Log_102… /tmp/RtmpN… git     1.03e7 6893b… NA
 ```
 
 Use `include = "all"` only when you intend to mirror every declared
