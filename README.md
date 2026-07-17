@@ -1,5 +1,9 @@
 # glcdp <img src="man/figures/logo.png" align="right" height="139" alt="glcdp package logo" />
 
+<!-- badges: start -->
+[![R-CMD-check](https://github.com/tscnlab/glc-dp-r/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/tscnlab/glc-dp-r/actions/workflows/R-CMD-check.yaml)
+<!-- badges: end -->
+
 `glcdp` discovers, inspects, downloads, and imports Global Light Commons data
 packages. It is designed as infrastructure for packages such as
 [LightLogR](https://tscnlab.github.io/LightLogR/) and LightLogWeb while
