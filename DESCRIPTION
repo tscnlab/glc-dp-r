@@ -1,6 +1,6 @@
 Package: glcdp
 Title: Discover, Access, and Import Global Light Commons Data Packages
-Version: 0.90.1
+Version: 0.9.1
 Authors@R: c(
     person(
       "Johannes", "Zauner",
