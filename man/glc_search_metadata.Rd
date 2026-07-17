@@ -2,7 +2,7 @@
 % Please edit documentation in R/metadata.R
 \name{glc_search_metadata}
 \alias{glc_search_metadata}
-\title{Search metadata values}
+\title{Search metadata values or field paths}
 \usage{
 glc_search_metadata(
   x,
@@ -10,7 +10,8 @@ glc_search_metadata(
   resources = NULL,
   fields = NULL,
   fixed = TRUE,
-  ignore_case = TRUE
+  ignore_case = TRUE,
+  search_in = c("values", "fields", "both")
 )
 }
 \arguments{
@@ -25,10 +26,19 @@ glc_search_metadata(
 \item{fixed}{Treat \code{query} as fixed text rather than a regular expression.}
 
 \item{ignore_case}{Ignore letter case while matching.}
+
+\item{search_in}{Where to match \code{query}: scalar metadata \code{"values"}, complete
+field paths \code{"fields"}, or \code{"both"}. The default is \code{"values"}.}
 }
 \value{
 A tibble of matching scalar metadata values and their field paths.
 }
 \description{
-Search metadata values
+Search metadata values or field paths
+}
+\details{
+Field searches return the same leaf-level rows as value searches. A field
+path that contains multiple scalar values therefore produces one row per
+value. The \code{fields} argument can be combined with any \code{search_in} mode to
+restrict which field paths are searched.
 }

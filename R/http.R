@@ -88,21 +88,49 @@ glc_contents_url <- function(x, path) {
   )
 }
 
-glc_fetch_remote_raw <- function(x, path) {
-  glc_get_raw(
-    glc_contents_url(x, path),
-    token = x$transport$token,
-    accept = "application/vnd.github.raw+json"
+glc_raw_contents_url <- function(x, path) {
+  path <- glc_safe_path(path)
+  paste0(
+    "https://raw.githubusercontent.com/",
+    x$repo,
+    "/",
+    utils::URLencode(x$commit, reserved = TRUE),
+    "/",
+    glc_path_encode(path)
   )
 }
 
-glc_download_remote_raw <- function(x, path, destination) {
-  request <- glc_request(
-    glc_contents_url(x, path),
+glc_remote_file_request <- function(x, path, error_status = TRUE) {
+  use_raw_host <- is.null(x$transport$token)
+  url <- if (use_raw_host) {
+    glc_raw_contents_url(x, path)
+  } else {
+    glc_contents_url(x, path)
+  }
+  accept <- if (use_raw_host) {
+    "application/octet-stream"
+  } else {
+    "application/vnd.github.raw+json"
+  }
+  glc_request(
+    url,
     token = x$transport$token,
-    accept = "application/vnd.github.raw+json",
-    error_status = FALSE
+    accept = accept,
+    error_status = error_status
   )
+}
+
+glc_fetch_remote_raw <- function(x, path) {
+  request <- glc_remote_file_request(x, path, error_status = FALSE)
+  response <- glc_perform(
+    request,
+    context = paste0("Download of ", path)
+  )
+  httr2::resp_body_raw(response)
+}
+
+glc_download_remote_raw <- function(x, path, destination) {
+  request <- glc_remote_file_request(x, path, error_status = FALSE)
   glc_perform(
     request,
     context = paste0("Download of ", path),
@@ -168,21 +196,4 @@ glc_repo_tree <- function(x) {
   }
   x$transport$tree <- tree
   tree
-}
-
-glc_git_blob_raw <- function(x, sha) {
-  url <- paste0(
-    "https://api.github.com/repos/",
-    x$repo,
-    "/git/blobs/",
-    sha
-  )
-  result <- glc_get_json(url, token = x$transport$token)
-  if (!identical(result$encoding, "base64") || is.null(result$content)) {
-    glc_abort(
-      "GitHub returned an unsupported representation for blob {.val {sha}}.",
-      class = "glcdp_blob_error"
-    )
-  }
-  jsonlite::base64_dec(gsub("[\\r\\n]", "", result$content))
 }

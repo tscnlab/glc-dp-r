@@ -1,0 +1,232 @@
+---
+title: "Import and download data"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Import and download data}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+live <- identical(Sys.getenv("IN_PKGDOWN"), "true") &&
+  !identical(Sys.getenv("GLCDP_SKIP_LIVE"), "true")
+```
+
+This article covers two related workflows:
+
+- import selected files directly into R with `glc_read()`; and
+- create a persistent, reproducible local subset with `glc_download()`.
+
+Remote examples run on the pkgdown website but remain unevaluated in ordinary
+package and CRAN builds. Set `GLCDP_SKIP_LIVE=true` to request an offline
+website build.
+
+```{r load}
+library(glcdp)
+```
+
+```{r open, eval = live}
+x <- glc_open("tscnlab/guidolin-glee-datasetv2")
+```
+
+## Select before importing
+
+Inspect datasets, file groups, and variables first. This avoids transferring
+unneeded data and gives you the stable ids and source names used by the read
+selectors.
+
+```{r inspect, eval = live}
+glc_datasets(x)
+glc_files(x, dataset_id = "DS001")
+glc_variables(x, dataset_id = "DS001")
+```
+
+`dataset_id` is required by `glc_read()`. Use `dataset_id = "all"` only when
+you deliberately want every dataset.
+
+```{r read-dataset, eval = live}
+collection <- glc_read(x, dataset_id = "DS001")
+collection
+```
+
+Interactive calls show progress across the selected files by default. Use
+`progress = FALSE` to suppress the indicator when a script or application
+provides its own progress reporting.
+
+Narrow the import with any combination of file-group ids or indices, file
+paths or basenames, source variable names, and semantic terms:
+
+```{r read-selection, eval = live}
+file_inventory <- glc_files(x, dataset_id = "DS001")
+first_file <- file_inventory[1, ]
+first_file
+file_group <- first_file$file_group_id[[1]]
+file_group
+files <- basename(first_file$path[[1]])
+files
+
+selected <- glc_read(
+  x,
+  dataset_id = "DS001",
+  file_group = file_group,
+  files = files,
+  variables = c("LIGHT"),
+  n_max = 1000
+)
+selected$data
+```
+
+When `variables` or `terms` are selected, the imported tables contain only the
+matching source variables. `glcdp` still uses any required date or time columns
+internally to construct `.glc_datetime`, but does not retain them unless the
+filters select them. Set `primary_only = TRUE` to select all declared primary
+variables.
+
+```{r read-primary, eval = live}
+primary <- glc_read(
+  x,
+  dataset_id = "DS001",
+  primary_only = TRUE
+)
+```
+
+## Understand the imported collection
+
+A `glc_data_collection` has one row per file group. Descriptive columns record
+the dataset, participant, device, modality, role, data state, time zone,
+datetime specification, and source files. The imported table is in the `data`
+list-column.
+
+```{r collection, eval = live}
+collection[, setdiff(names(collection), "data")]
+collection$data[[1]]
+```
+
+Each imported table also contains `.glc_*` provenance columns such as the
+dataset id, participant id, source file, and constructed datetime. These make
+row origins explicit after tables are combined.
+
+By default, metadata mismatches such as undeclared extra columns or values that
+cannot be parsed to the declared type are errors. During exploratory work, use
+`problems = "warn"` to retain problematic data with warnings; inspect the
+result before analysis.
+
+```{r read-warn, eval = live}
+exploratory <- glc_read(
+  x,
+  dataset_id = "DS001",
+  problems = "warn"
+)
+```
+
+## Collect analysis-ready data
+
+Combine file groups only when their structures and meanings are compatible:
+
+```{r collect, eval = live}
+light_data <- glc_collect(collection)
+light_data
+```
+
+The default `standardize = "lightlogr"` follows the data conventions used by
+[LightLogR](https://tscnlab.github.io/LightLogR/) and adds:
+
+- `Id`, derived from the dataset id;
+- `participant_Id`, derived from the participant id;
+- `Datetime`, constructed from the metadata-defined datetime specification;
+  and
+- `file.name`, derived from the source file path.
+
+The standardized result contains no internal `.glc_*` provenance columns. It
+is ordered by `Id` and `Datetime` and grouped by `Id`. Use `standardize =
+"none"` if you want an ungrouped tibble whose source and provenance columns
+are left unchanged.
+
+```{r collect-none, eval = live}
+source_data <- glc_collect(collection, standardize = "none")
+```
+
+`glc_collect()` refuses to combine groups that differ in columns, types, time
+zones, modalities, roles, data states, or datetime specifications. Keep those
+groups separate or select a compatible subset with `glc_read()`.
+
+Collected data can be used directly with LightLogR's
+[data-quality and insight functions](https://tscnlab.github.io/LightLogR/reference/index.html#insight),
+[visualization guide](https://tscnlab.github.io/LightLogR/articles/Visualizations.html),
+and [metrics guide](https://tscnlab.github.io/LightLogR/articles/Metrics.html).
+
+## Download a reproducible subset
+
+`glc_download()` creates a persistent directory while preserving
+package-relative paths. Its safe default downloads only the descriptor, core
+metadata, and required schemas:
+
+For public packages, ordinary Git files are transferred from immutable raw
+URLs at the selected commit, avoiding per-file GitHub API requests. A token
+supplied to `glc_open()` continues to use the authenticated API transport,
+including for private repositories.
+
+```{r download-metadata, eval = live}
+metadata_dir <- file.path(tempdir(), "guidolin-metadata")
+glc_download(x, metadata_dir)
+```
+
+Request data explicitly and apply the same kinds of selectors used during
+inspection:
+
+```{r download-data, eval = live}
+data_dir <- file.path(tempdir(), "guidolin-ds001")
+downloads <- glc_download(
+  x,
+  data_dir,
+  include = "data",
+  dataset_id = "DS001"
+)
+downloads
+```
+
+Use `include = "all"` only when you intend to mirror every declared resource.
+The `resources` and `files` arguments can further narrow a download. Existing
+files are protected unless `overwrite = TRUE` is set explicitly.
+
+Every download writes `glcdp-manifest.json`, recording the source repository,
+exact commit, registry verification state, schema version, selection, hashes,
+storage types, sizes, and Git LFS object ids. Reopen the directory to use the
+same inspection and import API without fetching the package again:
+
+```{r reopen, eval = live}
+local <- glc_open(data_dir)
+glc_summary(local)
+glc_files(local, available = FALSE)
+
+local_collection <- glc_read(local, dataset_id = "all")
+local_data <- glc_collect(local_collection)
+```
+
+The descriptor and core metadata retain the records declared by the source
+package. For a local subset, `glc_summary()` distinguishes locally available
+datasets, file groups, and files from those declared records. When the package
+is incomplete, `glc_read()` also reports how many declared datasets and files
+are locally available, then skips absent files. Thus, `dataset_id = "all"`
+reads all data included in the subset. Use
+`glc_files(local, available = FALSE)` to inspect the omitted file records.
+
+## Temporary reads versus persistent storage
+
+Remote `glc_read()` calls use session-temporary storage by default. This is a
+good fit for one-off analysis and leaves no persistent files behind.
+
+Pass `cache_dir` to `glc_open()` when you want remote files reused across
+calls, or use `glc_download()` when you want an explicit, portable package
+subset with a manifest:
+
+```{r cache, eval = live}
+cached <- glc_open(
+  "tscnlab/guidolin-glee-datasetv2",
+  cache_dir = file.path(tempdir(), "glcdp-cache")
+)
+```
+
+Choose the cache for performance; choose a downloaded subset for a durable,
+inspectable analysis input.

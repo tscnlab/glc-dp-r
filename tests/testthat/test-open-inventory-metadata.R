@@ -42,6 +42,53 @@ test_that("metadata search reports resource and nested field path", {
   expect_equal(matches$field, "title")
 })
 
+test_that("metadata search can match values, fields, or both", {
+  package <- glc_open(make_glc_fixture("2.0.0"), quiet = TRUE)
+
+  default_matches <- glc_search_metadata(
+    package,
+    "study_internal",
+    resources = "study"
+  )
+  field_matches <- glc_search_metadata(
+    package,
+    "STUDY_INTERNAL",
+    resources = "study",
+    search_in = "fields"
+  )
+  both_matches <- glc_search_metadata(
+    package,
+    "study",
+    resources = "study",
+    search_in = "both"
+  )
+
+  expect_equal(nrow(default_matches), 0L)
+  expect_equal(field_matches$field, "study_internal_id")
+  expect_equal(field_matches$value, "S1")
+  expect_setequal(both_matches$field, c("study_internal_id", "title"))
+})
+
+test_that("metadata search traverses nested data-frame columns", {
+  value <- jsonlite::fromJSON(
+    paste0(
+      '[{"id":"DS1","crossref":{"study":"Light study"}},',
+      '{"id":"DS2","crossref":{"study":"Other study"}}]'
+    ),
+    simplifyVector = TRUE
+  )
+  leaves <- glcdp:::glc_metadata_leaf_table(list(datasets = value))
+
+  matches <- leaves[leaves$value == "Light study", , drop = FALSE]
+  expect_equal(nrow(matches), 1)
+  expect_equal(matches$record, 1L)
+  expect_equal(matches$field, "crossref.study")
+  expect_equal(
+    leaves$record[leaves$value == "Other study"],
+    2L
+  )
+})
+
 test_that("summary reports core contents", {
   package <- glc_open(make_glc_fixture("3.0.0"), quiet = TRUE)
   summary <- glc_summary(package)

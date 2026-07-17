@@ -10,7 +10,9 @@ glc_summary(x)
 \item{x}{A package opened with \code{\link[=glc_open]{glc_open()}}.}
 }
 \value{
-A one-row \code{glc_summary} tibble.
+A one-row \code{glc_summary} tibble. For local packages, declared and
+locally available dataset, file-group, and file counts are reported
+separately.
 }
 \description{
 Summarize a Global Light Commons data package

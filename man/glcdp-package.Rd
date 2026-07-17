@@ -13,6 +13,7 @@ are imported from metadata-described file groups.
 \seealso{
 Useful links:
 \itemize{
+  \item \url{https://tscnlab.github.io/glc-dp-r/}
   \item \url{https://github.com/tscnlab/glc-dp-r}
   \item Report bugs at \url{https://github.com/tscnlab/glc-dp-r/issues}
 }

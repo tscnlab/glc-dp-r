@@ -77,7 +77,7 @@ glc_file_info_internal <- function(x, path) {
   }
   pointer <- NULL
   if (!is.na(row$size[[1L]]) && row$size[[1L]] <= 1024) {
-    pointer <- glc_parse_lfs_pointer(glc_git_blob_raw(x, row$sha[[1L]]))
+    pointer <- glc_parse_lfs_pointer(glc_fetch_remote_raw(x, path))
   }
   list(
     path = path,
@@ -277,7 +277,7 @@ glc_transfer_to <- function(x, path, destination, info = NULL) {
   } else {
     if (info$expected_size > 100 * 1024^2) {
       glc_abort(
-        "Ordinary Git blob {.path {info$path}} is larger than GitHub's 100 MB Contents API limit. Files of this size must be stored with Git LFS.",
+        "Ordinary Git blob {.path {info$path}} is larger than GitHub's 100 MB Git blob limit. Files of this size must be stored with Git LFS.",
         class = "glcdp_unsupported_storage"
       )
     }

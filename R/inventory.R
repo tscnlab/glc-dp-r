@@ -332,7 +332,9 @@ glc_optional_resource_records <- function(x, name) {
 #'
 #' @param x A package opened with [glc_open()].
 #'
-#' @return A one-row `glc_summary` tibble.
+#' @return A one-row `glc_summary` tibble. For local packages, declared and
+#'   locally available dataset, file-group, and file counts are reported
+#'   separately.
 #' @export
 glc_summary <- function(x) {
   glc_assert_package(x)
@@ -345,14 +347,22 @@ glc_summary <- function(x) {
   participants <- glc_optional_resource_records(x, "participants")
   devices <- glc_optional_resource_records(x, "devices")
   studies <- glc_optional_resource_records(x, "study")
+  available_files <- files$available %in% TRUE
+  available_dataset_ids <- unique(files$dataset_id[available_files])
+  available_group_ids <- unique(files$file_group_id[available_files])
   result <- tibble::tibble(
     schema_version = x$schema_version,
+    availability_checked = identical(x$source_type, "local"),
     study_count = length(studies),
     dataset_count = length(datasets),
+    available_dataset_count = length(available_dataset_ids),
     participant_count = length(participants),
     device_count = length(devices),
     file_group_count = length(groups),
+    available_file_group_count = length(available_group_ids),
     file_count = nrow(files),
+    available_file_count = sum(available_files),
+    missing_file_count = sum(!available_files),
     variable_count = nrow(glc_variables(x)),
     declared_bytes = sum(files$expected_bytes, na.rm = TRUE),
     modalities = list(glc_unique_chr(lapply(
@@ -375,11 +385,21 @@ glc_summary <- function(x) {
 print.glc_summary <- function(x, ...) {
   cat("<GLC package summary>\n")
   cat("Schema: ", x$schema_version[[1L]], "\n", sep = "")
+  format_availability <- function(available, declared) {
+    if (isTRUE(x$availability_checked[[1L]])) {
+      paste0(available, " available / ", declared, " declared")
+    } else {
+      as.character(declared)
+    }
+  }
   cat(
     "Studies: ",
     x$study_count[[1L]],
     " | Datasets: ",
-    x$dataset_count[[1L]],
+    format_availability(
+      x$available_dataset_count[[1L]],
+      x$dataset_count[[1L]]
+    ),
     " | Participants: ",
     x$participant_count[[1L]],
     "\n",
@@ -387,9 +407,15 @@ print.glc_summary <- function(x, ...) {
   )
   cat(
     "File groups: ",
-    x$file_group_count[[1L]],
+    format_availability(
+      x$available_file_group_count[[1L]],
+      x$file_group_count[[1L]]
+    ),
     " | Files: ",
-    x$file_count[[1L]],
+    format_availability(
+      x$available_file_count[[1L]],
+      x$file_count[[1L]]
+    ),
     " | Variables: ",
     x$variable_count[[1L]],
     "\n",
