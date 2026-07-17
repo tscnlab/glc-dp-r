@@ -361,3 +361,20 @@ make_separate_datetime_fixture <- function() {
   )
   root
 }
+
+make_multi_dataset_fixture <- function() {
+  root <- make_glc_fixture("3.0.0")
+  datasets <- fixture_read_datasets(root)
+  second <- datasets[[1]]
+  second$dataset_internal_id <- "DS2"
+  second$dataset_file[[1]]$dataset_file_names <- list(
+    "data/files/light-2.csv"
+  )
+  datasets[[2]] <- second
+  fixture_write_datasets(root, datasets)
+  file.copy(
+    file.path(root, "data", "files", "light.csv"),
+    file.path(root, "data", "files", "light-2.csv")
+  )
+  root
+}

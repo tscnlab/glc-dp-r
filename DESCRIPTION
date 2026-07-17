@@ -1,6 +1,6 @@
 Package: glcdp
 Title: Discover, Access, and Import Global Light Commons Data Packages
-Version: 0.0.0.9000
+Version: 0.90.0
 Authors@R: c(
     person(
       "Johannes", "Zauner",
@@ -43,9 +43,14 @@ Imports:
     readr,
     tibble
 Suggests:
+    knitr,
+    rmarkdown,
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
-URL: https://github.com/tscnlab/glc-dp-r
+VignetteBuilder: knitr
+URL: https://tscnlab.github.io/glc-dp-r/,
+    https://github.com/tscnlab/glc-dp-r
 BugReports: https://github.com/tscnlab/glc-dp-r/issues
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
+Config/Needs/website: pkgdown

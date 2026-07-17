@@ -1,0 +1,49 @@
+url: https://tscnlab.github.io/glc-dp-r/
+
+template:
+  bootstrap: 5
+  bootswatch: flatly
+  bslib:
+    primary: "#005293"
+    link-color: "#005293"
+
+navbar:
+  structure:
+    left: [intro, reference, articles, news]
+    right: [search, github]
+
+articles:
+- title: Workflows
+  navbar: ~
+  contents:
+  - glcdp
+  - discover-and-inspect
+  - import-and-download
+
+reference:
+- title: Discover and open packages
+  desc: Find registered packages and select a reproducible revision.
+  contents:
+  - glc_packages
+  - glc_search_packages
+  - glc_open
+  - glc_schema_versions
+- title: Inspect package contents
+  desc: Explore datasets, files, variables, resources, and metadata.
+  contents:
+  - glc_summary
+  - glc_resources
+  - glc_datasets
+  - glc_files
+  - glc_variables
+  - glc_metadata
+  - glc_search_metadata
+- title: Read and collect data
+  desc: Import metadata-described files and combine compatible groups.
+  contents:
+  - glc_read
+  - glc_collect
+- title: Download data packages
+  desc: Create portable local subsets with reproducibility manifests.
+  contents:
+  - glc_download

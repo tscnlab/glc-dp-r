@@ -1,3 +1,9 @@
 ^glc-dp\.Rproj$
 ^\.Rproj\.user$
 ^\.github$
+^_pkgdown\.yml$
+^docs$
+^output$
+^pkgdown$
+^tmp$
+(^|/)\.DS_Store$

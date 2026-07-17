@@ -10,11 +10,14 @@ glc_collect(x, standardize = c("lightlogr", "none"))
 \item{x}{A collection returned by \code{\link[=glc_read]{glc_read()}}.}
 
 \item{standardize}{Either \code{"lightlogr"} to add the conventional \code{Id},
-\code{Datetime}, and \code{file.name} columns, or \code{"none"} to retain only source and
-provenance columns.}
+\code{participant_Id}, \code{Datetime}, and \code{file.name} columns and remove internal
+\verb{.glc_*} provenance columns, or \code{"none"} to retain source and provenance
+columns unchanged.}
 }
 \value{
-A combined tibble. LightLogR-standardized output is grouped by \code{Id}.
+A combined tibble. In LightLogR-standardized output, \code{Id} contains
+the dataset id, \code{participant_Id} contains the participant id, and the
+result is grouped by \code{Id}.
 }
 \description{
 Explicitly combines file-group tibbles after checking their columns, types,

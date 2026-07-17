@@ -40,6 +40,37 @@ test_that("metadata and selected data downloads are reproducible local packages"
   expect_true(file.exists(file.path(all_destination, "data", "notes.csv")))
 })
 
+test_that("reopened subsets report and read only locally available data", {
+  package <- glc_open(make_multi_dataset_fixture(), quiet = TRUE)
+  destination <- tempfile("data-subset-")
+  glc_download(
+    package,
+    destination,
+    include = "data",
+    dataset_id = "DS1"
+  )
+  local <- glc_open(destination, quiet = TRUE)
+
+  files <- glc_files(local)
+  summary <- glc_summary(local)
+  expect_message(
+    collection <- glc_read(local, dataset_id = "all"),
+    "1 of 2 declared datasets and 1 of 2 declared files",
+    class = "glcdp_local_subset"
+  )
+
+  expect_equal(files$available, c(TRUE, FALSE))
+  expect_equal(summary$dataset_count, 2L)
+  expect_equal(summary$available_dataset_count, 1L)
+  expect_equal(summary$file_group_count, 2L)
+  expect_equal(summary$available_file_group_count, 1L)
+  expect_equal(summary$file_count, 2L)
+  expect_equal(summary$available_file_count, 1L)
+  expect_equal(summary$missing_file_count, 1L)
+  expect_equal(collection$dataset_id, "DS1")
+  expect_match(capture_output(print(summary)), "1 available / 2 declared")
+})
+
 test_that("downloads protect existing files and unsafe package paths", {
   package <- glc_open(make_glc_fixture("2.0.0"), quiet = TRUE)
   destination <- tempfile("download-existing-")
@@ -102,6 +133,38 @@ make_lfs_package <- function(repo = "example/data") {
   )
   package
 }
+
+test_that("unauthenticated Git files use immutable raw URLs", {
+  package <- make_lfs_package()
+  package$commit <- paste(rep("b", 40), collapse = "")
+  content <- charToRaw("ordinary small Git blob")
+  httr2::local_mocked_responses(list(
+    httr2::response(status_code = 200, body = content)
+  ))
+
+  url <- glcdp:::glc_raw_contents_url(package, "data/file name.csv")
+  result <- glcdp:::glc_fetch_remote_raw(package, "data/file name.csv")
+
+  expect_equal(
+    url,
+    paste0(
+      "https://raw.githubusercontent.com/example/data/",
+      paste(rep("b", 40), collapse = ""),
+      "/data/file%20name.csv"
+    )
+  )
+  expect_identical(result, content)
+})
+
+test_that("authenticated Git files retain Contents API transport", {
+  package <- make_lfs_package()
+  package$transport$token <- "secret-token"
+
+  request <- glcdp:::glc_remote_file_request(package, "data/file.csv")
+
+  expect_match(request$url, "api.github.com/repos/example/data/contents")
+  expect_match(request$url, "ref=", fixed = TRUE)
+})
 
 lfs_batch_response <- function(
   oid,

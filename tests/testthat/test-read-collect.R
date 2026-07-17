@@ -27,7 +27,7 @@ test_that("header discovery handles device preambles without an explicit row", {
   expect_equal(data$lux, c(12.5, 15))
 })
 
-test_that("variable selection retains datetime inputs", {
+test_that("variable selection uses datetime inputs without retaining them", {
   package <- glc_open(make_glc_fixture("3.0.0"), quiet = TRUE)
   data <- glc_read(
     package,
@@ -35,8 +35,20 @@ test_that("variable selection retains datetime inputs", {
     variables = "lux"
   )$data[[1]]
 
-  expect_true(all(c("lux", "timestamp", ".glc_datetime") %in% names(data)))
+  expect_true(all(c("lux", ".glc_datetime") %in% names(data)))
+  expect_false("timestamp" %in% names(data))
   expect_false("quality" %in% names(data))
+  expect_equal(
+    format(data$.glc_datetime, tz = "Europe/Berlin"),
+    c("2026-01-01 08:00:00", "2026-01-01 08:01:00")
+  )
+
+  data_with_datetime <- glc_read(
+    package,
+    dataset_id = "DS1",
+    variables = c("lux", "timestamp")
+  )$data[[1]]
+  expect_true("timestamp" %in% names(data_with_datetime))
 })
 
 test_that("declared type and extra-column problems follow the selected policy", {
@@ -70,8 +82,10 @@ test_that("collection creates LightLogR-ready identity and datetime columns", {
   expect_s3_class(data, "grouped_df")
   expect_s3_class(data$Id, "factor")
   expect_s3_class(data$Datetime, "POSIXct")
-  expect_equal(as.character(data$Id), c("P1", "P1"))
+  expect_equal(as.character(data$Id), c("DS1", "DS1"))
+  expect_equal(data$participant_Id, c("P1", "P1"))
   expect_equal(data$file.name, rep("light.csv", 2))
+  expect_false(any(startsWith(names(data), ".glc_")))
   expect_false("MEDI" %in% names(data))
 })
 
@@ -83,6 +97,26 @@ test_that("non-participant datasets use their dataset id", {
   data <- glc_read(package, dataset_id = "DS1") |>
     glc_collect()
   expect_equal(unique(as.character(data$Id)), "DS1")
+  expect_true(all(is.na(data$participant_Id)))
+})
+
+test_that("unstandardized collection retains internal provenance columns", {
+  package <- glc_open(make_glc_fixture("3.0.0"), quiet = TRUE)
+  data <- glc_read(package, dataset_id = "DS1") |>
+    glc_collect(standardize = "none")
+
+  expect_s3_class(data, "tbl_df")
+  expect_false(inherits(data, "grouped_df"))
+  expect_true(all(
+    c(
+      ".glc_dataset_id",
+      ".glc_file_group",
+      ".glc_participant_id",
+      ".glc_source_file",
+      ".glc_datetime"
+    ) %in%
+      names(data)
+  ))
 })
 
 test_that("incompatible groups and standard-column conflicts are rejected", {
@@ -136,6 +170,13 @@ test_that("row limits and unknown variable selections are checked", {
   expect_error(
     glc_read(package, dataset_id = "DS1", n_max = 1.5),
     "n_max"
+  )
+  expect_error(
+    glc_read(package, dataset_id = "DS1", progress = NA),
+    "progress"
+  )
+  expect_no_error(
+    glc_read(package, dataset_id = "DS1", progress = TRUE)
   )
 })
 

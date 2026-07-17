@@ -13,7 +13,8 @@ glc_read(
   terms = NULL,
   primary_only = FALSE,
   n_max = Inf,
-  problems = c("error", "warn")
+  problems = c("error", "warn"),
+  progress = interactive()
 )
 }
 \arguments{
@@ -30,12 +31,14 @@ dataset.}
 
 \item{terms}{Optional semantic variable terms.}
 
-\item{primary_only}{Select only declared primary variables, while retaining
-columns required to construct datetimes.}
+\item{primary_only}{Select only declared primary variables.}
 
 \item{n_max}{Maximum rows read from each file.}
 
 \item{problems}{Whether metadata mismatches should be errors or warnings.}
+
+\item{progress}{Show progress while files are imported. Defaults to \code{TRUE}
+in interactive sessions and \code{FALSE} otherwise.}
 }
 \value{
 A \code{glc_data_collection} tibble with one data list-column per file
@@ -43,4 +46,11 @@ group.
 }
 \description{
 Read metadata-described dataset files
+}
+\details{
+When variable filters are used, source columns required to construct
+datetimes are used internally but omitted unless selected by the filters.
+Declared files that are absent from a local package subset are skipped. When
+a local package contains fewer datasets or files than declared,
+\code{glc_read()} reports the discrepancy and reads the available files.
 }

@@ -142,12 +142,19 @@ glc_metadata_leaf_table <- function(metadata) {
     if (is.data.frame(value)) {
       if (nrow(value) == 0L) return(invisible(NULL))
       for (i in seq_len(nrow(value))) {
+        child_record <- if (is.na(record)) i else record
         for (name in names(value)) {
-          child <- value[[name]][i]
-          if (is.list(value[[name]])) child <- value[[name]][[i]]
+          column <- value[[name]]
+          child <- if (is.data.frame(column)) {
+            column[i, , drop = FALSE]
+          } else if (is.list(column)) {
+            column[[i]]
+          } else {
+            column[i]
+          }
           child_field <- if (nzchar(field)) paste(field, name, sep = ".") else
             name
-          walk(child, resource, child_field, i)
+          walk(child, resource, child_field, child_record)
         }
       }
       return(invisible(NULL))
@@ -191,7 +198,7 @@ glc_metadata_leaf_table <- function(metadata) {
   dplyr::bind_rows(rows)
 }
 
-#' Search metadata values
+#' Search metadata values or field paths
 #'
 #' @param x A package opened with [glc_open()].
 #' @param query Text or regular expression to search for.
@@ -199,6 +206,14 @@ glc_metadata_leaf_table <- function(metadata) {
 #' @param fields Optional exact field names or complete field paths to include.
 #' @param fixed Treat `query` as fixed text rather than a regular expression.
 #' @param ignore_case Ignore letter case while matching.
+#' @param search_in Where to match `query`: scalar metadata `"values"`, complete
+#'   field paths `"fields"`, or `"both"`. The default is `"values"`.
+#'
+#' @details
+#' Field searches return the same leaf-level rows as value searches. A field
+#' path that contains multiple scalar values therefore produces one row per
+#' value. The `fields` argument can be combined with any `search_in` mode to
+#' restrict which field paths are searched.
 #'
 #' @return A tibble of matching scalar metadata values and their field paths.
 #' @export
@@ -208,12 +223,14 @@ glc_search_metadata <- function(
   resources = NULL,
   fields = NULL,
   fixed = TRUE,
-  ignore_case = TRUE
+  ignore_case = TRUE,
+  search_in = c("values", "fields", "both")
 ) {
   glc_assert_package(x)
   glc_assert_string(query, "query", allow_empty = TRUE)
   glc_assert_flag(fixed, "fixed")
   glc_assert_flag(ignore_case, "ignore_case")
+  search_in <- match.arg(search_in)
   if (!is.null(fields) && (!is.character(fields) || anyNA(fields))) {
     glc_abort(
       "{.arg fields} must be a character vector without missing values."
@@ -230,24 +247,33 @@ glc_search_metadata <- function(
     )
     leaves <- leaves[field_match, , drop = FALSE]
   }
-  search_query <- query
-  search_values <- leaves$value
-  search_ignore_case <- ignore_case
-  if (fixed && ignore_case) {
-    search_query <- tolower(search_query)
-    search_values <- tolower(search_values)
-    search_ignore_case <- FALSE
-  }
-  keep <- tryCatch(
-    grepl(
-      search_query,
-      search_values,
-      fixed = fixed,
-      ignore.case = search_ignore_case
-    ),
-    error = function(cnd) {
-      glc_abort("Invalid metadata search pattern: {conditionMessage(cnd)}.")
+
+  match_text <- function(text) {
+    search_query <- query
+    search_text <- text
+    search_ignore_case <- ignore_case
+    if (fixed && ignore_case) {
+      search_query <- tolower(search_query)
+      search_text <- tolower(search_text)
+      search_ignore_case <- FALSE
     }
+    tryCatch(
+      grepl(
+        search_query,
+        search_text,
+        fixed = fixed,
+        ignore.case = search_ignore_case
+      ),
+      error = function(cnd) {
+        glc_abort("Invalid metadata search pattern: {conditionMessage(cnd)}.")
+      }
+    )
+  }
+  keep <- switch(
+    search_in,
+    values = match_text(leaves$value),
+    fields = match_text(leaves$field),
+    both = match_text(leaves$value) | match_text(leaves$field)
   )
   keep[is.na(keep)] <- FALSE
   leaves[keep, , drop = FALSE]

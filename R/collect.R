@@ -79,10 +79,13 @@ glc_add_standard_column <- function(data, name, value) {
 #'
 #' @param x A collection returned by [glc_read()].
 #' @param standardize Either `"lightlogr"` to add the conventional `Id`,
-#'   `Datetime`, and `file.name` columns, or `"none"` to retain only source and
-#'   provenance columns.
+#'   `participant_Id`, `Datetime`, and `file.name` columns and remove internal
+#'   `.glc_*` provenance columns, or `"none"` to retain source and provenance
+#'   columns unchanged.
 #'
-#' @return A combined tibble. LightLogR-standardized output is grouped by `Id`.
+#' @return A combined tibble. In LightLogR-standardized output, `Id` contains
+#'   the dataset id, `participant_Id` contains the participant id, and the
+#'   result is grouped by `Id`.
 #' @export
 glc_collect <- function(x, standardize = c("lightlogr", "none")) {
   if (!inherits(x, "glc_data_collection")) {
@@ -101,15 +104,20 @@ glc_collect <- function(x, standardize = c("lightlogr", "none")) {
     return(tibble::as_tibble(result))
   }
 
-  id <- as.character(result[[".glc_participant_id"]])
-  missing_id <- is.na(id) | !nzchar(id)
-  id[missing_id] <- as.character(result[[".glc_dataset_id"]][missing_id])
+  id <- as.character(result[[".glc_dataset_id"]])
   id <- factor(id, levels = unique(id))
+  participant_id <- as.character(result[[".glc_participant_id"]])
   datetime <- result[[".glc_datetime"]]
   file_name <- basename(result[[".glc_source_file"]])
   result <- glc_add_standard_column(result, "Id", id)
+  result <- glc_add_standard_column(
+    result,
+    "participant_Id",
+    participant_id
+  )
   result <- glc_add_standard_column(result, "Datetime", datetime)
   result <- glc_add_standard_column(result, "file.name", file_name)
+  result <- result[, !startsWith(names(result), ".glc_"), drop = FALSE]
   order <- order(as.character(result$Id), result$Datetime, na.last = TRUE)
   result <- result[order, , drop = FALSE]
   dplyr::group_by_at(tibble::as_tibble(result), "Id")

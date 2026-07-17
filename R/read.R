@@ -265,12 +265,7 @@ glc_selected_variable_names <- function(
   if (any_filter && length(chosen) == 0L) {
     glc_abort("Variable selection is empty for file group {.val {group$id}}.")
   }
-  datetime_columns <- if (identical(group$datetime$source, "column")) {
-    glc_unique_chr(group$datetime$date, group$datetime$time)
-  } else {
-    character()
-  }
-  list(names = unique(c(chosen, datetime_columns)), filtered = any_filter)
+  list(names = chosen, filtered = any_filter)
 }
 
 glc_group_matches_variables <- function(group, variables, terms, primary_only) {
@@ -463,6 +458,85 @@ glc_bind_group_files <- function(data, group) {
   dplyr::bind_rows(data)
 }
 
+glc_resolve_read_path <- function(x, path) {
+  tryCatch(
+    glc_resolve_path(x, path),
+    glcdp_missing_path = function(cnd) {
+      if (identical(x$source_type, "local")) return(NA_character_)
+      stop(cnd)
+    }
+  )
+}
+
+glc_inform_local_subset <- function(x) {
+  if (!identical(x$source_type, "local")) return(invisible(NULL))
+
+  datasets <- glc_model(x)$datasets
+  declared_dataset_ids <- vapply(
+    datasets,
+    function(dataset) dataset$id,
+    character(1)
+  )
+  files <- glc_files(x)
+  available_files <- files$available %in% TRUE
+  available_dataset_ids <- unique(files$dataset_id[available_files])
+  if (
+    length(available_dataset_ids) == length(declared_dataset_ids) &&
+      sum(available_files) == nrow(files)
+  ) {
+    return(invisible(NULL))
+  }
+
+  unavailable_dataset_ids <- setdiff(
+    declared_dataset_ids,
+    available_dataset_ids
+  )
+  dataset_label <- if (length(declared_dataset_ids) == 1L) {
+    "dataset"
+  } else {
+    "datasets"
+  }
+  file_label <- if (nrow(files) == 1L) "file" else "files"
+  message <- c(
+    "Local package is a partial data subset.",
+    "i" = paste0(
+      length(available_dataset_ids),
+      " of ",
+      length(declared_dataset_ids),
+      " declared ",
+      dataset_label,
+      " and ",
+      sum(available_files),
+      " of ",
+      nrow(files),
+      " declared ",
+      file_label,
+      " are locally available."
+    )
+  )
+  if (length(unavailable_dataset_ids) > 0L) {
+    unavailable_label <- if (length(unavailable_dataset_ids) == 1L) {
+      "Unavailable dataset: "
+    } else {
+      "Unavailable datasets: "
+    }
+    message <- c(
+      message,
+      "i" = paste0(
+        unavailable_label,
+        paste(unavailable_dataset_ids, collapse = ", "),
+        "."
+      )
+    )
+  }
+  message <- c(
+    message,
+    "i" = "glc_read() will read only locally available files."
+  )
+  glc_inform(message, class = "glcdp_local_subset")
+  invisible(NULL)
+}
+
 #' Read metadata-described dataset files
 #'
 #' @param x A package opened with [glc_open()].
@@ -472,10 +546,18 @@ glc_bind_group_files <- function(data, group) {
 #' @param files Optional declared paths, resolved paths, or basenames.
 #' @param variables Optional source variable names.
 #' @param terms Optional semantic variable terms.
-#' @param primary_only Select only declared primary variables, while retaining
-#'   columns required to construct datetimes.
+#' @param primary_only Select only declared primary variables.
 #' @param n_max Maximum rows read from each file.
 #' @param problems Whether metadata mismatches should be errors or warnings.
+#' @param progress Show progress while files are imported. Defaults to `TRUE`
+#'   in interactive sessions and `FALSE` otherwise.
+#'
+#' @details
+#' When variable filters are used, source columns required to construct
+#' datetimes are used internally but omitted unless selected by the filters.
+#' Declared files that are absent from a local package subset are skipped. When
+#' a local package contains fewer datasets or files than declared,
+#' `glc_read()` reports the discrepancy and reads the available files.
 #'
 #' @return A `glc_data_collection` tibble with one data list-column per file
 #'   group.
@@ -489,11 +571,13 @@ glc_read <- function(
   terms = NULL,
   primary_only = FALSE,
   n_max = Inf,
-  problems = c("error", "warn")
+  problems = c("error", "warn"),
+  progress = interactive()
 ) {
   glc_assert_package(x)
   problems <- match.arg(problems)
   glc_assert_flag(primary_only, "primary_only")
+  glc_assert_flag(progress, "progress")
   if (
     !is.numeric(n_max) ||
       length(n_max) != 1L ||
@@ -522,9 +606,9 @@ glc_read <- function(
   }
   datasets <- glc_selected_datasets(x, dataset_id)
   glc_validate_variable_filters(datasets, file_group, variables, terms)
-  rows <- list()
+  selected_groups <- list()
   used_files <- character()
-  row_index <- 0L
+  group_index <- 0L
   for (dataset in datasets) {
     for (group in dataset$groups) {
       if (!glc_group_selected(group, file_group, role = NULL, modality = NULL))
@@ -534,7 +618,7 @@ glc_read <- function(
       group_files <- group$files
       resolved_all <- vapply(
         group_files,
-        function(path) glc_resolve_path(x, path),
+        function(path) glc_resolve_read_path(x, path),
         character(1)
       )
       if (!is.null(files)) {
@@ -545,46 +629,17 @@ glc_read <- function(
         group_files <- group_files[keep]
         resolved_all <- resolved_all[keep]
       }
+      available_files <- !is.na(resolved_all)
+      group_files <- group_files[available_files]
+      resolved_all <- resolved_all[available_files]
       if (length(group_files) == 0L) next
       resolved <- resolved_all
       used_files <- c(used_files, group_files, resolved, basename(resolved))
-      data <- Map(
-        function(path) {
-          glc_read_group_file(
-            x,
-            dataset,
-            group,
-            path,
-            variables,
-            terms,
-            primary_only,
-            n_max,
-            problems
-          )
-        },
-        resolved
-      )
-      combined <- glc_bind_group_files(data, group)
-      row_index <- row_index + 1L
-      rows[[row_index]] <- tibble::tibble(
-        dataset_id = dataset$id,
-        file_group = group$index,
-        file_group_id = group$id,
-        study_id = dataset$study_id,
-        participant_id = dataset$participant_id,
-        device_id = group$device_id,
-        modalities = list(group$modality),
-        role = group$role,
-        data_state = group$data_state,
-        timezone = group$timezone,
-        datetime_source = group$datetime$source,
-        datetime_date = group$datetime$date,
-        datetime_format = group$datetime$date_format,
-        datetime_time = group$datetime$time,
-        datetime_time_format = group$datetime$time_format,
-        primary_variables = list(group$primary_variables),
-        files = list(resolved),
-        data = list(combined)
+      group_index <- group_index + 1L
+      selected_groups[[group_index]] <- list(
+        dataset = dataset,
+        group = group,
+        resolved = resolved
       )
     }
   }
@@ -594,9 +649,75 @@ glc_read <- function(
       glc_abort("Selected file{?s} not found: {.path {unmatched}}.")
     }
   }
-  if (length(rows) == 0L) {
+  glc_inform_local_subset(x)
+  if (length(selected_groups) == 0L) {
     glc_abort("The selection contains no readable file groups.")
   }
+
+  progress_id <- NULL
+  if (progress) {
+    file_count <- sum(vapply(
+      selected_groups,
+      function(selection) length(selection$resolved),
+      integer(1)
+    ))
+    progress_id <- cli::cli_progress_bar(
+      name = "Reading GLC files",
+      type = "tasks",
+      total = file_count,
+      clear = FALSE
+    )
+  }
+
+  rows <- lapply(selected_groups, function(selection) {
+    dataset <- selection$dataset
+    group <- selection$group
+    resolved <- selection$resolved
+    data <- lapply(resolved, function(path) {
+      if (progress) {
+        cli::cli_progress_update(
+          id = progress_id,
+          inc = 0L,
+          status = path,
+          force = TRUE
+        )
+      }
+      value <- glc_read_group_file(
+        x,
+        dataset,
+        group,
+        path,
+        variables,
+        terms,
+        primary_only,
+        n_max,
+        problems
+      )
+      if (progress) cli::cli_progress_update(id = progress_id)
+      value
+    })
+    combined <- glc_bind_group_files(data, group)
+    tibble::tibble(
+      dataset_id = dataset$id,
+      file_group = group$index,
+      file_group_id = group$id,
+      study_id = dataset$study_id,
+      participant_id = dataset$participant_id,
+      device_id = group$device_id,
+      modalities = list(group$modality),
+      role = group$role,
+      data_state = group$data_state,
+      timezone = group$timezone,
+      datetime_source = group$datetime$source,
+      datetime_date = group$datetime$date,
+      datetime_format = group$datetime$date_format,
+      datetime_time = group$datetime$time,
+      datetime_time_format = group$datetime$time_format,
+      primary_variables = list(group$primary_variables),
+      files = list(resolved),
+      data = list(combined)
+    )
+  })
   result <- dplyr::bind_rows(rows)
   class(result) <- c("glc_data_collection", class(result))
   result
