@@ -1,0 +1,11 @@
+pandoc: 3.8.3
+pkgdown: 2.2.1
+pkgdown_sha: ~
+articles:
+  discover-and-inspect: discover-and-inspect.html
+  glcdp: glcdp.html
+  import-and-download: import-and-download.html
+last_built: 2026-07-17T09:54Z
+urls:
+  reference: https://tscnlab.github.io/glc-dp-r/reference
+  article: https://tscnlab.github.io/glc-dp-r/articles
