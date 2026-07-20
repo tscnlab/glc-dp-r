@@ -11,7 +11,7 @@ rsconnect::writeManifest(
   appDir = "deploy/posit-connect",
   appPrimaryDoc = "app.R",
   appMode = "shiny",
-  dependencyResolution = "library"
+  envManagementR = TRUE
 )
 ```
 
