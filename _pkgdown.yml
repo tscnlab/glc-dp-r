@@ -17,6 +17,7 @@ articles:
   navbar: ~
   contents:
   - glcdp
+  - glc-data-explorer
   - discover-and-inspect
   - import-and-download
 
@@ -24,6 +25,7 @@ reference:
 - title: Discover and open packages
   desc: Find registered packages and select a reproducible revision.
   contents:
+  - glc_explore
   - glc_packages
   - glc_search_packages
   - glc_open

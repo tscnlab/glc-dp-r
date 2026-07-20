@@ -28,7 +28,9 @@ Description: Discovers Global Light Commons data packages through their
     levels, datetimes, and time zones. Git Large File Storage objects are
     resolved without requiring an external Git LFS installation, and imported
     file groups can be explicitly collected into data suitable for personal
-    light exposure analysis workflows.
+    light exposure analysis workflows. An included Shiny application supports
+    interactive discovery, inspection, selection, preview, and reproducible
+    handoff to R.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Depends:
@@ -43,8 +45,10 @@ Imports:
     readr,
     tibble
 Suggests:
+    bslib (>= 0.6.0),
     knitr,
     rmarkdown,
+    shiny (>= 1.7.2),
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
 VignetteBuilder: knitr
