@@ -1,4 +1,4 @@
-# glcdp (development version)
+# glcdp 0.9.2
 
 * Added `glc_explore()`, a Shiny application for browsing the registry,
   inspecting package contents and hierarchical metadata, filtering datasets,
