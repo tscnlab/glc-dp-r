@@ -1,8 +1,10 @@
 ^glc-dp\.Rproj$
+^\.git$
 ^\.Rproj\.user$
 ^\.github$
 ^_pkgdown\.yml$
 ^docs$
+^deploy$
 ^output$
 ^pkgdown$
 ^tmp$

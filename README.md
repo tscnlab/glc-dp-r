@@ -37,12 +37,28 @@ Remote reads use temporary session storage unless a cache directory is
 explicitly supplied. Persistent downloads are made only through
 `glc_download()` or an explicit cache directory.
 
+## Interactive data explorer
+
+Install the optional application dependencies and launch the local explorer:
+
+```r
+install.packages(c("shiny", "bslib"))
+glcdp::glc_explore()
+```
+
+The app browses passing registry revisions, summarizes package contents, and
+filters participants, devices, datasets, file groups, and source variables.
+It builds a small configurable preview before exporting an annotated R script
+that downloads and imports the exact selection. Package data remain on the
+machine running the app.
+
 ## Documentation
 
 The [package website](https://tscnlab.github.io/glc-dp-r/) includes a complete
 function reference and workflow articles:
 
 - [Get started with glcdp](https://tscnlab.github.io/glc-dp-r/articles/glcdp.html)
+- [Explore and hand off data with the Shiny app](https://tscnlab.github.io/glc-dp-r/articles/glc-data-explorer.html)
 - [Discover and inspect data packages](https://tscnlab.github.io/glc-dp-r/articles/discover-and-inspect.html)
 - [Import and download data](https://tscnlab.github.io/glc-dp-r/articles/import-and-download.html)
 
