@@ -13,16 +13,16 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/tscnlab/glc-dp-r/blob/v0.9.1/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/tscnlab/glc-dp-r/blob/main/DESCRIPTION)
 
 Zauner J, Thalji S, Spitschan M (2026). *glcdp: Discover, Access, and
-Import Global Light Commons Data Packages*. R package version 0.9.1,
+Import Global Light Commons Data Packages*. R package version 0.9.2,
 <https://tscnlab.github.io/glc-dp-r/>.
 
     @Manual{,
       title = {glcdp: Discover, Access, and Import Global Light Commons Data Packages},
       author = {Johannes Zauner and Salma M. Thalji and Manuel Spitschan},
       year = {2026},
-      note = {R package version 0.9.1},
+      note = {R package version 0.9.2},
       url = {https://tscnlab.github.io/glc-dp-r/},
     }

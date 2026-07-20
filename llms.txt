@@ -37,6 +37,23 @@ explicitly supplied. Persistent downloads are made only through
 [`glc_download()`](https://tscnlab.github.io/glc-dp-r/reference/glc_download.md)
 or an explicit cache directory.
 
+## Interactive data explorer
+
+Install the optional application dependencies and launch the local
+explorer:
+
+``` r
+
+install.packages(c("shiny", "bslib"))
+glcdp::glc_explore()
+```
+
+The app browses passing registry revisions, summarizes package contents,
+and filters participants, devices, datasets, file groups, and source
+variables. It builds a small configurable preview before exporting an
+annotated R script that downloads and imports the exact selection.
+Package data remain on the machine running the app.
+
 ## Documentation
 
 The [package website](https://tscnlab.github.io/glc-dp-r/) includes a
@@ -44,6 +61,8 @@ complete function reference and workflow articles:
 
 - [Get started with
   glcdp](https://tscnlab.github.io/glc-dp-r/articles/glcdp.html)
+- [Explore and hand off data with the Shiny
+  app](https://tscnlab.github.io/glc-dp-r/articles/glc-data-explorer.html)
 - [Discover and inspect data
   packages](https://tscnlab.github.io/glc-dp-r/articles/discover-and-inspect.html)
 - [Import and download
@@ -63,6 +82,8 @@ functions](https://tscnlab.github.io/LightLogR/reference/index.html).
 
 Find registered packages and select a reproducible revision.
 
+- [`glc_explore()`](https://tscnlab.github.io/glc-dp-r/reference/glc_explore.md)
+  : Explore Global Light Commons data packages
 - [`glc_packages()`](https://tscnlab.github.io/glc-dp-r/reference/glc_packages.md)
   : List registered Global Light Commons data packages
 - [`glc_search_packages()`](https://tscnlab.github.io/glc-dp-r/reference/glc_search_packages.md)
@@ -113,6 +134,8 @@ Create portable local subsets with reproducibility manifests.
 
 - [Get started with
   glcdp](https://tscnlab.github.io/glc-dp-r/articles/glcdp.md):
+- [Explore and hand off data with the Shiny
+  app](https://tscnlab.github.io/glc-dp-r/articles/glc-data-explorer.md):
 - [Discover and inspect data
   packages](https://tscnlab.github.io/glc-dp-r/articles/discover-and-inspect.md):
 - [Import and download

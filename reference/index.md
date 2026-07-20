@@ -4,6 +4,8 @@
 
 Find registered packages and select a reproducible revision.
 
+- [`glc_explore()`](https://tscnlab.github.io/glc-dp-r/reference/glc_explore.md)
+  : Explore Global Light Commons data packages
 - [`glc_packages()`](https://tscnlab.github.io/glc-dp-r/reference/glc_packages.md)
   : List registered Global Light Commons data packages
 - [`glc_search_packages()`](https://tscnlab.github.io/glc-dp-r/reference/glc_search_packages.md)

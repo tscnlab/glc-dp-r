@@ -1,5 +1,16 @@
 # Changelog
 
+## glcdp 0.9.2
+
+- Added
+  [`glc_explore()`](https://tscnlab.github.io/glc-dp-r/reference/glc_explore.md),
+  a Shiny application for browsing the registry, inspecting package
+  contents and hierarchical metadata, filtering datasets, file groups,
+  participants, devices, and variables, previewing selections, and
+  exporting annotated reproducible R scripts.
+- Added a documented Posit Connect deployment entry point and dependency
+  manifest workflow.
+
 ## glcdp 0.9.1
 
 - Corrected the package logo, removed its exterior background for

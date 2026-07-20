@@ -16,8 +16,8 @@
 <script src="deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Discover, Access, and Import Global Light Commons Data Packages">
-<meta name="description" content="Discovers Global Light Commons data packages through their registry, opens immutable passing revisions, and provides searchable inventories of package metadata. Selected metadata and measurement files can be downloaded or imported with metadata-defined columns, types, factor levels, datetimes, and time zones. Git Large File Storage objects are resolved without requiring an external Git LFS installation, and imported file groups can be explicitly collected into data suitable for personal light exposure analysis workflows.">
-<meta property="og:description" content="Discovers Global Light Commons data packages through their registry, opens immutable passing revisions, and provides searchable inventories of package metadata. Selected metadata and measurement files can be downloaded or imported with metadata-defined columns, types, factor levels, datetimes, and time zones. Git Large File Storage objects are resolved without requiring an external Git LFS installation, and imported file groups can be explicitly collected into data suitable for personal light exposure analysis workflows.">
+<meta name="description" content="Discovers Global Light Commons data packages through their registry, opens immutable passing revisions, and provides searchable inventories of package metadata. Selected metadata and measurement files can be downloaded or imported with metadata-defined columns, types, factor levels, datetimes, and time zones. Git Large File Storage objects are resolved without requiring an external Git LFS installation, and imported file groups can be explicitly collected into data suitable for personal light exposure analysis workflows. An included Shiny application supports interactive discovery, inspection, selection, preview, and reproducible handoff to R.">
+<meta property="og:description" content="Discovers Global Light Commons data packages through their registry, opens immutable passing revisions, and provides searchable inventories of package metadata. Selected metadata and measurement files can be downloaded or imported with metadata-defined columns, types, factor levels, datetimes, and time zones. Git Large File Storage objects are resolved without requiring an external Git LFS installation, and imported file groups can be explicitly collected into data suitable for personal light exposure analysis workflows. An included Shiny application supports interactive discovery, inspection, selection, preview, and reproducible handoff to R.">
 <meta property="og:image" content="https://tscnlab.github.io/glc-dp-r/logo.png">
 </head>
 <body>
@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="index.html">glcdp</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.9.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.9.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,7 +42,8 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="articles/discover-and-inspect.html">Discover and inspect data packages</a></li>
+<li><a class="dropdown-item" href="articles/glc-data-explorer.html">Explore and hand off data with the Shiny app</a></li>
+    <li><a class="dropdown-item" href="articles/discover-and-inspect.html">Discover and inspect data packages</a></li>
     <li><a class="dropdown-item" href="articles/import-and-download.html">Import and download data</a></li>
   </ul>
 </li>
@@ -88,11 +89,21 @@
 <p>Remote reads use temporary session storage unless a cache directory is explicitly supplied. Persistent downloads are made only through <code><a href="reference/glc_download.html">glc_download()</a></code> or an explicit cache directory.</p>
 </div>
 <div class="section level2">
+<h2 id="interactive-data-explorer">Interactive data explorer<a class="anchor" aria-label="anchor" href="#interactive-data-explorer"></a>
+</h2>
+<p>Install the optional application dependencies and launch the local explorer:</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"shiny"</span>, <span class="st">"bslib"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu">glcdp</span><span class="fu">::</span><span class="fu"><a href="reference/glc_explore.html">glc_explore</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p>The app browses passing registry revisions, summarizes package contents, and filters participants, devices, datasets, file groups, and source variables. It builds a small configurable preview before exporting an annotated R script that downloads and imports the exact selection. Package data remain on the machine running the app.</p>
+</div>
+<div class="section level2">
 <h2 id="documentation">Documentation<a class="anchor" aria-label="anchor" href="#documentation"></a>
 </h2>
 <p>The <a href="https://tscnlab.github.io/glc-dp-r/">package website</a> includes a complete function reference and workflow articles:</p>
 <ul>
 <li><a href="https://tscnlab.github.io/glc-dp-r/articles/glcdp.html">Get started with glcdp</a></li>
+<li><a href="https://tscnlab.github.io/glc-dp-r/articles/glc-data-explorer.html">Explore and hand off data with the Shiny app</a></li>
 <li><a href="https://tscnlab.github.io/glc-dp-r/articles/discover-and-inspect.html">Discover and inspect data packages</a></li>
 <li><a href="https://tscnlab.github.io/glc-dp-r/articles/import-and-download.html">Import and download data</a></li>
 </ul>

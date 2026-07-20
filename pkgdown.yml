@@ -3,9 +3,10 @@ pkgdown: 2.2.1
 pkgdown_sha: ~
 articles:
   discover-and-inspect: discover-and-inspect.html
+  glc-data-explorer: glc-data-explorer.html
   glcdp: glcdp.html
   import-and-download: import-and-download.html
-last_built: 2026-07-17T11:44Z
+last_built: 2026-07-20T13:12Z
 urls:
   reference: https://tscnlab.github.io/glc-dp-r/reference
   article: https://tscnlab.github.io/glc-dp-r/articles
