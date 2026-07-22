@@ -170,7 +170,7 @@ Field and relationship resolution must remain unambiguous; use `resource` to
 restrict field discovery when the same field occurs in multiple connected
 resources.
 
-```{r metadata-resource}
+```{r metadata-resource, eval = live}
 # Searches metadata:
 glc_search_metadata(x, "age", search_in = "fields")
 
@@ -201,7 +201,8 @@ add_metadata(
   )
 ) |>
   head() |>
-  dplyr::select(-file.name)
+  dplyr::select(Id, dataset_timezone, dataset_location,
+                participant_age, study_title, device_model)
 ```
 
 When adding project-specific metadata to a data package, store it under a
