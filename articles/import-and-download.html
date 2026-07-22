@@ -66,7 +66,7 @@
       <img src="../logo.png" class="logo" alt=""><h1>Import and download data</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/tscnlab/glc-dp-r/blob/v0.9.3/vignettes/import-and-download.Rmd" class="external-link"><code>vignettes/import-and-download.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/tscnlab/glc-dp-r/blob/main/vignettes/import-and-download.Rmd" class="external-link"><code>vignettes/import-and-download.Rmd</code></a></small>
       <div class="d-none name"><code>import-and-download.Rmd</code></div>
     </div>
 
@@ -361,6 +361,12 @@ the same field occurs in multiple connected resources.</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Searches metadata:</span></span>
 <span><span class="fu"><a href="../reference/glc_search_metadata.html">glc_search_metadata</a></span><span class="op">(</span><span class="va">x</span>, <span class="st">"age"</span>, search_in <span class="op">=</span> <span class="st">"fields"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 3 × 5</span></span></span>
+<span><span class="co">#&gt;   resource     record field           value context </span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> participants      1 participant_age 29    record 1</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> participants      2 participant_age 34    record 2</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> participants      3 participant_age 22    record 3</span></span>
 <span></span>
 <span><span class="co"># Extracts relevant metadata for collected dataset:</span></span>
 <span><span class="va">dataset_metadata</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/extract_metadata.html">extract_metadata</a></span><span class="op">(</span></span>
@@ -375,6 +381,12 @@ the same field occurs in multiple connected resources.</p>
 <span>  <span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span><span class="va">dataset_metadata</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 7</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Groups:   Id [1]</span></span></span>
+<span><span class="co">#&gt;   Id    file_group_id dataset_timezone dataset_location participant_age</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;list&gt;</span>                     <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> DS001 DS001:1       Europe/Berlin    <span style="color: #949494;">&lt;chr [2]&gt;</span>                     29</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 2 more variables: study_title &lt;chr&gt;, device_model &lt;chr&gt;</span></span></span>
 <span></span>
 <span><span class="co"># Adds relevant metadata into collected dataset</span></span>
 <span><span class="fu"><a href="../reference/add_metadata.html">add_metadata</a></span><span class="op">(</span></span>
@@ -389,7 +401,24 @@ the same field occurs in multiple connected resources.</p>
 <span>  <span class="op">)</span></span>
 <span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="op">-</span><span class="va">file.name</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="op">-</span><span class="va">file.name</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 42</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Groups:   Id [1]</span></span></span>
+<span><span class="co">#&gt;   `DATE/TIME`     MS EVENT TEMPERATURE `EXT TEMPERATURE` ORIENTATION   PIM  PIMn</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 14/08/2023 …     0     0        28.9                 0          16     0   0  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 14/08/2023 …     0     0        28.9                 0          16     0   0  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 14/08/2023 …     0     0        28.8                 0          16     6   0.6</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> 14/08/2023 …     0     0        28.8                 0          16     0   0  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> 14/08/2023 …     0     0        28.8                 0          16     0   0  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> 14/08/2023 …     0     0        28.7                 0          16     0   0  </span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 34 more variables: TAT &lt;dbl&gt;, TATn &lt;dbl&gt;, ZCM &lt;dbl&gt;, ZCMn &lt;dbl&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   LIGHT &lt;dbl&gt;, `AMB LIGHT` &lt;dbl&gt;, `RED LIGHT` &lt;dbl&gt;, `GREEN LIGHT` &lt;dbl&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   `BLUE LIGHT` &lt;dbl&gt;, `IR LIGHT` &lt;dbl&gt;, `UVA LIGHT` &lt;dbl&gt;, `UVB LIGHT` &lt;dbl&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   STATE &lt;dbl&gt;, CAP_SENS_1 &lt;dbl&gt;, CAP_SENS_2 &lt;dbl&gt;, F1 &lt;dbl&gt;, F2 &lt;dbl&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   F3 &lt;dbl&gt;, F4 &lt;dbl&gt;, F5 &lt;dbl&gt;, F6 &lt;dbl&gt;, F7 &lt;dbl&gt;, F8 &lt;dbl&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   `MELANOPIC EDI` &lt;dbl&gt;, CLEAR &lt;dbl&gt;, Id &lt;fct&gt;, file_group_id &lt;chr&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   participant_Id &lt;chr&gt;, Datetime &lt;dttm&gt;, dataset_timezone &lt;chr&gt;, …</span></span></span></code></pre></div>
 <p>When adding project-specific metadata to a data package, store it
 under a stable package-relative path such as
 <code>data/metadata.csv</code> and declare it as a resource in
@@ -446,23 +475,23 @@ the authenticated API transport, including for private repositories.</p>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 17 × 6</span></span></span>
 <span><span class="co">#&gt;    path                                 destination storage bytes sha256 lfs_oid</span></span>
 <span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                                <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> datapackage.json                     /tmp/RtmpY… git      <span style="text-decoration: underline;">2</span>363 e841f… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> data/study.json                      /tmp/RtmpY… git      <span style="text-decoration: underline;">3</span>644 fb165… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> data/participants.json               /tmp/RtmpY… git       379 1a7ae… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> data/participant_characteristics.csv /tmp/RtmpY… git       218 554b8… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> data/datasets.json                   /tmp/RtmpY… git     <span style="text-decoration: underline;">17</span>835 4df6d… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> data/devices.json                    /tmp/RtmpY… git      <span style="text-decoration: underline;">2</span>148 53076… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> data/datasheets/device_datasheet.js… /tmp/RtmpY… git      <span style="text-decoration: underline;">1</span>343 50acf… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> data/datasheets/sensor_datasheet.js… /tmp/RtmpY… git      <span style="text-decoration: underline;">1</span>213 0185f… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> schemas/2.0.0/gleam-dp-profile.json  /tmp/RtmpY… git     <span style="text-decoration: underline;">12</span>715 755e1… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> schemas/json-entity-resource.json    /tmp/RtmpY… git       743 a6442… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">11</span> schemas/2.0.0/study.schema.json      /tmp/RtmpY… git      <span style="text-decoration: underline;">4</span>361 861e8… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">12</span> schemas/2.0.0/participants.schema.j… /tmp/RtmpY… git       932 135aa… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">13</span> schemas/2.0.0/participant_character… /tmp/RtmpY… git      <span style="text-decoration: underline;">1</span>244 b3b53… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">14</span> schemas/2.0.0/dataset.schema.json    /tmp/RtmpY… git     <span style="text-decoration: underline;">12</span>431 6d1ef… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">15</span> schemas/2.0.0/device.schema.json     /tmp/RtmpY… git      <span style="text-decoration: underline;">3</span>193 c5efc… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">16</span> schemas/2.0.0/device_datasheet.sche… /tmp/RtmpY… git      <span style="text-decoration: underline;">5</span>499 358e3… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">17</span> schemas/light_data.schema.json       /tmp/RtmpY… git      <span style="text-decoration: underline;">1</span>653 ce2f6… <span style="color: #BB0000;">NA</span></span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> datapackage.json                     /tmp/RtmpW… git      <span style="text-decoration: underline;">2</span>363 e841f… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> data/study.json                      /tmp/RtmpW… git      <span style="text-decoration: underline;">3</span>644 fb165… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> data/participants.json               /tmp/RtmpW… git       379 1a7ae… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> data/participant_characteristics.csv /tmp/RtmpW… git       218 554b8… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> data/datasets.json                   /tmp/RtmpW… git     <span style="text-decoration: underline;">17</span>835 4df6d… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> data/devices.json                    /tmp/RtmpW… git      <span style="text-decoration: underline;">2</span>148 53076… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> data/datasheets/device_datasheet.js… /tmp/RtmpW… git      <span style="text-decoration: underline;">1</span>343 50acf… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> data/datasheets/sensor_datasheet.js… /tmp/RtmpW… git      <span style="text-decoration: underline;">1</span>213 0185f… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> schemas/2.0.0/gleam-dp-profile.json  /tmp/RtmpW… git     <span style="text-decoration: underline;">12</span>715 755e1… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> schemas/json-entity-resource.json    /tmp/RtmpW… git       743 a6442… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">11</span> schemas/2.0.0/study.schema.json      /tmp/RtmpW… git      <span style="text-decoration: underline;">4</span>361 861e8… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">12</span> schemas/2.0.0/participants.schema.j… /tmp/RtmpW… git       932 135aa… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">13</span> schemas/2.0.0/participant_character… /tmp/RtmpW… git      <span style="text-decoration: underline;">1</span>244 b3b53… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">14</span> schemas/2.0.0/dataset.schema.json    /tmp/RtmpW… git     <span style="text-decoration: underline;">12</span>431 6d1ef… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">15</span> schemas/2.0.0/device.schema.json     /tmp/RtmpW… git      <span style="text-decoration: underline;">3</span>193 c5efc… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">16</span> schemas/2.0.0/device_datasheet.sche… /tmp/RtmpW… git      <span style="text-decoration: underline;">5</span>499 358e3… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">17</span> schemas/light_data.schema.json       /tmp/RtmpW… git      <span style="text-decoration: underline;">1</span>653 ce2f6… <span style="color: #BB0000;">NA</span></span></span></code></pre></div>
 <p>Request data explicitly and apply the same kinds of selectors used
 during inspection:</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
@@ -477,24 +506,24 @@ during inspection:</p>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 18 × 6</span></span></span>
 <span><span class="co">#&gt;    path                                destination storage  bytes sha256 lfs_oid</span></span>
 <span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                               <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> datapackage.json                    /tmp/RtmpY… git     2.36<span style="color: #949494;">e</span>3 e841f… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> data/study.json                     /tmp/RtmpY… git     3.64<span style="color: #949494;">e</span>3 fb165… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> data/participants.json              /tmp/RtmpY… git     3.79<span style="color: #949494;">e</span>2 1a7ae… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> data/participant_characteristics.c… /tmp/RtmpY… git     2.18<span style="color: #949494;">e</span>2 554b8… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> data/datasets.json                  /tmp/RtmpY… git     1.78<span style="color: #949494;">e</span>4 4df6d… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> data/devices.json                   /tmp/RtmpY… git     2.15<span style="color: #949494;">e</span>3 53076… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> data/datasheets/device_datasheet.j… /tmp/RtmpY… git     1.34<span style="color: #949494;">e</span>3 50acf… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> data/datasheets/sensor_datasheet.j… /tmp/RtmpY… git     1.21<span style="color: #949494;">e</span>3 0185f… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> schemas/2.0.0/gleam-dp-profile.json /tmp/RtmpY… git     1.27<span style="color: #949494;">e</span>4 755e1… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> schemas/json-entity-resource.json   /tmp/RtmpY… git     7.43<span style="color: #949494;">e</span>2 a6442… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">11</span> schemas/2.0.0/study.schema.json     /tmp/RtmpY… git     4.36<span style="color: #949494;">e</span>3 861e8… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">12</span> schemas/2.0.0/participants.schema.… /tmp/RtmpY… git     9.32<span style="color: #949494;">e</span>2 135aa… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">13</span> schemas/2.0.0/participant_characte… /tmp/RtmpY… git     1.24<span style="color: #949494;">e</span>3 b3b53… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">14</span> schemas/2.0.0/dataset.schema.json   /tmp/RtmpY… git     1.24<span style="color: #949494;">e</span>4 6d1ef… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">15</span> schemas/2.0.0/device.schema.json    /tmp/RtmpY… git     3.19<span style="color: #949494;">e</span>3 c5efc… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">16</span> schemas/2.0.0/device_datasheet.sch… /tmp/RtmpY… git     5.50<span style="color: #949494;">e</span>3 358e3… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">17</span> schemas/light_data.schema.json      /tmp/RtmpY… git     1.65<span style="color: #949494;">e</span>3 ce2f6… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">18</span> data/datasets/201_actlumus_Log_102… /tmp/RtmpY… git     1.03<span style="color: #949494;">e</span>7 6893b… <span style="color: #BB0000;">NA</span></span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> datapackage.json                    /tmp/RtmpW… git     2.36<span style="color: #949494;">e</span>3 e841f… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> data/study.json                     /tmp/RtmpW… git     3.64<span style="color: #949494;">e</span>3 fb165… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> data/participants.json              /tmp/RtmpW… git     3.79<span style="color: #949494;">e</span>2 1a7ae… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> data/participant_characteristics.c… /tmp/RtmpW… git     2.18<span style="color: #949494;">e</span>2 554b8… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> data/datasets.json                  /tmp/RtmpW… git     1.78<span style="color: #949494;">e</span>4 4df6d… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> data/devices.json                   /tmp/RtmpW… git     2.15<span style="color: #949494;">e</span>3 53076… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> data/datasheets/device_datasheet.j… /tmp/RtmpW… git     1.34<span style="color: #949494;">e</span>3 50acf… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> data/datasheets/sensor_datasheet.j… /tmp/RtmpW… git     1.21<span style="color: #949494;">e</span>3 0185f… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> schemas/2.0.0/gleam-dp-profile.json /tmp/RtmpW… git     1.27<span style="color: #949494;">e</span>4 755e1… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> schemas/json-entity-resource.json   /tmp/RtmpW… git     7.43<span style="color: #949494;">e</span>2 a6442… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">11</span> schemas/2.0.0/study.schema.json     /tmp/RtmpW… git     4.36<span style="color: #949494;">e</span>3 861e8… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">12</span> schemas/2.0.0/participants.schema.… /tmp/RtmpW… git     9.32<span style="color: #949494;">e</span>2 135aa… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">13</span> schemas/2.0.0/participant_characte… /tmp/RtmpW… git     1.24<span style="color: #949494;">e</span>3 b3b53… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">14</span> schemas/2.0.0/dataset.schema.json   /tmp/RtmpW… git     1.24<span style="color: #949494;">e</span>4 6d1ef… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">15</span> schemas/2.0.0/device.schema.json    /tmp/RtmpW… git     3.19<span style="color: #949494;">e</span>3 c5efc… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">16</span> schemas/2.0.0/device_datasheet.sch… /tmp/RtmpW… git     5.50<span style="color: #949494;">e</span>3 358e3… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">17</span> schemas/light_data.schema.json      /tmp/RtmpW… git     1.65<span style="color: #949494;">e</span>3 ce2f6… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">18</span> data/datasets/201_actlumus_Log_102… /tmp/RtmpW… git     1.03<span style="color: #949494;">e</span>7 6893b… <span style="color: #BB0000;">NA</span></span></span></code></pre></div>
 <p>Use <code>include = "all"</code> only when you intend to mirror every
 declared resource. The <code>resources</code> and <code>files</code>
 arguments can further narrow a download. Existing files are protected

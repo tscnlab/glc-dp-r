@@ -326,6 +326,12 @@ connected resources.
 
 # Searches metadata:
 glc_search_metadata(x, "age", search_in = "fields")
+#> # A tibble: 3 × 5
+#>   resource     record field           value context 
+#>   <chr>         <int> <chr>           <chr> <chr>   
+#> 1 participants      1 participant_age 29    record 1
+#> 2 participants      2 participant_age 34    record 2
+#> 3 participants      3 participant_age 22    record 3
 
 # Extracts relevant metadata for collected dataset:
 dataset_metadata <- extract_metadata(
@@ -340,6 +346,12 @@ dataset_metadata <- extract_metadata(
   )
 )
 dataset_metadata
+#> # A tibble: 1 × 7
+#> # Groups:   Id [1]
+#>   Id    file_group_id dataset_timezone dataset_location participant_age
+#>   <fct> <chr>         <chr>            <list>                     <int>
+#> 1 DS001 DS001:1       Europe/Berlin    <chr [2]>                     29
+#> # ℹ 2 more variables: study_title <chr>, device_model <chr>
 
 # Adds relevant metadata into collected dataset
 add_metadata(
@@ -355,6 +367,23 @@ add_metadata(
 ) |>
   head() |>
   dplyr::select(-file.name)
+#> # A tibble: 6 × 42
+#> # Groups:   Id [1]
+#>   `DATE/TIME`     MS EVENT TEMPERATURE `EXT TEMPERATURE` ORIENTATION   PIM  PIMn
+#>   <chr>        <dbl> <dbl>       <dbl>             <dbl>       <dbl> <dbl> <dbl>
+#> 1 14/08/2023 …     0     0        28.9                 0          16     0   0  
+#> 2 14/08/2023 …     0     0        28.9                 0          16     0   0  
+#> 3 14/08/2023 …     0     0        28.8                 0          16     6   0.6
+#> 4 14/08/2023 …     0     0        28.8                 0          16     0   0  
+#> 5 14/08/2023 …     0     0        28.8                 0          16     0   0  
+#> 6 14/08/2023 …     0     0        28.7                 0          16     0   0  
+#> # ℹ 34 more variables: TAT <dbl>, TATn <dbl>, ZCM <dbl>, ZCMn <dbl>,
+#> #   LIGHT <dbl>, `AMB LIGHT` <dbl>, `RED LIGHT` <dbl>, `GREEN LIGHT` <dbl>,
+#> #   `BLUE LIGHT` <dbl>, `IR LIGHT` <dbl>, `UVA LIGHT` <dbl>, `UVB LIGHT` <dbl>,
+#> #   STATE <dbl>, CAP_SENS_1 <dbl>, CAP_SENS_2 <dbl>, F1 <dbl>, F2 <dbl>,
+#> #   F3 <dbl>, F4 <dbl>, F5 <dbl>, F6 <dbl>, F7 <dbl>, F8 <dbl>,
+#> #   `MELANOPIC EDI` <dbl>, CLEAR <dbl>, Id <fct>, file_group_id <chr>,
+#> #   participant_Id <chr>, Datetime <dttm>, dataset_timezone <chr>, …
 ```
 
 When adding project-specific metadata to a data package, store it under
@@ -422,23 +451,23 @@ glc_download(x, metadata_dir)
 #> # A tibble: 17 × 6
 #>    path                                 destination storage bytes sha256 lfs_oid
 #>    <chr>                                <chr>       <chr>   <dbl> <chr>  <chr>  
-#>  1 datapackage.json                     /tmp/RtmpY… git      2363 e841f… NA     
-#>  2 data/study.json                      /tmp/RtmpY… git      3644 fb165… NA     
-#>  3 data/participants.json               /tmp/RtmpY… git       379 1a7ae… NA     
-#>  4 data/participant_characteristics.csv /tmp/RtmpY… git       218 554b8… NA     
-#>  5 data/datasets.json                   /tmp/RtmpY… git     17835 4df6d… NA     
-#>  6 data/devices.json                    /tmp/RtmpY… git      2148 53076… NA     
-#>  7 data/datasheets/device_datasheet.js… /tmp/RtmpY… git      1343 50acf… NA     
-#>  8 data/datasheets/sensor_datasheet.js… /tmp/RtmpY… git      1213 0185f… NA     
-#>  9 schemas/2.0.0/gleam-dp-profile.json  /tmp/RtmpY… git     12715 755e1… NA     
-#> 10 schemas/json-entity-resource.json    /tmp/RtmpY… git       743 a6442… NA     
-#> 11 schemas/2.0.0/study.schema.json      /tmp/RtmpY… git      4361 861e8… NA     
-#> 12 schemas/2.0.0/participants.schema.j… /tmp/RtmpY… git       932 135aa… NA     
-#> 13 schemas/2.0.0/participant_character… /tmp/RtmpY… git      1244 b3b53… NA     
-#> 14 schemas/2.0.0/dataset.schema.json    /tmp/RtmpY… git     12431 6d1ef… NA     
-#> 15 schemas/2.0.0/device.schema.json     /tmp/RtmpY… git      3193 c5efc… NA     
-#> 16 schemas/2.0.0/device_datasheet.sche… /tmp/RtmpY… git      5499 358e3… NA     
-#> 17 schemas/light_data.schema.json       /tmp/RtmpY… git      1653 ce2f6… NA
+#>  1 datapackage.json                     /tmp/RtmpW… git      2363 e841f… NA     
+#>  2 data/study.json                      /tmp/RtmpW… git      3644 fb165… NA     
+#>  3 data/participants.json               /tmp/RtmpW… git       379 1a7ae… NA     
+#>  4 data/participant_characteristics.csv /tmp/RtmpW… git       218 554b8… NA     
+#>  5 data/datasets.json                   /tmp/RtmpW… git     17835 4df6d… NA     
+#>  6 data/devices.json                    /tmp/RtmpW… git      2148 53076… NA     
+#>  7 data/datasheets/device_datasheet.js… /tmp/RtmpW… git      1343 50acf… NA     
+#>  8 data/datasheets/sensor_datasheet.js… /tmp/RtmpW… git      1213 0185f… NA     
+#>  9 schemas/2.0.0/gleam-dp-profile.json  /tmp/RtmpW… git     12715 755e1… NA     
+#> 10 schemas/json-entity-resource.json    /tmp/RtmpW… git       743 a6442… NA     
+#> 11 schemas/2.0.0/study.schema.json      /tmp/RtmpW… git      4361 861e8… NA     
+#> 12 schemas/2.0.0/participants.schema.j… /tmp/RtmpW… git       932 135aa… NA     
+#> 13 schemas/2.0.0/participant_character… /tmp/RtmpW… git      1244 b3b53… NA     
+#> 14 schemas/2.0.0/dataset.schema.json    /tmp/RtmpW… git     12431 6d1ef… NA     
+#> 15 schemas/2.0.0/device.schema.json     /tmp/RtmpW… git      3193 c5efc… NA     
+#> 16 schemas/2.0.0/device_datasheet.sche… /tmp/RtmpW… git      5499 358e3… NA     
+#> 17 schemas/light_data.schema.json       /tmp/RtmpW… git      1653 ce2f6… NA
 ```
 
 Request data explicitly and apply the same kinds of selectors used
@@ -457,24 +486,24 @@ downloads
 #> # A tibble: 18 × 6
 #>    path                                destination storage  bytes sha256 lfs_oid
 #>    <chr>                               <chr>       <chr>    <dbl> <chr>  <chr>  
-#>  1 datapackage.json                    /tmp/RtmpY… git     2.36e3 e841f… NA     
-#>  2 data/study.json                     /tmp/RtmpY… git     3.64e3 fb165… NA     
-#>  3 data/participants.json              /tmp/RtmpY… git     3.79e2 1a7ae… NA     
-#>  4 data/participant_characteristics.c… /tmp/RtmpY… git     2.18e2 554b8… NA     
-#>  5 data/datasets.json                  /tmp/RtmpY… git     1.78e4 4df6d… NA     
-#>  6 data/devices.json                   /tmp/RtmpY… git     2.15e3 53076… NA     
-#>  7 data/datasheets/device_datasheet.j… /tmp/RtmpY… git     1.34e3 50acf… NA     
-#>  8 data/datasheets/sensor_datasheet.j… /tmp/RtmpY… git     1.21e3 0185f… NA     
-#>  9 schemas/2.0.0/gleam-dp-profile.json /tmp/RtmpY… git     1.27e4 755e1… NA     
-#> 10 schemas/json-entity-resource.json   /tmp/RtmpY… git     7.43e2 a6442… NA     
-#> 11 schemas/2.0.0/study.schema.json     /tmp/RtmpY… git     4.36e3 861e8… NA     
-#> 12 schemas/2.0.0/participants.schema.… /tmp/RtmpY… git     9.32e2 135aa… NA     
-#> 13 schemas/2.0.0/participant_characte… /tmp/RtmpY… git     1.24e3 b3b53… NA     
-#> 14 schemas/2.0.0/dataset.schema.json   /tmp/RtmpY… git     1.24e4 6d1ef… NA     
-#> 15 schemas/2.0.0/device.schema.json    /tmp/RtmpY… git     3.19e3 c5efc… NA     
-#> 16 schemas/2.0.0/device_datasheet.sch… /tmp/RtmpY… git     5.50e3 358e3… NA     
-#> 17 schemas/light_data.schema.json      /tmp/RtmpY… git     1.65e3 ce2f6… NA     
-#> 18 data/datasets/201_actlumus_Log_102… /tmp/RtmpY… git     1.03e7 6893b… NA
+#>  1 datapackage.json                    /tmp/RtmpW… git     2.36e3 e841f… NA     
+#>  2 data/study.json                     /tmp/RtmpW… git     3.64e3 fb165… NA     
+#>  3 data/participants.json              /tmp/RtmpW… git     3.79e2 1a7ae… NA     
+#>  4 data/participant_characteristics.c… /tmp/RtmpW… git     2.18e2 554b8… NA     
+#>  5 data/datasets.json                  /tmp/RtmpW… git     1.78e4 4df6d… NA     
+#>  6 data/devices.json                   /tmp/RtmpW… git     2.15e3 53076… NA     
+#>  7 data/datasheets/device_datasheet.j… /tmp/RtmpW… git     1.34e3 50acf… NA     
+#>  8 data/datasheets/sensor_datasheet.j… /tmp/RtmpW… git     1.21e3 0185f… NA     
+#>  9 schemas/2.0.0/gleam-dp-profile.json /tmp/RtmpW… git     1.27e4 755e1… NA     
+#> 10 schemas/json-entity-resource.json   /tmp/RtmpW… git     7.43e2 a6442… NA     
+#> 11 schemas/2.0.0/study.schema.json     /tmp/RtmpW… git     4.36e3 861e8… NA     
+#> 12 schemas/2.0.0/participants.schema.… /tmp/RtmpW… git     9.32e2 135aa… NA     
+#> 13 schemas/2.0.0/participant_characte… /tmp/RtmpW… git     1.24e3 b3b53… NA     
+#> 14 schemas/2.0.0/dataset.schema.json   /tmp/RtmpW… git     1.24e4 6d1ef… NA     
+#> 15 schemas/2.0.0/device.schema.json    /tmp/RtmpW… git     3.19e3 c5efc… NA     
+#> 16 schemas/2.0.0/device_datasheet.sch… /tmp/RtmpW… git     5.50e3 358e3… NA     
+#> 17 schemas/light_data.schema.json      /tmp/RtmpW… git     1.65e3 ce2f6… NA     
+#> 18 data/datasets/201_actlumus_Log_102… /tmp/RtmpW… git     1.03e7 6893b… NA
 ```
 
 Use `include = "all"` only when you intend to mirror every declared
