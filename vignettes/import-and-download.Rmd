@@ -129,10 +129,93 @@ light_data <- glc_collect(collection)
 light_data
 ```
 
+## Extract or add metadata
+
+Use `extract_metadata()` when you want one concise row per imported file group,
+and `add_metadata()` when the same fields should be available on every
+observation. Both functions require an explicit metadata source and an explicit
+field selection. The default key is `file_group_id`, which `glc_collect()` adds
+to standardized data. If the input is grouped, the extracted tibble retains
+that grouping and includes its grouping columns before `file_group_id`.
+
+```{r metadata-pair, eval = live}
+analysis_metadata <- tibble::tibble(
+  file_group_id = unique(as.character(light_data$file_group_id)),
+  analysis_set = "primary"
+)
+
+metadata_summary <- extract_metadata(
+  light_data,
+  analysis_metadata,
+  fields = "analysis_set"
+)
+metadata_summary
+
+enriched_data <- add_metadata(
+  light_data,
+  analysis_metadata,
+  fields = "analysis_set"
+)
+
+enriched_data |> head() |> dplyr::select(-file.name)
+```
+
+The metadata source can also be a local CSV/TSV path or the package handle.
+For a package handle, `glcdp` follows each file group to its dataset and device,
+and follows the dataset to its participant and study. It can therefore assemble
+fields such as `participant_age` without manually naming the participant
+resource. Dataset-, participant-, and study-level values repeat across file
+groups. Use `by = "Id"` when you explicitly want one row per dataset instead.
+Field and relationship resolution must remain unambiguous; use `resource` to
+restrict field discovery when the same field occurs in multiple connected
+resources.
+
+```{r metadata-resource, eval = FALSE}
+# Searches metadata:
+glc_search_metadata(x, "age", search_in = "fields")
+
+# Extracts relevant metadata for collected dataset:
+dataset_metadata <- extract_metadata(
+  light_data,
+  x,
+  fields = c(
+    "dataset_timezone",
+    "dataset_location",
+    "participant_age",
+    "study_title",
+    "device_model"
+  )
+)
+dataset_metadata
+
+# Adds relevant metadata into collected dataset
+add_metadata(
+  light_data,
+  x,
+  fields = c(
+    "dataset_timezone",
+    "dataset_location",
+    "participant_age",
+    "study_title",
+    "device_model"
+  )
+) |>
+  head() |>
+  dplyr::select(-file.name)
+```
+
+When adding project-specific metadata to a data package, store it under a
+stable package-relative path such as `data/metadata.csv` and declare it as a
+resource in `datapackage.json`. The functions never guess from the working
+directory or neighboring files. They error when no identifiers or fields
+match, and warn while retaining useful results for partial matches.
+
 The default `standardize = "lightlogr"` follows the data conventions used by
 [LightLogR](https://tscnlab.github.io/LightLogR/) and adds:
 
 - `Id`, derived from the dataset id;
+- `file_group_id`, the stable dataset file-group id used by the metadata
+  helpers;
 - `participant_Id`, derived from the participant id;
 - `Datetime`, constructed from the metadata-defined datetime specification;
   and
@@ -148,8 +231,10 @@ source_data <- glc_collect(collection, standardize = "none")
 ```
 
 `glc_collect()` refuses to combine groups that differ in columns, types, time
-zones, modalities, roles, data states, or datetime specifications. Keep those
-groups separate or select a compatible subset with `glc_read()`.
+zones, modalities, roles, data states, or datetime specifications. It also
+rejects contradictory file-group relationships and multiple device links
+within one dataset. Keep those groups separate or select a compatible subset
+with `glc_read()`.
 
 Collected data can be used directly with LightLogR's
 [data-quality and insight functions](https://tscnlab.github.io/LightLogR/reference/index.html#insight),

@@ -1,5 +1,14 @@
-# glcdp 0.9.2
+# glcdp 0.9.3
 
+* Added `extract_metadata()` and `add_metadata()` to select requested metadata
+  by imported-data identifiers and optionally join it onto every observation.
+  Their default `file_group_id` link traverses from each file group to its
+  dataset, participant, study, and device; dataset-level extraction remains
+  available with `by = "Id"`. Extracted summaries retain the input dataset's
+  grouping and grouping columns.
+* LightLogR-standardized `glc_collect()` output now exposes `file_group_id` and
+  rejects contradictory group relationships or multiple device links within a
+  dataset.
 * Added `glc_explore()`, a Shiny application for browsing the registry,
   inspecting package contents and hierarchical metadata, filtering datasets,
   file groups, participants, devices, and variables, previewing selections,

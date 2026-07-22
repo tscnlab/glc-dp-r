@@ -83,6 +83,7 @@ test_that("collection creates LightLogR-ready identity and datetime columns", {
   expect_s3_class(data$Id, "factor")
   expect_s3_class(data$Datetime, "POSIXct")
   expect_equal(as.character(data$Id), c("DS1", "DS1"))
+  expect_equal(data$file_group_id, c("DS1:1", "DS1:1"))
   expect_equal(data$participant_Id, c("P1", "P1"))
   expect_equal(data$file.name, rep("light.csv", 2))
   expect_false(any(startsWith(names(data), ".glc_")))
@@ -137,6 +138,45 @@ test_that("incompatible groups and standard-column conflicts are rejected", {
     "conflicts",
     class = "glcdp_standard_column_conflict"
   )
+})
+
+test_that("collection rejects contradictory links and multiple devices per dataset", {
+  package <- glc_open(make_glc_fixture("3.0.0"), quiet = TRUE)
+  first <- glc_read(package, dataset_id = "DS1")
+
+  contradictory <- dplyr::bind_rows(first, first)
+  class(contradictory) <- class(first)
+  contradictory$participant_id[[2]] <- "P2"
+  expect_error(
+    glc_collect(contradictory),
+    "contradictory",
+    class = "glcdp_incompatible_collection"
+  )
+
+  second_device <- first
+  second_device$file_group[[1]] <- 2L
+  second_device$file_group_id[[1]] <- "DS1:2"
+  second_device$device_id[[1]] <- "D2"
+  second_device$data[[1]]$.glc_file_group <- "DS1:2"
+  multi_device <- dplyr::bind_rows(first, second_device)
+  class(multi_device) <- class(first)
+  expect_error(
+    glc_collect(multi_device),
+    "multiple devices",
+    class = "glcdp_incompatible_collection"
+  )
+
+  second_dataset <- second_device
+  second_dataset$dataset_id[[1]] <- "DS2"
+  second_dataset$file_group_id[[1]] <- "DS2:1"
+  second_dataset$participant_id[[1]] <- "P2"
+  second_dataset$data[[1]]$.glc_dataset_id <- "DS2"
+  second_dataset$data[[1]]$.glc_file_group <- "DS2:1"
+  second_dataset$data[[1]]$.glc_participant_id <- "P2"
+  separate_datasets <- dplyr::bind_rows(first, second_dataset)
+  class(separate_datasets) <- class(first)
+
+  expect_no_error(glc_collect(separate_datasets))
 })
 
 test_that("collection and separate-column datetime specifications are parsed", {

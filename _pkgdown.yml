@@ -45,6 +45,8 @@ reference:
   contents:
   - glc_read
   - glc_collect
+  - extract_metadata
+  - add_metadata
 - title: Download data packages
   desc: Create portable local subsets with reproducibility manifests.
   contents:
