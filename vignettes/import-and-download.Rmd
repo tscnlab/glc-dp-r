@@ -170,7 +170,7 @@ Field and relationship resolution must remain unambiguous; use `resource` to
 restrict field discovery when the same field occurs in multiple connected
 resources.
 
-```{r metadata-resource, eval = FALSE}
+```{r metadata-resource}
 # Searches metadata:
 glc_search_metadata(x, "age", search_in = "fields")
 
