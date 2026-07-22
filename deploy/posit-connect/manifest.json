@@ -615,7 +615,7 @@
       "description": {
         "Package": "glcdp",
         "Title": "Discover, Access, and Import Global Light Commons Data Packages",
-        "Version": "0.9.2",
+        "Version": "0.9.3",
         "Authors@R": "c(\n    person(\n      \"Johannes\", \"Zauner\",\n      email = \"johannes.zauner@tum.de\",\n      role = c(\"aut\", \"cre\"),\n      comment = c(ORCID = \"0000-0003-2171-4566\")\n    ),\n    person(\n      \"Salma M.\", \"Thalji\",\n      email = \"salma.thalji@tum.de\",\n      role = \"aut\",\n      comment = c(ORCID = \"0009-0002-7320-9289\")\n    ),\n    person(\n      \"Manuel\", \"Spitschan\",\n      email = \"manuel.spitschan@tum.de\",\n      role = \"aut\",\n      comment = c(ORCID = \"0000-0002-8572-9268\")\n    )\n  )",
         "Description": "Discovers Global Light Commons data packages through their\n    registry, opens immutable passing revisions, and provides searchable\n    inventories of package metadata. Selected metadata and measurement files\n    can be downloaded or imported with metadata-defined columns, types, factor\n    levels, datetimes, and time zones. Git Large File Storage objects are\n    resolved without requiring an external Git LFS installation, and imported\n    file groups can be explicitly collected into data suitable for personal\n    light exposure analysis workflows. An included Shiny application supports\n    interactive discovery, inspection, selection, preview, and reproducible\n    handoff to R.",
         "License": "MIT + file LICENSE",
@@ -634,18 +634,17 @@
         "RemoteHost": "api.github.com",
         "RemoteRepo": "glc-dp-r",
         "RemoteUsername": "tscnlab",
-        "RemotePkgRef": "tscnlab/glc-dp-r@codex/shiny-data-explorer",
-        "RemoteRef": "codex/shiny-data-explorer",
-        "RemoteSha": "23574f3550c538fb8cf6c5c4f0fe377653ed0f83",
+        "RemoteRef": "7fc98b7b8c7e57144a029bb7d8c4d7e214d4990d",
+        "RemoteSha": "7fc98b7b8c7e57144a029bb7d8c4d7e214d4990d",
         "GithubRepo": "glc-dp-r",
         "GithubUsername": "tscnlab",
-        "GithubRef": "codex/shiny-data-explorer",
-        "GithubSHA1": "23574f3550c538fb8cf6c5c4f0fe377653ed0f83",
+        "GithubRef": "7fc98b7b8c7e57144a029bb7d8c4d7e214d4990d",
+        "GithubSHA1": "7fc98b7b8c7e57144a029bb7d8c4d7e214d4990d",
         "NeedsCompilation": "no",
-        "Packaged": "2026-07-20 12:36:17 UTC; zauner",
+        "Packaged": "2026-07-22 07:39:05 UTC; zauner",
         "Author": "Johannes Zauner [aut, cre] (ORCID:\n    <https://orcid.org/0000-0003-2171-4566>),\n  Salma M. Thalji [aut] (ORCID: <https://orcid.org/0009-0002-7320-9289>),\n  Manuel Spitschan [aut] (ORCID: <https://orcid.org/0000-0002-8572-9268>)",
         "Maintainer": "Johannes Zauner <johannes.zauner@tum.de>",
-        "Built": "R 4.5.0; ; 2026-07-20 12:36:18 UTC; unix"
+        "Built": "R 4.5.0; ; 2026-07-22 07:39:05 UTC; unix"
       }
     },
     "glue": {
