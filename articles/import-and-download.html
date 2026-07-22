@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">glcdp</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.9.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.9.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -273,7 +273,7 @@ compatible:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">light_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/glc_collect.html">glc_collect</a></span><span class="op">(</span><span class="va">collection</span><span class="op">)</span></span>
 <span><span class="va">light_data</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 60,043 × 37</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 60,043 × 38</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Groups:   Id [1]</span></span></span>
 <span><span class="co">#&gt;    `DATE/TIME`    MS EVENT TEMPERATURE `EXT TEMPERATURE` ORIENTATION   PIM  PIMn</span></span>
 <span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
@@ -288,17 +288,123 @@ compatible:</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 14/08/2023…     0     0        28.6                 0          16     0   0  </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 14/08/2023…     0     0        28.6                 0          16     0   0  </span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 60,033 more rows</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 29 more variables: TAT &lt;dbl&gt;, TATn &lt;dbl&gt;, ZCM &lt;dbl&gt;, ZCMn &lt;dbl&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 30 more variables: TAT &lt;dbl&gt;, TATn &lt;dbl&gt;, ZCM &lt;dbl&gt;, ZCMn &lt;dbl&gt;,</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;">#   LIGHT &lt;dbl&gt;, `AMB LIGHT` &lt;dbl&gt;, `RED LIGHT` &lt;dbl&gt;, `GREEN LIGHT` &lt;dbl&gt;,</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;">#   `BLUE LIGHT` &lt;dbl&gt;, `IR LIGHT` &lt;dbl&gt;, `UVA LIGHT` &lt;dbl&gt;, `UVB LIGHT` &lt;dbl&gt;,</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;">#   STATE &lt;dbl&gt;, CAP_SENS_1 &lt;dbl&gt;, CAP_SENS_2 &lt;dbl&gt;, F1 &lt;dbl&gt;, F2 &lt;dbl&gt;,</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;">#   F3 &lt;dbl&gt;, F4 &lt;dbl&gt;, F5 &lt;dbl&gt;, F6 &lt;dbl&gt;, F7 &lt;dbl&gt;, F8 &lt;dbl&gt;,</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;">#   `MELANOPIC EDI` &lt;dbl&gt;, CLEAR &lt;dbl&gt;, Id &lt;fct&gt;, participant_Id &lt;chr&gt;, …</span></span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #949494;">#   `MELANOPIC EDI` &lt;dbl&gt;, CLEAR &lt;dbl&gt;, Id &lt;fct&gt;, file_group_id &lt;chr&gt;, …</span></span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="extract-or-add-metadata">Extract or add metadata<a class="anchor" aria-label="anchor" href="#extract-or-add-metadata"></a>
+</h2>
+<p>Use <code><a href="../reference/extract_metadata.html">extract_metadata()</a></code> when you want one concise row per
+imported file group, and <code><a href="../reference/add_metadata.html">add_metadata()</a></code> when the same
+fields should be available on every observation. Both functions require
+an explicit metadata source and an explicit field selection. The default
+key is <code>file_group_id</code>, which <code><a href="../reference/glc_collect.html">glc_collect()</a></code> adds
+to standardized data. If the input is grouped, the extracted tibble
+retains that grouping and includes its grouping columns before
+<code>file_group_id</code>.</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">analysis_metadata</span> <span class="op">&lt;-</span> <span class="fu">tibble</span><span class="fu">::</span><span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span></span>
+<span>  file_group_id <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="va">light_data</span><span class="op">$</span><span class="va">file_group_id</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  analysis_set <span class="op">=</span> <span class="st">"primary"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">metadata_summary</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/extract_metadata.html">extract_metadata</a></span><span class="op">(</span></span>
+<span>  <span class="va">light_data</span>,</span>
+<span>  <span class="va">analysis_metadata</span>,</span>
+<span>  fields <span class="op">=</span> <span class="st">"analysis_set"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">metadata_summary</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 3</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Groups:   Id [1]</span></span></span>
+<span><span class="co">#&gt;   Id    file_group_id analysis_set</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> DS001 DS001:1       primary</span></span>
+<span></span>
+<span><span class="va">enriched_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/add_metadata.html">add_metadata</a></span><span class="op">(</span></span>
+<span>  <span class="va">light_data</span>,</span>
+<span>  <span class="va">analysis_metadata</span>,</span>
+<span>  fields <span class="op">=</span> <span class="st">"analysis_set"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">enriched_data</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="op">-</span><span class="va">file.name</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 38</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Groups:   Id [1]</span></span></span>
+<span><span class="co">#&gt;   `DATE/TIME`     MS EVENT TEMPERATURE `EXT TEMPERATURE` ORIENTATION   PIM  PIMn</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 14/08/2023 …     0     0        28.9                 0          16     0   0  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 14/08/2023 …     0     0        28.9                 0          16     0   0  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 14/08/2023 …     0     0        28.8                 0          16     6   0.6</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> 14/08/2023 …     0     0        28.8                 0          16     0   0  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> 14/08/2023 …     0     0        28.8                 0          16     0   0  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> 14/08/2023 …     0     0        28.7                 0          16     0   0  </span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 30 more variables: TAT &lt;dbl&gt;, TATn &lt;dbl&gt;, ZCM &lt;dbl&gt;, ZCMn &lt;dbl&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   LIGHT &lt;dbl&gt;, `AMB LIGHT` &lt;dbl&gt;, `RED LIGHT` &lt;dbl&gt;, `GREEN LIGHT` &lt;dbl&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   `BLUE LIGHT` &lt;dbl&gt;, `IR LIGHT` &lt;dbl&gt;, `UVA LIGHT` &lt;dbl&gt;, `UVB LIGHT` &lt;dbl&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   STATE &lt;dbl&gt;, CAP_SENS_1 &lt;dbl&gt;, CAP_SENS_2 &lt;dbl&gt;, F1 &lt;dbl&gt;, F2 &lt;dbl&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   F3 &lt;dbl&gt;, F4 &lt;dbl&gt;, F5 &lt;dbl&gt;, F6 &lt;dbl&gt;, F7 &lt;dbl&gt;, F8 &lt;dbl&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   `MELANOPIC EDI` &lt;dbl&gt;, CLEAR &lt;dbl&gt;, Id &lt;fct&gt;, file_group_id &lt;chr&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   participant_Id &lt;chr&gt;, Datetime &lt;dttm&gt;, analysis_set &lt;chr&gt;</span></span></span></code></pre></div>
+<p>The metadata source can also be a local CSV/TSV path or the package
+handle. For a package handle, <code>glcdp</code> follows each file group
+to its dataset and device, and follows the dataset to its participant
+and study. It can therefore assemble fields such as
+<code>participant_age</code> without manually naming the participant
+resource. Dataset-, participant-, and study-level values repeat across
+file groups. Use <code>by = "Id"</code> when you explicitly want one row
+per dataset instead. Field and relationship resolution must remain
+unambiguous; use <code>resource</code> to restrict field discovery when
+the same field occurs in multiple connected resources.</p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Searches metadata:</span></span>
+<span><span class="fu"><a href="../reference/glc_search_metadata.html">glc_search_metadata</a></span><span class="op">(</span><span class="va">x</span>, <span class="st">"age"</span>, search_in <span class="op">=</span> <span class="st">"fields"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Extracts relevant metadata for collected dataset:</span></span>
+<span><span class="va">dataset_metadata</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/extract_metadata.html">extract_metadata</a></span><span class="op">(</span></span>
+<span>  <span class="va">light_data</span>,</span>
+<span>  <span class="va">x</span>,</span>
+<span>  fields <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>    <span class="st">"dataset_timezone"</span>,</span>
+<span>    <span class="st">"dataset_location"</span>,</span>
+<span>    <span class="st">"participant_age"</span>,</span>
+<span>    <span class="st">"study_title"</span>,</span>
+<span>    <span class="st">"device_model"</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">dataset_metadata</span></span>
+<span></span>
+<span><span class="co"># Adds relevant metadata into collected dataset</span></span>
+<span><span class="fu"><a href="../reference/add_metadata.html">add_metadata</a></span><span class="op">(</span></span>
+<span>  <span class="va">light_data</span>,</span>
+<span>  <span class="va">x</span>,</span>
+<span>  fields <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>    <span class="st">"dataset_timezone"</span>,</span>
+<span>    <span class="st">"dataset_location"</span>,</span>
+<span>    <span class="st">"participant_age"</span>,</span>
+<span>    <span class="st">"study_title"</span>,</span>
+<span>    <span class="st">"device_model"</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="op">-</span><span class="va">file.name</span><span class="op">)</span></span></code></pre></div>
+<p>When adding project-specific metadata to a data package, store it
+under a stable package-relative path such as
+<code>data/metadata.csv</code> and declare it as a resource in
+<code>datapackage.json</code>. The functions never guess from the
+working directory or neighboring files. They error when no identifiers
+or fields match, and warn while retaining useful results for partial
+matches.</p>
 <p>The default <code>standardize = "lightlogr"</code> follows the data
 conventions used by <a href="https://tscnlab.github.io/LightLogR/" class="external-link">LightLogR</a> and adds:</p>
 <ul>
 <li>
 <code>Id</code>, derived from the dataset id;</li>
+<li>
+<code>file_group_id</code>, the stable dataset file-group id used by
+the metadata helpers;</li>
 <li>
 <code>participant_Id</code>, derived from the participant id;</li>
 <li>
@@ -312,12 +418,13 @@ provenance columns. It is ordered by <code>Id</code> and
 <code>Datetime</code> and grouped by <code>Id</code>. Use
 <code>standardize = "none"</code> if you want an ungrouped tibble whose
 source and provenance columns are left unchanged.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">source_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/glc_collect.html">glc_collect</a></span><span class="op">(</span><span class="va">collection</span>, standardize <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span></span></code></pre></div>
 <p><code><a href="../reference/glc_collect.html">glc_collect()</a></code> refuses to combine groups that differ in
 columns, types, time zones, modalities, roles, data states, or datetime
-specifications. Keep those groups separate or select a compatible subset
-with <code><a href="../reference/glc_read.html">glc_read()</a></code>.</p>
+specifications. It also rejects contradictory file-group relationships
+and multiple device links within one dataset. Keep those groups separate
+or select a compatible subset with <code><a href="../reference/glc_read.html">glc_read()</a></code>.</p>
 <p>Collected data can be used directly with LightLogR’s <a href="https://tscnlab.github.io/LightLogR/reference/index.html#insight" class="external-link">data-quality
 and insight functions</a>, <a href="https://tscnlab.github.io/LightLogR/articles/Visualizations.html" class="external-link">visualization
 guide</a>, and <a href="https://tscnlab.github.io/LightLogR/articles/Metrics.html" class="external-link">metrics
@@ -333,32 +440,32 @@ descriptor, core metadata, and required schemas:</p>
 immutable raw URLs at the selected commit, avoiding per-file GitHub API
 requests. A token supplied to <code><a href="../reference/glc_open.html">glc_open()</a></code> continues to use
 the authenticated API transport, including for private repositories.</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">metadata_dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"guidolin-metadata"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/glc_download.html">glc_download</a></span><span class="op">(</span><span class="va">x</span>, <span class="va">metadata_dir</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 17 × 6</span></span></span>
 <span><span class="co">#&gt;    path                                 destination storage bytes sha256 lfs_oid</span></span>
 <span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                                <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> datapackage.json                     /tmp/RtmpZ… git      <span style="text-decoration: underline;">2</span>363 e841f… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> data/study.json                      /tmp/RtmpZ… git      <span style="text-decoration: underline;">3</span>644 fb165… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> data/participants.json               /tmp/RtmpZ… git       379 1a7ae… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> data/participant_characteristics.csv /tmp/RtmpZ… git       218 554b8… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> data/datasets.json                   /tmp/RtmpZ… git     <span style="text-decoration: underline;">17</span>835 4df6d… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> data/devices.json                    /tmp/RtmpZ… git      <span style="text-decoration: underline;">2</span>148 53076… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> data/datasheets/device_datasheet.js… /tmp/RtmpZ… git      <span style="text-decoration: underline;">1</span>343 50acf… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> data/datasheets/sensor_datasheet.js… /tmp/RtmpZ… git      <span style="text-decoration: underline;">1</span>213 0185f… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> schemas/2.0.0/gleam-dp-profile.json  /tmp/RtmpZ… git     <span style="text-decoration: underline;">12</span>715 755e1… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> schemas/json-entity-resource.json    /tmp/RtmpZ… git       743 a6442… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">11</span> schemas/2.0.0/study.schema.json      /tmp/RtmpZ… git      <span style="text-decoration: underline;">4</span>361 861e8… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">12</span> schemas/2.0.0/participants.schema.j… /tmp/RtmpZ… git       932 135aa… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">13</span> schemas/2.0.0/participant_character… /tmp/RtmpZ… git      <span style="text-decoration: underline;">1</span>244 b3b53… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">14</span> schemas/2.0.0/dataset.schema.json    /tmp/RtmpZ… git     <span style="text-decoration: underline;">12</span>431 6d1ef… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">15</span> schemas/2.0.0/device.schema.json     /tmp/RtmpZ… git      <span style="text-decoration: underline;">3</span>193 c5efc… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">16</span> schemas/2.0.0/device_datasheet.sche… /tmp/RtmpZ… git      <span style="text-decoration: underline;">5</span>499 358e3… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">17</span> schemas/light_data.schema.json       /tmp/RtmpZ… git      <span style="text-decoration: underline;">1</span>653 ce2f6… <span style="color: #BB0000;">NA</span></span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> datapackage.json                     /tmp/Rtmpc… git      <span style="text-decoration: underline;">2</span>363 e841f… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> data/study.json                      /tmp/Rtmpc… git      <span style="text-decoration: underline;">3</span>644 fb165… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> data/participants.json               /tmp/Rtmpc… git       379 1a7ae… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> data/participant_characteristics.csv /tmp/Rtmpc… git       218 554b8… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> data/datasets.json                   /tmp/Rtmpc… git     <span style="text-decoration: underline;">17</span>835 4df6d… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> data/devices.json                    /tmp/Rtmpc… git      <span style="text-decoration: underline;">2</span>148 53076… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> data/datasheets/device_datasheet.js… /tmp/Rtmpc… git      <span style="text-decoration: underline;">1</span>343 50acf… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> data/datasheets/sensor_datasheet.js… /tmp/Rtmpc… git      <span style="text-decoration: underline;">1</span>213 0185f… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> schemas/2.0.0/gleam-dp-profile.json  /tmp/Rtmpc… git     <span style="text-decoration: underline;">12</span>715 755e1… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> schemas/json-entity-resource.json    /tmp/Rtmpc… git       743 a6442… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">11</span> schemas/2.0.0/study.schema.json      /tmp/Rtmpc… git      <span style="text-decoration: underline;">4</span>361 861e8… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">12</span> schemas/2.0.0/participants.schema.j… /tmp/Rtmpc… git       932 135aa… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">13</span> schemas/2.0.0/participant_character… /tmp/Rtmpc… git      <span style="text-decoration: underline;">1</span>244 b3b53… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">14</span> schemas/2.0.0/dataset.schema.json    /tmp/Rtmpc… git     <span style="text-decoration: underline;">12</span>431 6d1ef… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">15</span> schemas/2.0.0/device.schema.json     /tmp/Rtmpc… git      <span style="text-decoration: underline;">3</span>193 c5efc… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">16</span> schemas/2.0.0/device_datasheet.sche… /tmp/Rtmpc… git      <span style="text-decoration: underline;">5</span>499 358e3… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">17</span> schemas/light_data.schema.json       /tmp/Rtmpc… git      <span style="text-decoration: underline;">1</span>653 ce2f6… <span style="color: #BB0000;">NA</span></span></span></code></pre></div>
 <p>Request data explicitly and apply the same kinds of selectors used
 during inspection:</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">data_dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"guidolin-ds001"</span><span class="op">)</span></span>
 <span><span class="va">downloads</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/glc_download.html">glc_download</a></span><span class="op">(</span></span>
 <span>  <span class="va">x</span>,</span>
@@ -370,24 +477,24 @@ during inspection:</p>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 18 × 6</span></span></span>
 <span><span class="co">#&gt;    path                                destination storage  bytes sha256 lfs_oid</span></span>
 <span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                               <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> datapackage.json                    /tmp/RtmpZ… git     2.36<span style="color: #949494;">e</span>3 e841f… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> data/study.json                     /tmp/RtmpZ… git     3.64<span style="color: #949494;">e</span>3 fb165… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> data/participants.json              /tmp/RtmpZ… git     3.79<span style="color: #949494;">e</span>2 1a7ae… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> data/participant_characteristics.c… /tmp/RtmpZ… git     2.18<span style="color: #949494;">e</span>2 554b8… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> data/datasets.json                  /tmp/RtmpZ… git     1.78<span style="color: #949494;">e</span>4 4df6d… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> data/devices.json                   /tmp/RtmpZ… git     2.15<span style="color: #949494;">e</span>3 53076… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> data/datasheets/device_datasheet.j… /tmp/RtmpZ… git     1.34<span style="color: #949494;">e</span>3 50acf… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> data/datasheets/sensor_datasheet.j… /tmp/RtmpZ… git     1.21<span style="color: #949494;">e</span>3 0185f… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> schemas/2.0.0/gleam-dp-profile.json /tmp/RtmpZ… git     1.27<span style="color: #949494;">e</span>4 755e1… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> schemas/json-entity-resource.json   /tmp/RtmpZ… git     7.43<span style="color: #949494;">e</span>2 a6442… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">11</span> schemas/2.0.0/study.schema.json     /tmp/RtmpZ… git     4.36<span style="color: #949494;">e</span>3 861e8… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">12</span> schemas/2.0.0/participants.schema.… /tmp/RtmpZ… git     9.32<span style="color: #949494;">e</span>2 135aa… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">13</span> schemas/2.0.0/participant_characte… /tmp/RtmpZ… git     1.24<span style="color: #949494;">e</span>3 b3b53… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">14</span> schemas/2.0.0/dataset.schema.json   /tmp/RtmpZ… git     1.24<span style="color: #949494;">e</span>4 6d1ef… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">15</span> schemas/2.0.0/device.schema.json    /tmp/RtmpZ… git     3.19<span style="color: #949494;">e</span>3 c5efc… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">16</span> schemas/2.0.0/device_datasheet.sch… /tmp/RtmpZ… git     5.50<span style="color: #949494;">e</span>3 358e3… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">17</span> schemas/light_data.schema.json      /tmp/RtmpZ… git     1.65<span style="color: #949494;">e</span>3 ce2f6… <span style="color: #BB0000;">NA</span>     </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">18</span> data/datasets/201_actlumus_Log_102… /tmp/RtmpZ… git     1.03<span style="color: #949494;">e</span>7 6893b… <span style="color: #BB0000;">NA</span></span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> datapackage.json                    /tmp/Rtmpc… git     2.36<span style="color: #949494;">e</span>3 e841f… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> data/study.json                     /tmp/Rtmpc… git     3.64<span style="color: #949494;">e</span>3 fb165… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> data/participants.json              /tmp/Rtmpc… git     3.79<span style="color: #949494;">e</span>2 1a7ae… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> data/participant_characteristics.c… /tmp/Rtmpc… git     2.18<span style="color: #949494;">e</span>2 554b8… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> data/datasets.json                  /tmp/Rtmpc… git     1.78<span style="color: #949494;">e</span>4 4df6d… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> data/devices.json                   /tmp/Rtmpc… git     2.15<span style="color: #949494;">e</span>3 53076… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> data/datasheets/device_datasheet.j… /tmp/Rtmpc… git     1.34<span style="color: #949494;">e</span>3 50acf… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> data/datasheets/sensor_datasheet.j… /tmp/Rtmpc… git     1.21<span style="color: #949494;">e</span>3 0185f… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> schemas/2.0.0/gleam-dp-profile.json /tmp/Rtmpc… git     1.27<span style="color: #949494;">e</span>4 755e1… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> schemas/json-entity-resource.json   /tmp/Rtmpc… git     7.43<span style="color: #949494;">e</span>2 a6442… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">11</span> schemas/2.0.0/study.schema.json     /tmp/Rtmpc… git     4.36<span style="color: #949494;">e</span>3 861e8… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">12</span> schemas/2.0.0/participants.schema.… /tmp/Rtmpc… git     9.32<span style="color: #949494;">e</span>2 135aa… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">13</span> schemas/2.0.0/participant_characte… /tmp/Rtmpc… git     1.24<span style="color: #949494;">e</span>3 b3b53… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">14</span> schemas/2.0.0/dataset.schema.json   /tmp/Rtmpc… git     1.24<span style="color: #949494;">e</span>4 6d1ef… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">15</span> schemas/2.0.0/device.schema.json    /tmp/Rtmpc… git     3.19<span style="color: #949494;">e</span>3 c5efc… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">16</span> schemas/2.0.0/device_datasheet.sch… /tmp/Rtmpc… git     5.50<span style="color: #949494;">e</span>3 358e3… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">17</span> schemas/light_data.schema.json      /tmp/Rtmpc… git     1.65<span style="color: #949494;">e</span>3 ce2f6… <span style="color: #BB0000;">NA</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">18</span> data/datasets/201_actlumus_Log_102… /tmp/Rtmpc… git     1.03<span style="color: #949494;">e</span>7 6893b… <span style="color: #BB0000;">NA</span></span></span></code></pre></div>
 <p>Use <code>include = "all"</code> only when you intend to mirror every
 declared resource. The <code>resources</code> and <code>files</code>
 arguments can further narrow a download. Existing files are protected
@@ -397,7 +504,7 @@ source repository, exact commit, registry verification state, schema
 version, selection, hashes, storage types, sizes, and Git LFS object
 ids. Reopen the directory to use the same inspection and import API
 without fetching the package again:</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">local</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/glc_open.html">glc_open</a></span><span class="op">(</span><span class="va">data_dir</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/glc_summary.html">glc_summary</a></span><span class="op">(</span><span class="va">local</span><span class="op">)</span></span>
 <span><span class="co">#&gt; &lt;GLC package summary&gt;</span></span>
@@ -439,7 +546,7 @@ persistent files behind.</p>
 <p>Pass <code>cache_dir</code> to <code><a href="../reference/glc_open.html">glc_open()</a></code> when you want
 remote files reused across calls, or use <code><a href="../reference/glc_download.html">glc_download()</a></code>
 when you want an explicit, portable package subset with a manifest:</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">cached</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/glc_open.html">glc_open</a></span><span class="op">(</span></span>
 <span>  <span class="st">"tscnlab/guidolin-glee-datasetv2"</span>,</span>
 <span>  cache_dir <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"glcdp-cache"</span><span class="op">)</span></span>

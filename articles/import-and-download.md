@@ -229,7 +229,7 @@ compatible:
 
 light_data <- glc_collect(collection)
 light_data
-#> # A tibble: 60,043 × 37
+#> # A tibble: 60,043 × 38
 #> # Groups:   Id [1]
 #>    `DATE/TIME`    MS EVENT TEMPERATURE `EXT TEMPERATURE` ORIENTATION   PIM  PIMn
 #>    <chr>       <dbl> <dbl>       <dbl>             <dbl>       <dbl> <dbl> <dbl>
@@ -244,18 +244,132 @@ light_data
 #>  9 14/08/2023…     0     0        28.6                 0          16     0   0  
 #> 10 14/08/2023…     0     0        28.6                 0          16     0   0  
 #> # ℹ 60,033 more rows
-#> # ℹ 29 more variables: TAT <dbl>, TATn <dbl>, ZCM <dbl>, ZCMn <dbl>,
+#> # ℹ 30 more variables: TAT <dbl>, TATn <dbl>, ZCM <dbl>, ZCMn <dbl>,
 #> #   LIGHT <dbl>, `AMB LIGHT` <dbl>, `RED LIGHT` <dbl>, `GREEN LIGHT` <dbl>,
 #> #   `BLUE LIGHT` <dbl>, `IR LIGHT` <dbl>, `UVA LIGHT` <dbl>, `UVB LIGHT` <dbl>,
 #> #   STATE <dbl>, CAP_SENS_1 <dbl>, CAP_SENS_2 <dbl>, F1 <dbl>, F2 <dbl>,
 #> #   F3 <dbl>, F4 <dbl>, F5 <dbl>, F6 <dbl>, F7 <dbl>, F8 <dbl>,
-#> #   `MELANOPIC EDI` <dbl>, CLEAR <dbl>, Id <fct>, participant_Id <chr>, …
+#> #   `MELANOPIC EDI` <dbl>, CLEAR <dbl>, Id <fct>, file_group_id <chr>, …
 ```
+
+## Extract or add metadata
+
+Use
+[`extract_metadata()`](https://tscnlab.github.io/glc-dp-r/reference/extract_metadata.md)
+when you want one concise row per imported file group, and
+[`add_metadata()`](https://tscnlab.github.io/glc-dp-r/reference/add_metadata.md)
+when the same fields should be available on every observation. Both
+functions require an explicit metadata source and an explicit field
+selection. The default key is `file_group_id`, which
+[`glc_collect()`](https://tscnlab.github.io/glc-dp-r/reference/glc_collect.md)
+adds to standardized data. If the input is grouped, the extracted tibble
+retains that grouping and includes its grouping columns before
+`file_group_id`.
+
+``` r
+
+analysis_metadata <- tibble::tibble(
+  file_group_id = unique(as.character(light_data$file_group_id)),
+  analysis_set = "primary"
+)
+
+metadata_summary <- extract_metadata(
+  light_data,
+  analysis_metadata,
+  fields = "analysis_set"
+)
+metadata_summary
+#> # A tibble: 1 × 3
+#> # Groups:   Id [1]
+#>   Id    file_group_id analysis_set
+#>   <fct> <chr>         <chr>       
+#> 1 DS001 DS001:1       primary
+
+enriched_data <- add_metadata(
+  light_data,
+  analysis_metadata,
+  fields = "analysis_set"
+)
+
+enriched_data |> head() |> dplyr::select(-file.name)
+#> # A tibble: 6 × 38
+#> # Groups:   Id [1]
+#>   `DATE/TIME`     MS EVENT TEMPERATURE `EXT TEMPERATURE` ORIENTATION   PIM  PIMn
+#>   <chr>        <dbl> <dbl>       <dbl>             <dbl>       <dbl> <dbl> <dbl>
+#> 1 14/08/2023 …     0     0        28.9                 0          16     0   0  
+#> 2 14/08/2023 …     0     0        28.9                 0          16     0   0  
+#> 3 14/08/2023 …     0     0        28.8                 0          16     6   0.6
+#> 4 14/08/2023 …     0     0        28.8                 0          16     0   0  
+#> 5 14/08/2023 …     0     0        28.8                 0          16     0   0  
+#> 6 14/08/2023 …     0     0        28.7                 0          16     0   0  
+#> # ℹ 30 more variables: TAT <dbl>, TATn <dbl>, ZCM <dbl>, ZCMn <dbl>,
+#> #   LIGHT <dbl>, `AMB LIGHT` <dbl>, `RED LIGHT` <dbl>, `GREEN LIGHT` <dbl>,
+#> #   `BLUE LIGHT` <dbl>, `IR LIGHT` <dbl>, `UVA LIGHT` <dbl>, `UVB LIGHT` <dbl>,
+#> #   STATE <dbl>, CAP_SENS_1 <dbl>, CAP_SENS_2 <dbl>, F1 <dbl>, F2 <dbl>,
+#> #   F3 <dbl>, F4 <dbl>, F5 <dbl>, F6 <dbl>, F7 <dbl>, F8 <dbl>,
+#> #   `MELANOPIC EDI` <dbl>, CLEAR <dbl>, Id <fct>, file_group_id <chr>,
+#> #   participant_Id <chr>, Datetime <dttm>, analysis_set <chr>
+```
+
+The metadata source can also be a local CSV/TSV path or the package
+handle. For a package handle, `glcdp` follows each file group to its
+dataset and device, and follows the dataset to its participant and
+study. It can therefore assemble fields such as `participant_age`
+without manually naming the participant resource. Dataset-,
+participant-, and study-level values repeat across file groups. Use
+`by = "Id"` when you explicitly want one row per dataset instead. Field
+and relationship resolution must remain unambiguous; use `resource` to
+restrict field discovery when the same field occurs in multiple
+connected resources.
+
+``` r
+
+# Searches metadata:
+glc_search_metadata(x, "age", search_in = "fields")
+
+# Extracts relevant metadata for collected dataset:
+dataset_metadata <- extract_metadata(
+  light_data,
+  x,
+  fields = c(
+    "dataset_timezone",
+    "dataset_location",
+    "participant_age",
+    "study_title",
+    "device_model"
+  )
+)
+dataset_metadata
+
+# Adds relevant metadata into collected dataset
+add_metadata(
+  light_data,
+  x,
+  fields = c(
+    "dataset_timezone",
+    "dataset_location",
+    "participant_age",
+    "study_title",
+    "device_model"
+  )
+) |>
+  head() |>
+  dplyr::select(-file.name)
+```
+
+When adding project-specific metadata to a data package, store it under
+a stable package-relative path such as `data/metadata.csv` and declare
+it as a resource in `datapackage.json`. The functions never guess from
+the working directory or neighboring files. They error when no
+identifiers or fields match, and warn while retaining useful results for
+partial matches.
 
 The default `standardize = "lightlogr"` follows the data conventions
 used by [LightLogR](https://tscnlab.github.io/LightLogR/) and adds:
 
 - `Id`, derived from the dataset id;
+- `file_group_id`, the stable dataset file-group id used by the metadata
+  helpers;
 - `participant_Id`, derived from the participant id;
 - `Datetime`, constructed from the metadata-defined datetime
   specification; and
@@ -273,8 +387,10 @@ source_data <- glc_collect(collection, standardize = "none")
 
 [`glc_collect()`](https://tscnlab.github.io/glc-dp-r/reference/glc_collect.md)
 refuses to combine groups that differ in columns, types, time zones,
-modalities, roles, data states, or datetime specifications. Keep those
-groups separate or select a compatible subset with
+modalities, roles, data states, or datetime specifications. It also
+rejects contradictory file-group relationships and multiple device links
+within one dataset. Keep those groups separate or select a compatible
+subset with
 [`glc_read()`](https://tscnlab.github.io/glc-dp-r/reference/glc_read.md).
 
 Collected data can be used directly with LightLogR’s [data-quality and
@@ -306,23 +422,23 @@ glc_download(x, metadata_dir)
 #> # A tibble: 17 × 6
 #>    path                                 destination storage bytes sha256 lfs_oid
 #>    <chr>                                <chr>       <chr>   <dbl> <chr>  <chr>  
-#>  1 datapackage.json                     /tmp/RtmpZ… git      2363 e841f… NA     
-#>  2 data/study.json                      /tmp/RtmpZ… git      3644 fb165… NA     
-#>  3 data/participants.json               /tmp/RtmpZ… git       379 1a7ae… NA     
-#>  4 data/participant_characteristics.csv /tmp/RtmpZ… git       218 554b8… NA     
-#>  5 data/datasets.json                   /tmp/RtmpZ… git     17835 4df6d… NA     
-#>  6 data/devices.json                    /tmp/RtmpZ… git      2148 53076… NA     
-#>  7 data/datasheets/device_datasheet.js… /tmp/RtmpZ… git      1343 50acf… NA     
-#>  8 data/datasheets/sensor_datasheet.js… /tmp/RtmpZ… git      1213 0185f… NA     
-#>  9 schemas/2.0.0/gleam-dp-profile.json  /tmp/RtmpZ… git     12715 755e1… NA     
-#> 10 schemas/json-entity-resource.json    /tmp/RtmpZ… git       743 a6442… NA     
-#> 11 schemas/2.0.0/study.schema.json      /tmp/RtmpZ… git      4361 861e8… NA     
-#> 12 schemas/2.0.0/participants.schema.j… /tmp/RtmpZ… git       932 135aa… NA     
-#> 13 schemas/2.0.0/participant_character… /tmp/RtmpZ… git      1244 b3b53… NA     
-#> 14 schemas/2.0.0/dataset.schema.json    /tmp/RtmpZ… git     12431 6d1ef… NA     
-#> 15 schemas/2.0.0/device.schema.json     /tmp/RtmpZ… git      3193 c5efc… NA     
-#> 16 schemas/2.0.0/device_datasheet.sche… /tmp/RtmpZ… git      5499 358e3… NA     
-#> 17 schemas/light_data.schema.json       /tmp/RtmpZ… git      1653 ce2f6… NA
+#>  1 datapackage.json                     /tmp/Rtmpc… git      2363 e841f… NA     
+#>  2 data/study.json                      /tmp/Rtmpc… git      3644 fb165… NA     
+#>  3 data/participants.json               /tmp/Rtmpc… git       379 1a7ae… NA     
+#>  4 data/participant_characteristics.csv /tmp/Rtmpc… git       218 554b8… NA     
+#>  5 data/datasets.json                   /tmp/Rtmpc… git     17835 4df6d… NA     
+#>  6 data/devices.json                    /tmp/Rtmpc… git      2148 53076… NA     
+#>  7 data/datasheets/device_datasheet.js… /tmp/Rtmpc… git      1343 50acf… NA     
+#>  8 data/datasheets/sensor_datasheet.js… /tmp/Rtmpc… git      1213 0185f… NA     
+#>  9 schemas/2.0.0/gleam-dp-profile.json  /tmp/Rtmpc… git     12715 755e1… NA     
+#> 10 schemas/json-entity-resource.json    /tmp/Rtmpc… git       743 a6442… NA     
+#> 11 schemas/2.0.0/study.schema.json      /tmp/Rtmpc… git      4361 861e8… NA     
+#> 12 schemas/2.0.0/participants.schema.j… /tmp/Rtmpc… git       932 135aa… NA     
+#> 13 schemas/2.0.0/participant_character… /tmp/Rtmpc… git      1244 b3b53… NA     
+#> 14 schemas/2.0.0/dataset.schema.json    /tmp/Rtmpc… git     12431 6d1ef… NA     
+#> 15 schemas/2.0.0/device.schema.json     /tmp/Rtmpc… git      3193 c5efc… NA     
+#> 16 schemas/2.0.0/device_datasheet.sche… /tmp/Rtmpc… git      5499 358e3… NA     
+#> 17 schemas/light_data.schema.json       /tmp/Rtmpc… git      1653 ce2f6… NA
 ```
 
 Request data explicitly and apply the same kinds of selectors used
@@ -341,24 +457,24 @@ downloads
 #> # A tibble: 18 × 6
 #>    path                                destination storage  bytes sha256 lfs_oid
 #>    <chr>                               <chr>       <chr>    <dbl> <chr>  <chr>  
-#>  1 datapackage.json                    /tmp/RtmpZ… git     2.36e3 e841f… NA     
-#>  2 data/study.json                     /tmp/RtmpZ… git     3.64e3 fb165… NA     
-#>  3 data/participants.json              /tmp/RtmpZ… git     3.79e2 1a7ae… NA     
-#>  4 data/participant_characteristics.c… /tmp/RtmpZ… git     2.18e2 554b8… NA     
-#>  5 data/datasets.json                  /tmp/RtmpZ… git     1.78e4 4df6d… NA     
-#>  6 data/devices.json                   /tmp/RtmpZ… git     2.15e3 53076… NA     
-#>  7 data/datasheets/device_datasheet.j… /tmp/RtmpZ… git     1.34e3 50acf… NA     
-#>  8 data/datasheets/sensor_datasheet.j… /tmp/RtmpZ… git     1.21e3 0185f… NA     
-#>  9 schemas/2.0.0/gleam-dp-profile.json /tmp/RtmpZ… git     1.27e4 755e1… NA     
-#> 10 schemas/json-entity-resource.json   /tmp/RtmpZ… git     7.43e2 a6442… NA     
-#> 11 schemas/2.0.0/study.schema.json     /tmp/RtmpZ… git     4.36e3 861e8… NA     
-#> 12 schemas/2.0.0/participants.schema.… /tmp/RtmpZ… git     9.32e2 135aa… NA     
-#> 13 schemas/2.0.0/participant_characte… /tmp/RtmpZ… git     1.24e3 b3b53… NA     
-#> 14 schemas/2.0.0/dataset.schema.json   /tmp/RtmpZ… git     1.24e4 6d1ef… NA     
-#> 15 schemas/2.0.0/device.schema.json    /tmp/RtmpZ… git     3.19e3 c5efc… NA     
-#> 16 schemas/2.0.0/device_datasheet.sch… /tmp/RtmpZ… git     5.50e3 358e3… NA     
-#> 17 schemas/light_data.schema.json      /tmp/RtmpZ… git     1.65e3 ce2f6… NA     
-#> 18 data/datasets/201_actlumus_Log_102… /tmp/RtmpZ… git     1.03e7 6893b… NA
+#>  1 datapackage.json                    /tmp/Rtmpc… git     2.36e3 e841f… NA     
+#>  2 data/study.json                     /tmp/Rtmpc… git     3.64e3 fb165… NA     
+#>  3 data/participants.json              /tmp/Rtmpc… git     3.79e2 1a7ae… NA     
+#>  4 data/participant_characteristics.c… /tmp/Rtmpc… git     2.18e2 554b8… NA     
+#>  5 data/datasets.json                  /tmp/Rtmpc… git     1.78e4 4df6d… NA     
+#>  6 data/devices.json                   /tmp/Rtmpc… git     2.15e3 53076… NA     
+#>  7 data/datasheets/device_datasheet.j… /tmp/Rtmpc… git     1.34e3 50acf… NA     
+#>  8 data/datasheets/sensor_datasheet.j… /tmp/Rtmpc… git     1.21e3 0185f… NA     
+#>  9 schemas/2.0.0/gleam-dp-profile.json /tmp/Rtmpc… git     1.27e4 755e1… NA     
+#> 10 schemas/json-entity-resource.json   /tmp/Rtmpc… git     7.43e2 a6442… NA     
+#> 11 schemas/2.0.0/study.schema.json     /tmp/Rtmpc… git     4.36e3 861e8… NA     
+#> 12 schemas/2.0.0/participants.schema.… /tmp/Rtmpc… git     9.32e2 135aa… NA     
+#> 13 schemas/2.0.0/participant_characte… /tmp/Rtmpc… git     1.24e3 b3b53… NA     
+#> 14 schemas/2.0.0/dataset.schema.json   /tmp/Rtmpc… git     1.24e4 6d1ef… NA     
+#> 15 schemas/2.0.0/device.schema.json    /tmp/Rtmpc… git     3.19e3 c5efc… NA     
+#> 16 schemas/2.0.0/device_datasheet.sch… /tmp/Rtmpc… git     5.50e3 358e3… NA     
+#> 17 schemas/light_data.schema.json      /tmp/Rtmpc… git     1.65e3 ce2f6… NA     
+#> 18 data/datasets/201_actlumus_Log_102… /tmp/Rtmpc… git     1.03e7 6893b… NA
 ```
 
 Use `include = "all"` only when you intend to mirror every declared

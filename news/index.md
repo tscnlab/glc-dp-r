@@ -1,7 +1,21 @@
 # Changelog
 
-## glcdp 0.9.2
+## glcdp 0.9.3
 
+- Added
+  [`extract_metadata()`](https://tscnlab.github.io/glc-dp-r/reference/extract_metadata.md)
+  and
+  [`add_metadata()`](https://tscnlab.github.io/glc-dp-r/reference/add_metadata.md)
+  to select requested metadata by imported-data identifiers and
+  optionally join it onto every observation. Their default
+  `file_group_id` link traverses from each file group to its dataset,
+  participant, study, and device; dataset-level extraction remains
+  available with `by = "Id"`. Extracted summaries retain the input
+  dataset’s grouping and grouping columns.
+- LightLogR-standardized
+  [`glc_collect()`](https://tscnlab.github.io/glc-dp-r/reference/glc_collect.md)
+  output now exposes `file_group_id` and rejects contradictory group
+  relationships or multiple device links within a dataset.
 - Added
   [`glc_explore()`](https://tscnlab.github.io/glc-dp-r/reference/glc_explore.md),
   a Shiny application for browsing the registry, inspecting package

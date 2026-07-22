@@ -42,6 +42,10 @@ Import metadata-described files and combine compatible groups.
   : Read metadata-described dataset files
 - [`glc_collect()`](https://tscnlab.github.io/glc-dp-r/reference/glc_collect.md)
   : Collect compatible file groups
+- [`extract_metadata()`](https://tscnlab.github.io/glc-dp-r/reference/extract_metadata.md)
+  : Extract metadata for imported data
+- [`add_metadata()`](https://tscnlab.github.io/glc-dp-r/reference/add_metadata.md)
+  : Add metadata to imported data
 
 ## Download data packages
 

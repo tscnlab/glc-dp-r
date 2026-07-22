@@ -50,7 +50,7 @@ silently hiding packages with problems.
 packages <- glc_packages()
 packages
 #> <GLC registry>
-#> Generated: 2026-07-20T12:54:26.819834+00:00 
+#> Generated: 2026-07-22T07:19:05.302619+00:00 
 #> # A tibble: 2 × 17
 #>   id           repository branch repository_status current_status current_commit
 #>   <chr>        <chr>      <chr>  <chr>             <chr>          <chr>         
@@ -64,9 +64,9 @@ packages
 
 glc_search_packages("guidolin", packages)
 #> <GLC registry>
-#> Generated: 2026-07-20T12:54:26.819834+00:00 
+#> Generated: 2026-07-22T07:19:05.302619+00:00 
 #> <GLC registry>
-#> Generated: 2026-07-20T12:54:26.819834+00:00 
+#> Generated: 2026-07-22T07:19:05.302619+00:00 
 #> # A tibble: 1 × 17
 #>   id           repository branch repository_status current_status current_commit
 #>   <chr>        <chr>      <chr>  <chr>             <chr>          <chr>         
@@ -85,9 +85,9 @@ recorded passing revision:
 
 glc_search_packages(packages = packages, status = "pass")
 #> <GLC registry>
-#> Generated: 2026-07-20T12:54:26.819834+00:00 
+#> Generated: 2026-07-22T07:19:05.302619+00:00 
 #> <GLC registry>
-#> Generated: 2026-07-20T12:54:26.819834+00:00 
+#> Generated: 2026-07-22T07:19:05.302619+00:00 
 #> # A tibble: 1 × 17
 #>   id           repository branch repository_status current_status current_commit
 #>   <chr>        <chr>      <chr>  <chr>             <chr>          <chr>         
@@ -99,9 +99,9 @@ glc_search_packages(packages = packages, status = "pass")
 #> #   registry_generated_at <chr>
 glc_search_packages(packages = packages, has_pass = TRUE)
 #> <GLC registry>
-#> Generated: 2026-07-20T12:54:26.819834+00:00 
+#> Generated: 2026-07-22T07:19:05.302619+00:00 
 #> <GLC registry>
-#> Generated: 2026-07-20T12:54:26.819834+00:00 
+#> Generated: 2026-07-22T07:19:05.302619+00:00 
 #> # A tibble: 1 × 17
 #>   id           repository branch repository_status current_status current_commit
 #>   <chr>        <chr>      <chr>  <chr>             <chr>          <chr>         
@@ -327,20 +327,20 @@ documentation](https://tscnlab.github.io/LightLogR/reference/import_Dataset.html
 
 light_data <- glc_collect(collection)
 light_data
-#> # A tibble: 60,043 × 5
+#> # A tibble: 60,043 × 6
 #> # Groups:   Id [1]
-#>    LIGHT Id    participant_Id Datetime            file.name                     
-#>    <dbl> <fct> <chr>          <dttm>              <chr>                         
-#>  1  809. DS001 201            2023-08-14 10:55:21 201_actlumus_Log_1020_2023082…
-#>  2  806. DS001 201            2023-08-14 10:55:31 201_actlumus_Log_1020_2023082…
-#>  3  738. DS001 201            2023-08-14 10:55:41 201_actlumus_Log_1020_2023082…
-#>  4  736. DS001 201            2023-08-14 10:55:51 201_actlumus_Log_1020_2023082…
-#>  5  716. DS001 201            2023-08-14 10:56:01 201_actlumus_Log_1020_2023082…
-#>  6  736. DS001 201            2023-08-14 10:56:11 201_actlumus_Log_1020_2023082…
-#>  7  753. DS001 201            2023-08-14 10:56:21 201_actlumus_Log_1020_2023082…
-#>  8  719. DS001 201            2023-08-14 10:56:31 201_actlumus_Log_1020_2023082…
-#>  9  713. DS001 201            2023-08-14 10:56:41 201_actlumus_Log_1020_2023082…
-#> 10  771. DS001 201            2023-08-14 10:56:51 201_actlumus_Log_1020_2023082…
+#>    LIGHT Id    file_group_id participant_Id Datetime            file.name       
+#>    <dbl> <fct> <chr>         <chr>          <dttm>              <chr>           
+#>  1  809. DS001 DS001:1       201            2023-08-14 10:55:21 201_actlumus_Lo…
+#>  2  806. DS001 DS001:1       201            2023-08-14 10:55:31 201_actlumus_Lo…
+#>  3  738. DS001 DS001:1       201            2023-08-14 10:55:41 201_actlumus_Lo…
+#>  4  736. DS001 DS001:1       201            2023-08-14 10:55:51 201_actlumus_Lo…
+#>  5  716. DS001 DS001:1       201            2023-08-14 10:56:01 201_actlumus_Lo…
+#>  6  736. DS001 DS001:1       201            2023-08-14 10:56:11 201_actlumus_Lo…
+#>  7  753. DS001 DS001:1       201            2023-08-14 10:56:21 201_actlumus_Lo…
+#>  8  719. DS001 DS001:1       201            2023-08-14 10:56:31 201_actlumus_Lo…
+#>  9  713. DS001 DS001:1       201            2023-08-14 10:56:41 201_actlumus_Lo…
+#> 10  771. DS001 DS001:1       201            2023-08-14 10:56:51 201_actlumus_Lo…
 #> # ℹ 60,033 more rows
 ```
 
