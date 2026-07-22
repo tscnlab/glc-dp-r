@@ -13,7 +13,7 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/tscnlab/glc-dp-r/blob/main/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/tscnlab/glc-dp-r/blob/v0.9.3/DESCRIPTION)
 
 Zauner J, Thalji S, Spitschan M (2026). *glcdp: Discover, Access, and
 Import Global Light Commons Data Packages*. R package version 0.9.3,
