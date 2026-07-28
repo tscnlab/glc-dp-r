@@ -30,3 +30,13 @@ type and factor values, labels, and descriptions.
 \description{
 Inventory and search declared variables
 }
+\examples{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+iztech <- glc_open("tscnlab/melidos-iztech-glc-dataset")
+glc_variables(
+  iztech,
+  file_group = "MELIDOS_IZTECH_S001:17",
+  primary = TRUE
+)
+\dontshow{\}) # examplesIf}
+}

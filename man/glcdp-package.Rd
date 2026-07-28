@@ -20,12 +20,13 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: Johannes Zauner \email{johannes.zauner@tum.de} (\href{https://orcid.org/0000-0003-2171-4566}{ORCID})
+\strong{Maintainer}: Johannes Zauner \email{johannes.zauner@tum.de} (\href{https://orcid.org/0000-0003-2171-4566}{ORCID}) [copyright holder]
 
 Authors:
 \itemize{
-  \item Salma M. Thalji \email{salma.thalji@tum.de} (\href{https://orcid.org/0009-0002-7320-9289}{ORCID})
-  \item Manuel Spitschan \email{manuel.spitschan@tum.de} (\href{https://orcid.org/0000-0002-8572-9268}{ORCID})
+  \item Johannes Zauner \email{johannes.zauner@tum.de} (\href{https://orcid.org/0000-0003-2171-4566}{ORCID}) [copyright holder]
+  \item Salma M. Thalji \email{salma.thalji@tum.de} (\href{https://orcid.org/0009-0002-7320-9289}{ORCID}) [copyright holder]
+  \item Manuel Spitschan \email{manuel.spitschan@tum.de} (\href{https://orcid.org/0000-0002-8572-9268}{ORCID}) [copyright holder]
 }
 
 }

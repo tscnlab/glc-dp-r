@@ -5,19 +5,19 @@ Authors@R: c(
     person(
       "Johannes", "Zauner",
       email = "johannes.zauner@tum.de",
-      role = c("aut", "cre"),
+      role = c("aut", "cre", "cph"),
       comment = c(ORCID = "0000-0003-2171-4566")
     ),
     person(
       "Salma M.", "Thalji",
       email = "salma.thalji@tum.de",
-      role = "aut",
+      role = c("aut", "cph"),
       comment = c(ORCID = "0009-0002-7320-9289")
     ),
     person(
       "Manuel", "Spitschan",
       email = "manuel.spitschan@tum.de",
-      role = "aut",
+      role = c("aut", "cph"),
       comment = c(ORCID = "0000-0002-8572-9268")
     )
   )
@@ -25,12 +25,12 @@ Description: Discovers Global Light Commons data packages through their
     registry, opens immutable passing revisions, and provides searchable
     inventories of package metadata. Selected metadata and measurement files
     can be downloaded or imported with metadata-defined columns, types, factor
-    levels, datetimes, and time zones. Git Large File Storage objects are
-    resolved without requiring an external Git LFS installation, and imported
-    file groups can be explicitly collected into data suitable for personal
-    light exposure analysis workflows. An included Shiny application supports
-    interactive discovery, inspection, selection, preview, and reproducible
-    handoff to R.
+    levels, date-time values, and time zones. 'Git Large File Storage' objects
+    are resolved without requiring an external 'Git LFS' installation, and
+    imported file groups can be explicitly collected into data suitable for
+    personal light exposure analysis workflows. An included 'shiny' application
+    supports interactive discovery, inspection, selection, preview, and
+    reproducible handoff to 'R'.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Depends:
@@ -56,5 +56,5 @@ URL: https://tscnlab.github.io/glc-dp-r/,
     https://github.com/tscnlab/glc-dp-r
 BugReports: https://github.com/tscnlab/glc-dp-r/issues
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.2
 Config/Needs/website: pkgdown
+Config/roxygen2/version: 8.0.0

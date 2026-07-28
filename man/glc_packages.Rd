@@ -20,7 +20,7 @@ Downloads and flattens the Global Light Commons registry. Both passing and
 non-passing current revisions are retained.
 }
 \examples{
-\dontshow{if (interactive()) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
 packages <- glc_packages()
 glc_search_packages("iztech", packages)
 \dontshow{\}) # examplesIf}

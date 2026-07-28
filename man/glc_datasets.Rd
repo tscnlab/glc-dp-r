@@ -17,3 +17,9 @@ A tibble with one row per dataset.
 \description{
 Inventory datasets
 }
+\examples{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+iztech <- glc_open("tscnlab/melidos-iztech-glc-dataset")
+glc_datasets(iztech)
+\dontshow{\}) # examplesIf}
+}

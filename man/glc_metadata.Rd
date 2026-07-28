@@ -21,3 +21,9 @@ sub-lists.
 Loads core metadata by default. Additional descriptor resources can be
 requested explicitly by name.
 }
+\examples{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+iztech <- glc_open("tscnlab/melidos-iztech-glc-dataset")
+glc_metadata(iztech, resources = "study")
+\dontshow{\}) # examplesIf}
+}

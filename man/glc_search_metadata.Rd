@@ -42,3 +42,9 @@ path that contains multiple scalar values therefore produces one row per
 value. The \code{fields} argument can be combined with any \code{search_in} mode to
 restrict which field paths are searched.
 }
+\examples{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+iztech <- glc_open("tscnlab/melidos-iztech-glc-dataset")
+glc_search_metadata(iztech, "Izmir", resources = "study")
+\dontshow{\}) # examplesIf}
+}

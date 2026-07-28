@@ -33,3 +33,9 @@ file-specific encoding declared by its file group.
 \description{
 Inventory declared data files
 }
+\examples{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+iztech <- glc_open("tscnlab/melidos-iztech-glc-dataset")
+glc_files(iztech, dataset_id = "MELIDOS_IZTECH_S001")
+\dontshow{\}) # examplesIf}
+}

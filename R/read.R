@@ -563,6 +563,15 @@ glc_inform_local_subset <- function(x) {
 #' @return A `glc_data_collection` tibble with one data list-column per file
 #'   group.
 #' @export
+#'
+#' @examplesIf interactive()
+#' iztech <- glc_open("tscnlab/melidos-iztech-glc-dataset")
+#' glc_read(
+#'   iztech,
+#'   dataset_id = "MELIDOS_IZTECH_S001",
+#'   file_group = "MELIDOS_IZTECH_S001:17",
+#'   n_max = 10
+#' )
 glc_read <- function(
   x,
   dataset_id,

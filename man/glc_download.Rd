@@ -40,3 +40,10 @@ A tibble recording downloaded paths, storage, size, and hashes.
 Downloads only descriptor-declared and dataset-referenced content, preserves
 repository-relative paths, and writes a reproducibility manifest.
 }
+\examples{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+iztech <- glc_open("tscnlab/melidos-iztech-glc-dataset")
+destination <- tempfile("glcdp-metadata-")
+glc_download(iztech, destination)
+\dontshow{\}) # examplesIf}
+}

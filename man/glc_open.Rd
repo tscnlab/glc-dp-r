@@ -38,7 +38,7 @@ Opens a local package or resolves a GitHub-hosted package at an immutable
 commit. Registered packages default to their latest passing revision.
 }
 \examples{
-\dontshow{if (interactive()) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
 package <- glc_open("tscnlab/melidos-iztech-glc-dataset")
 package
 \dontshow{\}) # examplesIf}

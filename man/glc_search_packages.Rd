@@ -28,3 +28,10 @@ A filtered \code{glc_registry} tibble.
 \description{
 Search registered data packages
 }
+\examples{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+packages <- glc_packages()
+glc_search_packages("iztech", packages)
+glc_search_packages(packages = packages, status = "pass")
+\dontshow{\}) # examplesIf}
+}

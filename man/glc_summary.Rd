@@ -17,3 +17,9 @@ separately.
 \description{
 Summarize a Global Light Commons data package
 }
+\examples{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+iztech <- glc_open("tscnlab/melidos-iztech-glc-dataset")
+glc_summary(iztech)
+\dontshow{\}) # examplesIf}
+}

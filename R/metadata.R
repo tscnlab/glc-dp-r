@@ -82,6 +82,10 @@ glc_read_resource_file <- function(x, path, resource) {
 #'   resources are returned as tibbles; directory resources contain named
 #'   sub-lists.
 #' @export
+#'
+#' @examplesIf interactive()
+#' iztech <- glc_open("tscnlab/melidos-iztech-glc-dataset")
+#' glc_metadata(iztech, resources = "study")
 glc_metadata <- function(x, resources = NULL) {
   glc_assert_package(x)
   if (is.null(resources)) {
@@ -217,6 +221,10 @@ glc_metadata_leaf_table <- function(metadata) {
 #'
 #' @return A tibble of matching scalar metadata values and their field paths.
 #' @export
+#'
+#' @examplesIf interactive()
+#' iztech <- glc_open("tscnlab/melidos-iztech-glc-dataset")
+#' glc_search_metadata(iztech, "Izmir", resources = "study")
 glc_search_metadata <- function(
   x,
   query,

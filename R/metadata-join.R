@@ -899,7 +899,7 @@ glc_metadata_add_group_context <- function(result, dataset, keys) {
 #'
 #' extract_metadata(dataset, metadata, fields = "condition")
 #'
-#' \dontrun{
+#' if (interactive()) {
 #' package <- glc_open("owner/repository")
 #' imported <- glc_read(package, dataset_id = "DS1") |>
 #'   glc_collect()

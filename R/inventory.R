@@ -4,6 +4,10 @@
 #'
 #' @return A tibble with one row per declared resource path.
 #' @export
+#'
+#' @examplesIf interactive()
+#' iztech <- glc_open("tscnlab/melidos-iztech-glc-dataset")
+#' glc_resources(iztech)
 glc_resources <- function(x) {
   glc_assert_package(x)
   resources <- x$descriptor$resources %||% list()
@@ -81,6 +85,10 @@ glc_selected_datasets <- function(x, dataset_id = NULL) {
 #'
 #' @return A tibble with one row per dataset.
 #' @export
+#'
+#' @examplesIf interactive()
+#' iztech <- glc_open("tscnlab/melidos-iztech-glc-dataset")
+#' glc_datasets(iztech)
 glc_datasets <- function(x, dataset_id = NULL) {
   glc_assert_package(x)
   datasets <- glc_selected_datasets(x, dataset_id)
@@ -159,6 +167,10 @@ glc_group_selected <- function(group, file_group, role, modality) {
 #' @return A tibble with one row per concrete declared file, including the
 #'   file-specific encoding declared by its file group.
 #' @export
+#'
+#' @examplesIf interactive()
+#' iztech <- glc_open("tscnlab/melidos-iztech-glc-dataset")
+#' glc_files(iztech, dataset_id = "MELIDOS_IZTECH_S001")
 glc_files <- function(
   x,
   dataset_id = NULL,
@@ -305,6 +317,14 @@ glc_files <- function(
 #' @return A tibble with one row per declared variable, including its declared
 #'   type and factor values, labels, and descriptions.
 #' @export
+#'
+#' @examplesIf interactive()
+#' iztech <- glc_open("tscnlab/melidos-iztech-glc-dataset")
+#' glc_variables(
+#'   iztech,
+#'   file_group = "MELIDOS_IZTECH_S001:17",
+#'   primary = TRUE
+#' )
 glc_variables <- function(
   x,
   dataset_id = NULL,
@@ -478,6 +498,10 @@ glc_optional_resource_records <- function(x, name) {
 #'   locally available dataset, file-group, and file counts are reported
 #'   separately.
 #' @export
+#'
+#' @examplesIf interactive()
+#' iztech <- glc_open("tscnlab/melidos-iztech-glc-dataset")
+#' glc_summary(iztech)
 glc_summary <- function(x) {
   glc_assert_package(x)
   if (

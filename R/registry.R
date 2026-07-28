@@ -115,6 +115,11 @@ glc_packages <- function(registry = glc_default_registry(), refresh = FALSE) {
 #'
 #' @return A filtered `glc_registry` tibble.
 #' @export
+#'
+#' @examplesIf interactive()
+#' packages <- glc_packages()
+#' glc_search_packages("iztech", packages)
+#' glc_search_packages(packages = packages, status = "pass")
 glc_search_packages <- function(
   query = NULL,
   packages = glc_packages(),

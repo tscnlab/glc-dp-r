@@ -15,3 +15,9 @@ A tibble with one row per declared resource path.
 \description{
 Inventory data-package resources
 }
+\examples{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+iztech <- glc_open("tscnlab/melidos-iztech-glc-dataset")
+glc_resources(iztech)
+\dontshow{\}) # examplesIf}
+}

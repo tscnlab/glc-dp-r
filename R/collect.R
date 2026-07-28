@@ -212,6 +212,16 @@ glc_add_standard_column <- function(
 #'   `participant_Id` contains the participant id, an existing source
 #'   `file.name` column is retained, and the result is grouped by `Id`.
 #' @export
+#'
+#' @examplesIf interactive()
+#' iztech <- glc_open("tscnlab/melidos-iztech-glc-dataset")
+#' collection <- glc_read(
+#'   iztech,
+#'   dataset_id = "MELIDOS_IZTECH_S001",
+#'   file_group = "MELIDOS_IZTECH_S001:17",
+#'   n_max = 10
+#' )
+#' glc_collect(collection)
 glc_collect <- function(x, standardize = c("lightlogr", "none")) {
   if (!inherits(x, "glc_data_collection")) {
     glc_abort("{.arg x} must be returned by {.fn glc_read}.")

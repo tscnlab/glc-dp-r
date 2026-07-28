@@ -189,6 +189,11 @@ glc_write_manifest <- function(x, destination, include, selection, results) {
 #'
 #' @return A tibble recording downloaded paths, storage, size, and hashes.
 #' @export
+#'
+#' @examplesIf interactive()
+#' iztech <- glc_open("tscnlab/melidos-iztech-glc-dataset")
+#' destination <- tempfile("glcdp-metadata-")
+#' glc_download(iztech, destination)
 glc_download <- function(
   x,
   dest_dir,

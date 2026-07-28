@@ -32,7 +32,7 @@ export an annotated, reproducible R script without uploading package data
 to another service.
 }
 \examples{
-\dontshow{if (interactive()) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
 glc_explore()
 \dontshow{\}) # examplesIf}
 }

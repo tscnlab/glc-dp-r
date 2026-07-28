@@ -26,3 +26,15 @@ factor-level contracts, time zones, modalities, roles, data states, and
 relationship consistency. Multiple non-missing device links within one
 dataset are rejected.
 }
+\examples{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+iztech <- glc_open("tscnlab/melidos-iztech-glc-dataset")
+collection <- glc_read(
+  iztech,
+  dataset_id = "MELIDOS_IZTECH_S001",
+  file_group = "MELIDOS_IZTECH_S001:17",
+  n_max = 10
+)
+glc_collect(collection)
+\dontshow{\}) # examplesIf}
+}
