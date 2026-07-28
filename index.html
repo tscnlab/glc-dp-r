@@ -16,8 +16,8 @@
 <script src="deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Discover, Access, and Import Global Light Commons Data Packages">
-<meta name="description" content="Discovers Global Light Commons data packages through their registry, opens immutable passing revisions, and provides searchable inventories of package metadata. Selected metadata and measurement files can be downloaded or imported with metadata-defined columns, types, factor levels, datetimes, and time zones. Git Large File Storage objects are resolved without requiring an external Git LFS installation, and imported file groups can be explicitly collected into data suitable for personal light exposure analysis workflows. An included Shiny application supports interactive discovery, inspection, selection, preview, and reproducible handoff to R.">
-<meta property="og:description" content="Discovers Global Light Commons data packages through their registry, opens immutable passing revisions, and provides searchable inventories of package metadata. Selected metadata and measurement files can be downloaded or imported with metadata-defined columns, types, factor levels, datetimes, and time zones. Git Large File Storage objects are resolved without requiring an external Git LFS installation, and imported file groups can be explicitly collected into data suitable for personal light exposure analysis workflows. An included Shiny application supports interactive discovery, inspection, selection, preview, and reproducible handoff to R.">
+<meta name="description" content="Discovers Global Light Commons data packages through their registry, opens immutable passing revisions, and provides searchable inventories of package metadata. Selected metadata and measurement files can be downloaded or imported with metadata-defined columns, types, factor levels, date-time values, and time zones. Git Large File Storage objects are resolved without requiring an external Git LFS installation, and imported file groups can be explicitly collected into data suitable for personal light exposure analysis workflows. An included shiny application supports interactive discovery, inspection, selection, preview, and reproducible handoff to R.">
+<meta property="og:description" content="Discovers Global Light Commons data packages through their registry, opens immutable passing revisions, and provides searchable inventories of package metadata. Selected metadata and measurement files can be downloaded or imported with metadata-defined columns, types, factor levels, date-time values, and time zones. Git Large File Storage objects are resolved without requiring an external Git LFS installation, and imported file groups can be explicitly collected into data suitable for personal light exposure analysis workflows. An included shiny application supports interactive discovery, inspection, selection, preview, and reproducible handoff to R.">
 <meta property="og:image" content="https://tscnlab.github.io/glc-dp-r/logo.png">
 </head>
 <body>
@@ -72,12 +72,15 @@
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
-<p>Install the development version from GitHub:</p>
+<p>Install the released version from CRAN:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"glcdp"</span><span class="op">)</span></span></code></pre></div>
+<p>Install the development version from GitHub:</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># install.packages("pak")</span></span>
 <span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"tscnlab/glc-dp-r"</span><span class="op">)</span></span></code></pre></div>
 <p>The development version targets GLC schema 3.0.2 as its current default, including metadata-driven column types, factor levels in schema-declared order, and per-file encodings. Schemas 3.0.0 and 3.0.1 remain compatible stable predecessors; schemas 1.0.0 and 2.0.0 have barebones legacy support. The package also supports immutable registry revisions, selective downloads, and GitHub-hosted Git LFS objects.</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">packages</span> <span class="op">&lt;-</span> <span class="fu">glcdp</span><span class="fu">::</span><span class="fu"><a href="reference/glc_packages.html">glc_packages</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="va">melidos</span> <span class="op">&lt;-</span> <span class="fu">glcdp</span><span class="fu">::</span><span class="fu"><a href="reference/glc_open.html">glc_open</a></span><span class="op">(</span><span class="st">"tscnlab/melidos-iztech-glc-dataset"</span><span class="op">)</span></span>
 <span></span>
@@ -98,7 +101,7 @@
 <h2 id="interactive-data-explorer">Interactive data explorer<a class="anchor" aria-label="anchor" href="#interactive-data-explorer"></a>
 </h2>
 <p>Install the optional application dependencies and launch the local explorer:</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"shiny"</span>, <span class="st">"bslib"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu">glcdp</span><span class="fu">::</span><span class="fu"><a href="reference/glc_explore.html">glc_explore</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p>The app browses passing registry revisions, summarizes package contents, and filters participants, devices, datasets, file groups, semantic terms, and source variables. The completed summary can start the larger contents load in place and reports its progress, completion, or retry action centrally. Repeated participant-specific file groups can be narrowed by device, wearing position, modality, role, state, contained variable, or semantic term. Numeric participant characteristics use range filters, and the metadata hierarchy loads complete records incrementally while the table view retains full paging. Repeated metadata fields are folded with their record counts, and large file-group, variable, and handoff inventories use paging and server-side search choices to keep browser interaction responsive. A page-level busy indicator remains visible while reactive filtering or rendering is in progress. It builds a small configurable preview before exporting an annotated R script that downloads and imports the exact selection. Package data remain on the machine running the app.</p>
@@ -144,9 +147,9 @@
 <div class="developers">
 <h2 data-toc-skip>Developers</h2>
 <ul class="list-unstyled">
-<li>Johannes Zauner <br><small class="roles"> Author, maintainer </small> <a href="https://orcid.org/0000-0003-2171-4566" target="orcid.widget" aria-label="ORCID" class="external-link"><span class="fab fa-orcid orcid" aria-hidden="true"></span></a>  </li>
-<li>Salma M. Thalji <br><small class="roles"> Author </small> <a href="https://orcid.org/0009-0002-7320-9289" target="orcid.widget" aria-label="ORCID" class="external-link"><span class="fab fa-orcid orcid" aria-hidden="true"></span></a>  </li>
-<li>Manuel Spitschan <br><small class="roles"> Author </small> <a href="https://orcid.org/0000-0002-8572-9268" target="orcid.widget" aria-label="ORCID" class="external-link"><span class="fab fa-orcid orcid" aria-hidden="true"></span></a>  </li>
+<li>Johannes Zauner <br><small class="roles"> Author, maintainer, copyright holder </small> <a href="https://orcid.org/0000-0003-2171-4566" target="orcid.widget" aria-label="ORCID" class="external-link"><span class="fab fa-orcid orcid" aria-hidden="true"></span></a>  </li>
+<li>Salma M. Thalji <br><small class="roles"> Author, copyright holder </small> <a href="https://orcid.org/0009-0002-7320-9289" target="orcid.widget" aria-label="ORCID" class="external-link"><span class="fab fa-orcid orcid" aria-hidden="true"></span></a>  </li>
+<li>Manuel Spitschan <br><small class="roles"> Author, copyright holder </small> <a href="https://orcid.org/0000-0002-8572-9268" target="orcid.widget" aria-label="ORCID" class="external-link"><span class="fab fa-orcid orcid" aria-hidden="true"></span></a>  </li>
 </ul>
 </div>
 

@@ -41,3 +41,16 @@ glc_variables(
 
 A tibble with one row per declared variable, including its declared type
 and factor values, labels, and descriptions.
+
+## Examples
+
+``` r
+if (FALSE) { # interactive()
+iztech <- glc_open("tscnlab/melidos-iztech-glc-dataset")
+glc_variables(
+  iztech,
+  file_group = "MELIDOS_IZTECH_S001:17",
+  primary = TRUE
+)
+}
+```

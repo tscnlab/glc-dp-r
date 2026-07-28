@@ -75,3 +75,17 @@ filters. Declared files that are absent from a local package subset are
 skipped. When a local package contains fewer datasets or files than
 declared, `glc_read()` reports the discrepancy and reads the available
 files.
+
+## Examples
+
+``` r
+if (FALSE) { # interactive()
+iztech <- glc_open("tscnlab/melidos-iztech-glc-dataset")
+glc_read(
+  iztech,
+  dataset_id = "MELIDOS_IZTECH_S001",
+  file_group = "MELIDOS_IZTECH_S001:17",
+  n_max = 10
+)
+}
+```

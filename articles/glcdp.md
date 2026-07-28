@@ -55,7 +55,7 @@ silently hiding packages with problems.
 packages <- glc_packages()
 packages
 #> <GLC registry>
-#> Generated: 2026-07-28T15:37:47.933266+00:00 
+#> Generated: 2026-07-28T17:13:04.143260+00:00 
 #> # A tibble: 3 × 17
 #>   id           repository branch repository_status current_status current_commit
 #>   <chr>        <chr>      <chr>  <chr>             <chr>          <chr>         
@@ -70,9 +70,9 @@ packages
 
 glc_search_packages("iztech", packages)
 #> <GLC registry>
-#> Generated: 2026-07-28T15:37:47.933266+00:00 
+#> Generated: 2026-07-28T17:13:04.143260+00:00 
 #> <GLC registry>
-#> Generated: 2026-07-28T15:37:47.933266+00:00 
+#> Generated: 2026-07-28T17:13:04.143260+00:00 
 #> # A tibble: 1 × 17
 #>   id           repository branch repository_status current_status current_commit
 #>   <chr>        <chr>      <chr>  <chr>             <chr>          <chr>         
@@ -91,9 +91,9 @@ recorded passing revision:
 
 glc_search_packages(packages = packages, status = "pass")
 #> <GLC registry>
-#> Generated: 2026-07-28T15:37:47.933266+00:00 
+#> Generated: 2026-07-28T17:13:04.143260+00:00 
 #> <GLC registry>
-#> Generated: 2026-07-28T15:37:47.933266+00:00 
+#> Generated: 2026-07-28T17:13:04.143260+00:00 
 #> # A tibble: 3 × 17
 #>   id           repository branch repository_status current_status current_commit
 #>   <chr>        <chr>      <chr>  <chr>             <chr>          <chr>         
@@ -107,9 +107,9 @@ glc_search_packages(packages = packages, status = "pass")
 #> #   registry_generated_at <chr>
 glc_search_packages(packages = packages, has_pass = TRUE)
 #> <GLC registry>
-#> Generated: 2026-07-28T15:37:47.933266+00:00 
+#> Generated: 2026-07-28T17:13:04.143260+00:00 
 #> <GLC registry>
-#> Generated: 2026-07-28T15:37:47.933266+00:00 
+#> Generated: 2026-07-28T17:13:04.143260+00:00 
 #> # A tibble: 3 × 17
 #>   id           repository branch repository_status current_status current_commit
 #>   <chr>        <chr>      <chr>  <chr>             <chr>          <chr>         

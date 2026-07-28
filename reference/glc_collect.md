@@ -31,3 +31,18 @@ A combined tibble. In LightLogR-standardized output, `Id` contains the
 dataset id, `file_group_id` identifies the source file group,
 `participant_Id` contains the participant id, an existing source
 `file.name` column is retained, and the result is grouped by `Id`.
+
+## Examples
+
+``` r
+if (FALSE) { # interactive()
+iztech <- glc_open("tscnlab/melidos-iztech-glc-dataset")
+collection <- glc_read(
+  iztech,
+  dataset_id = "MELIDOS_IZTECH_S001",
+  file_group = "MELIDOS_IZTECH_S001:17",
+  n_max = 10
+)
+glc_collect(collection)
+}
+```

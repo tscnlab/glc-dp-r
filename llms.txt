@@ -7,6 +7,13 @@ remaining independent of their analysis interfaces.
 
 ## Installation
 
+Install the released version from CRAN:
+
+``` r
+
+install.packages("glcdp")
+```
+
 Install the development version from GitHub:
 
 ``` r

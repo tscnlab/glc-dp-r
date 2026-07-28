@@ -18,3 +18,12 @@ glc_resources(x)
 ## Value
 
 A tibble with one row per declared resource path.
+
+## Examples
+
+``` r
+if (FALSE) { # interactive()
+iztech <- glc_open("tscnlab/melidos-iztech-glc-dataset")
+glc_resources(iztech)
+}
+```

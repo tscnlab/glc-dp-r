@@ -37,3 +37,13 @@ glc_search_packages(
 ## Value
 
 A filtered `glc_registry` tibble.
+
+## Examples
+
+``` r
+if (FALSE) { # interactive()
+packages <- glc_packages()
+glc_search_packages("iztech", packages)
+glc_search_packages(packages = packages, status = "pass")
+}
+```

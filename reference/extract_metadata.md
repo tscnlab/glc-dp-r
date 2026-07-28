@@ -106,7 +106,7 @@ extract_metadata(dataset, metadata, fields = "condition")
 #> 1 DS1   DS1:1         control     
 #> 2 DS2   DS2:1         intervention
 
-if (FALSE) { # \dontrun{
+if (interactive()) {
 package <- glc_open("owner/repository")
 imported <- glc_read(package, dataset_id = "DS1") |>
   glc_collect()
@@ -116,5 +116,5 @@ extract_metadata(
   fields = c("participant_age", "study_title", "device_model")
 )
 extract_metadata(imported, package, "dataset_timezone", by = "Id")
-} # }
+}
 ```

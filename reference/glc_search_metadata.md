@@ -58,3 +58,12 @@ Field searches return the same leaf-level rows as value searches. A
 field path that contains multiple scalar values therefore produces one
 row per value. The `fields` argument can be combined with any
 `search_in` mode to restrict which field paths are searched.
+
+## Examples
+
+``` r
+if (FALSE) { # interactive()
+iztech <- glc_open("tscnlab/melidos-iztech-glc-dataset")
+glc_search_metadata(iztech, "Izmir", resources = "study")
+}
+```

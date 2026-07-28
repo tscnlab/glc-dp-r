@@ -25,3 +25,12 @@ glc_metadata(x, resources = NULL)
 
 A named list with one element per requested resource. Tabular resources
 are returned as tibbles; directory resources contain named sub-lists.
+
+## Examples
+
+``` r
+if (FALSE) { # interactive()
+iztech <- glc_open("tscnlab/melidos-iztech-glc-dataset")
+glc_metadata(iztech, resources = "study")
+}
+```

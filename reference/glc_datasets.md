@@ -22,3 +22,12 @@ glc_datasets(x, dataset_id = NULL)
 ## Value
 
 A tibble with one row per dataset.
+
+## Examples
+
+``` r
+if (FALSE) { # interactive()
+iztech <- glc_open("tscnlab/melidos-iztech-glc-dataset")
+glc_datasets(iztech)
+}
+```

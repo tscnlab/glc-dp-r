@@ -46,3 +46,12 @@ glc_files(
 
 A tibble with one row per concrete declared file, including the
 file-specific encoding declared by its file group.
+
+## Examples
+
+``` r
+if (FALSE) { # interactive()
+iztech <- glc_open("tscnlab/melidos-iztech-glc-dataset")
+glc_files(iztech, dataset_id = "MELIDOS_IZTECH_S001")
+}
+```

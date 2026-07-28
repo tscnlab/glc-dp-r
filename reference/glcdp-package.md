@@ -17,12 +17,15 @@ Useful links:
 ## Author
 
 **Maintainer**: Johannes Zauner <johannes.zauner@tum.de>
-([ORCID](https://orcid.org/0000-0003-2171-4566))
+([ORCID](https://orcid.org/0000-0003-2171-4566)) \[copyright holder\]
 
 Authors:
 
+- Johannes Zauner <johannes.zauner@tum.de>
+  ([ORCID](https://orcid.org/0000-0003-2171-4566)) \[copyright holder\]
+
 - Salma M. Thalji <salma.thalji@tum.de>
-  ([ORCID](https://orcid.org/0009-0002-7320-9289))
+  ([ORCID](https://orcid.org/0009-0002-7320-9289)) \[copyright holder\]
 
 - Manuel Spitschan <manuel.spitschan@tum.de>
-  ([ORCID](https://orcid.org/0000-0002-8572-9268))
+  ([ORCID](https://orcid.org/0000-0002-8572-9268)) \[copyright holder\]

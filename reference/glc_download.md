@@ -58,3 +58,13 @@ glc_download(
 ## Value
 
 A tibble recording downloaded paths, storage, size, and hashes.
+
+## Examples
+
+``` r
+if (FALSE) { # interactive()
+iztech <- glc_open("tscnlab/melidos-iztech-glc-dataset")
+destination <- tempfile("glcdp-metadata-")
+glc_download(iztech, destination)
+}
+```

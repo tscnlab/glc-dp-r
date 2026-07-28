@@ -19,3 +19,12 @@ glc_summary(x)
 
 A one-row `glc_summary` tibble. For local packages, declared and locally
 available dataset, file-group, and file counts are reported separately.
+
+## Examples
+
+``` r
+if (FALSE) { # interactive()
+iztech <- glc_open("tscnlab/melidos-iztech-glc-dataset")
+glc_summary(iztech)
+}
+```

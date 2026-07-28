@@ -2,12 +2,13 @@
 
 ## Authors
 
-- **Johannes Zauner**. Author, maintainer.
+- **Johannes Zauner**. Author, maintainer, copyright holder.
   [](https://orcid.org/0000-0003-2171-4566)
 
-- **Salma M. Thalji**. Author. [](https://orcid.org/0009-0002-7320-9289)
+- **Salma M. Thalji**. Author, copyright holder.
+  [](https://orcid.org/0009-0002-7320-9289)
 
-- **Manuel Spitschan**. Author.
+- **Manuel Spitschan**. Author, copyright holder.
   [](https://orcid.org/0000-0002-8572-9268)
 
 ## Citation
