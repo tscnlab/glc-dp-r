@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="index.html">glcdp</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.9.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -76,15 +76,21 @@
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># install.packages("pak")</span></span>
 <span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"tscnlab/glc-dp-r"</span><span class="op">)</span></span></code></pre></div>
-<p>The development version supports stable GLC metadata schemas 1.0.0 and 2.0.0, experimental reading of the 3.0.0 development schema, immutable registry revisions, selective downloads, and GitHub-hosted Git LFS objects.</p>
+<p>The development version targets GLC schema 3.0.2 as its current default, including metadata-driven column types, factor levels in schema-declared order, and per-file encodings. Schemas 3.0.0 and 3.0.1 remain compatible stable predecessors; schemas 1.0.0 and 2.0.0 have barebones legacy support. The package also supports immutable registry revisions, selective downloads, and GitHub-hosted Git LFS objects.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">packages</span> <span class="op">&lt;-</span> <span class="fu">glcdp</span><span class="fu">::</span><span class="fu"><a href="reference/glc_packages.html">glc_packages</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="va">guidolin</span> <span class="op">&lt;-</span> <span class="fu">glcdp</span><span class="fu">::</span><span class="fu"><a href="reference/glc_open.html">glc_open</a></span><span class="op">(</span><span class="st">"tscnlab/guidolin-glee-datasetv2"</span><span class="op">)</span></span>
+<span><span class="va">melidos</span> <span class="op">&lt;-</span> <span class="fu">glcdp</span><span class="fu">::</span><span class="fu"><a href="reference/glc_open.html">glc_open</a></span><span class="op">(</span><span class="st">"tscnlab/melidos-iztech-glc-dataset"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">glcdp</span><span class="fu">::</span><span class="fu"><a href="reference/glc_summary.html">glc_summary</a></span><span class="op">(</span><span class="va">guidolin</span><span class="op">)</span></span>
-<span><span class="fu">glcdp</span><span class="fu">::</span><span class="fu"><a href="reference/glc_variables.html">glc_variables</a></span><span class="op">(</span><span class="va">guidolin</span>, primary <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="fu">glcdp</span><span class="fu">::</span><span class="fu"><a href="reference/glc_summary.html">glc_summary</a></span><span class="op">(</span><span class="va">melidos</span><span class="op">)</span></span>
+<span><span class="va">datasets</span> <span class="op">&lt;-</span> <span class="fu">glcdp</span><span class="fu">::</span><span class="fu"><a href="reference/glc_datasets.html">glc_datasets</a></span><span class="op">(</span><span class="va">melidos</span><span class="op">)</span></span>
+<span><span class="va">files</span> <span class="op">&lt;-</span> <span class="fu">glcdp</span><span class="fu">::</span><span class="fu"><a href="reference/glc_files.html">glc_files</a></span><span class="op">(</span><span class="va">melidos</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">collection</span> <span class="op">&lt;-</span> <span class="fu">glcdp</span><span class="fu">::</span><span class="fu"><a href="reference/glc_read.html">glc_read</a></span><span class="op">(</span><span class="va">guidolin</span>, dataset_id <span class="op">=</span> <span class="st">"DS001"</span><span class="op">)</span></span>
+<span><span class="va">first</span> <span class="op">&lt;-</span> <span class="va">files</span><span class="op">[</span><span class="fl">1</span>, <span class="op">]</span></span>
+<span><span class="va">collection</span> <span class="op">&lt;-</span> <span class="fu">glcdp</span><span class="fu">::</span><span class="fu"><a href="reference/glc_read.html">glc_read</a></span><span class="op">(</span></span>
+<span>  <span class="va">melidos</span>,</span>
+<span>  dataset_id <span class="op">=</span> <span class="va">first</span><span class="op">$</span><span class="va">dataset_id</span>,</span>
+<span>  file_group <span class="op">=</span> <span class="va">first</span><span class="op">$</span><span class="va">file_group_id</span></span>
+<span><span class="op">)</span></span>
 <span><span class="va">light_data</span> <span class="op">&lt;-</span> <span class="fu">glcdp</span><span class="fu">::</span><span class="fu"><a href="reference/glc_collect.html">glc_collect</a></span><span class="op">(</span><span class="va">collection</span><span class="op">)</span></span></code></pre></div>
 <p>Remote reads use temporary session storage unless a cache directory is explicitly supplied. Persistent downloads are made only through <code><a href="reference/glc_download.html">glc_download()</a></code> or an explicit cache directory.</p>
 </div>
@@ -95,7 +101,7 @@
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"shiny"</span>, <span class="st">"bslib"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu">glcdp</span><span class="fu">::</span><span class="fu"><a href="reference/glc_explore.html">glc_explore</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p>The app browses passing registry revisions, summarizes package contents, and filters participants, devices, datasets, file groups, and source variables. It builds a small configurable preview before exporting an annotated R script that downloads and imports the exact selection. Package data remain on the machine running the app.</p>
+<p>The app browses passing registry revisions, summarizes package contents, and filters participants, devices, datasets, file groups, semantic terms, and source variables. The completed summary can start the larger contents load in place and reports its progress, completion, or retry action centrally. Repeated participant-specific file groups can be narrowed by device, wearing position, modality, role, state, contained variable, or semantic term. Numeric participant characteristics use range filters, and the metadata hierarchy loads complete records incrementally while the table view retains full paging. Repeated metadata fields are folded with their record counts, and large file-group, variable, and handoff inventories use paging and server-side search choices to keep browser interaction responsive. A page-level busy indicator remains visible while reactive filtering or rendering is in progress. It builds a small configurable preview before exporting an annotated R script that downloads and imports the exact selection. Package data remain on the machine running the app.</p>
 </div>
 <div class="section level2">
 <h2 id="documentation">Documentation<a class="anchor" aria-label="anchor" href="#documentation"></a>

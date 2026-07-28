@@ -55,7 +55,7 @@ A `glc_package` handle.
 
 ``` r
 if (FALSE) { # interactive()
-package <- glc_open("tscnlab/guidolin-glee-datasetv2")
+package <- glc_open("tscnlab/melidos-iztech-glc-dataset")
 package
 }
 ```

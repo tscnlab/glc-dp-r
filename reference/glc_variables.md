@@ -39,4 +39,5 @@ glc_variables(
 
 ## Value
 
-A tibble with one row per declared variable.
+A tibble with one row per declared variable, including its declared type
+and factor values, labels, and descriptions.

@@ -44,4 +44,5 @@ glc_files(
 
 ## Value
 
-A tibble with one row per concrete declared file.
+A tibble with one row per concrete declared file, including the
+file-specific encoding declared by its file group.

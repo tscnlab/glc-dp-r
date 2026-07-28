@@ -16,10 +16,12 @@ A tibble describing support status for each schema version.
 
 ``` r
 glc_schema_versions()
-#> # A tibble: 3 × 3
-#>   version status       notes                                              
-#>   <chr>   <chr>        <chr>                                              
-#> 1 1.0.0   stable       Legacy packages may omit the root schema version.  
-#> 2 2.0.0   stable       Current released schema supported by the validator.
-#> 3 3.0.0   experimental Follows the schema-3.0.0-development branch.       
+#> # A tibble: 5 × 3
+#>   version status notes                                                          
+#>   <chr>   <chr>  <chr>                                                          
+#> 1 1.0.0   legacy Barebones support for recognizable packages without a root ver…
+#> 2 2.0.0   legacy Barebones compatibility for the unimplemented legacy schema.   
+#> 3 3.0.0   stable Compatible stable predecessor using the typed import contract. 
+#> 4 3.0.1   stable Compatible stable predecessor using the typed import contract. 
+#> 5 3.0.2   stable Current default schema and primary metadata-driven import impl…
 ```

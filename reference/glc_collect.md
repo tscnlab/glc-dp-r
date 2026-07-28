@@ -1,9 +1,9 @@
 # Collect compatible file groups
 
 Explicitly combines file-group tibbles after checking their columns,
-types, time zones, modalities, roles, data states, and relationship
-consistency. Multiple non-missing device links within one dataset are
-rejected.
+types, factor-level contracts, time zones, modalities, roles, data
+states, and relationship consistency. Multiple non-missing device links
+within one dataset are rejected.
 
 ## Usage
 
@@ -29,5 +29,5 @@ glc_collect(x, standardize = c("lightlogr", "none"))
 
 A combined tibble. In LightLogR-standardized output, `Id` contains the
 dataset id, `file_group_id` identifies the source file group,
-`participant_Id` contains the participant id, and the result is grouped
-by `Id`.
+`participant_Id` contains the participant id, an existing source
+`file.name` column is retained, and the result is grouped by `Id`.

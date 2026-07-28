@@ -29,6 +29,6 @@ A `glc_registry` tibble with one row per registered repository.
 ``` r
 if (FALSE) { # interactive()
 packages <- glc_packages()
-glc_search_packages("guidolin", packages)
+glc_search_packages("iztech", packages)
 }
 ```

@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">glcdp</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.9.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -74,9 +74,11 @@
     
 <p>This article shows how to choose a Global Light Commons package and
 understand its contents before downloading or importing measurements.
-Remote examples run on the pkgdown website but remain unevaluated in
-ordinary package and CRAN builds. Set <code>GLCDP_SKIP_LIVE=true</code>
-to request an offline website build.</p>
+Every example uses the validated MELIDOS IZTECH package, whose current
+passing revision uses schema 3.0.2. Remote examples run on the pkgdown
+website but remain unevaluated in ordinary package and CRAN builds. Set
+<code>GLCDP_SKIP_LIVE=true</code> to request an offline website
+build.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://tscnlab.github.io/glc-dp-r/">glcdp</a></span><span class="op">)</span></span></code></pre></div>
 <div class="section level2">
@@ -104,12 +106,13 @@ attestation was verified.</li>
 <span>  <span class="st">"attestation_verified"</span></span>
 <span><span class="op">)</span><span class="op">]</span></span>
 <span><span class="co">#&gt; &lt;GLC registry&gt;</span></span>
-<span><span class="co">#&gt; Generated: 2026-07-22T07:19:05.302619+00:00 </span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 2 × 5</span></span></span>
+<span><span class="co">#&gt; Generated: 2026-07-28T13:13:47.465808+00:00 </span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 3 × 5</span></span></span>
 <span><span class="co">#&gt;   id              repository current_status has_latest_pass attestation_verified</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>               </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> guidolin-glee-… tscnlab/g… pass           TRUE            TRUE                </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> demo-glee-data… tscnlab/d… fail           FALSE           TRUE</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> melidos-iztech… tscnlab/m… pass           TRUE            TRUE                </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> melidos-knust-… tscnlab/m… pass           TRUE            TRUE</span></span></code></pre></div>
 <p>Registry results are cached for the R session. Set
 <code>refresh = TRUE</code> only when you need to fetch the registry
 again.</p>
@@ -117,15 +120,15 @@ again.</p>
 <code class="sourceCode R"><span><span class="va">packages</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/glc_packages.html">glc_packages</a></span><span class="op">(</span>refresh <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 <p>Searches are fixed and case-insensitive by default:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/glc_search_packages.html">glc_search_packages</a></span><span class="op">(</span><span class="st">"guidolin"</span>, <span class="va">packages</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/glc_search_packages.html">glc_search_packages</a></span><span class="op">(</span><span class="st">"iztech"</span>, <span class="va">packages</span><span class="op">)</span></span>
 <span><span class="co">#&gt; &lt;GLC registry&gt;</span></span>
-<span><span class="co">#&gt; Generated: 2026-07-22T07:19:05.302619+00:00 </span></span>
+<span><span class="co">#&gt; Generated: 2026-07-28T13:13:47.465808+00:00 </span></span>
 <span><span class="co">#&gt; &lt;GLC registry&gt;</span></span>
-<span><span class="co">#&gt; Generated: 2026-07-22T07:19:05.302619+00:00 </span></span>
+<span><span class="co">#&gt; Generated: 2026-07-28T13:13:47.465808+00:00 </span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 17</span></span></span>
 <span><span class="co">#&gt;   id           repository branch repository_status current_status current_commit</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> guidolin-gl… tscnlab/g… main   active            pass           8ec9034a3d967…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> melidos-izt… tscnlab/m… main   active            pass           9353a0c4287d4…</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 11 more variables: current_validator &lt;chr&gt;, current_validated_at &lt;chr&gt;,</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;">#   current_errors &lt;int&gt;, current_warnings &lt;int&gt;, latest_pass_commit &lt;chr&gt;,</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;">#   latest_pass_validator &lt;chr&gt;, latest_pass_validated_at &lt;chr&gt;,</span></span></span>
@@ -133,14 +136,15 @@ again.</p>
 <span><span class="co">#&gt; <span style="color: #949494;">#   registry_generated_at &lt;chr&gt;</span></span></span>
 <span><span class="fu"><a href="../reference/glc_search_packages.html">glc_search_packages</a></span><span class="op">(</span>packages <span class="op">=</span> <span class="va">packages</span>, status <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pass"</span>, <span class="st">"fail"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; &lt;GLC registry&gt;</span></span>
-<span><span class="co">#&gt; Generated: 2026-07-22T07:19:05.302619+00:00 </span></span>
+<span><span class="co">#&gt; Generated: 2026-07-28T13:13:47.465808+00:00 </span></span>
 <span><span class="co">#&gt; &lt;GLC registry&gt;</span></span>
-<span><span class="co">#&gt; Generated: 2026-07-22T07:19:05.302619+00:00 </span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 2 × 17</span></span></span>
+<span><span class="co">#&gt; Generated: 2026-07-28T13:13:47.465808+00:00 </span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 3 × 17</span></span></span>
 <span><span class="co">#&gt;   id           repository branch repository_status current_status current_commit</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> guidolin-gl… tscnlab/g… main   active            pass           8ec9034a3d967…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> demo-glee-d… tscnlab/d… main   active            fail           6f805a86164f2…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> melidos-izt… tscnlab/m… main   active            pass           9353a0c4287d4…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> melidos-knu… tscnlab/m… main   active            pass           a7e4d17a7ea7f…</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 11 more variables: current_validator &lt;chr&gt;, current_validated_at &lt;chr&gt;,</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;">#   current_errors &lt;int&gt;, current_warnings &lt;int&gt;, latest_pass_commit &lt;chr&gt;,</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;">#   latest_pass_validator &lt;chr&gt;, latest_pass_validated_at &lt;chr&gt;,</span></span></span>
@@ -148,15 +152,14 @@ again.</p>
 <span><span class="co">#&gt; <span style="color: #949494;">#   registry_generated_at &lt;chr&gt;</span></span></span>
 <span><span class="fu"><a href="../reference/glc_search_packages.html">glc_search_packages</a></span><span class="op">(</span>packages <span class="op">=</span> <span class="va">packages</span>, has_pass <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co">#&gt; &lt;GLC registry&gt;</span></span>
-<span><span class="co">#&gt; Generated: 2026-07-22T07:19:05.302619+00:00 </span></span>
+<span><span class="co">#&gt; Generated: 2026-07-28T13:13:47.465808+00:00 </span></span>
 <span><span class="co">#&gt; &lt;GLC registry&gt;</span></span>
-<span><span class="co">#&gt; Generated: 2026-07-22T07:19:05.302619+00:00 </span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 17</span></span></span>
-<span><span class="co">#&gt;   id           repository branch repository_status current_status current_commit</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> demo-glee-d… tscnlab/d… main   active            fail           6f805a86164f2…</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 11 more variables: current_validator &lt;chr&gt;, current_validated_at &lt;chr&gt;,</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;">#   current_errors &lt;int&gt;, current_warnings &lt;int&gt;, latest_pass_commit &lt;chr&gt;,</span></span></span>
+<span><span class="co">#&gt; Generated: 2026-07-28T13:13:47.465808+00:00 </span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 0 × 17</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 17 variables: id &lt;chr&gt;, repository &lt;chr&gt;, branch &lt;chr&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   repository_status &lt;chr&gt;, current_status &lt;chr&gt;, current_commit &lt;chr&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   current_validator &lt;chr&gt;, current_validated_at &lt;chr&gt;, current_errors &lt;int&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   current_warnings &lt;int&gt;, latest_pass_commit &lt;chr&gt;,</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;">#   latest_pass_validator &lt;chr&gt;, latest_pass_validated_at &lt;chr&gt;,</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;">#   has_latest_pass &lt;lgl&gt;, is_current_pass &lt;lgl&gt;, attestation_verified &lt;lgl&gt;,</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;">#   registry_generated_at &lt;chr&gt;</span></span></span></code></pre></div>
@@ -168,11 +171,12 @@ again.</p>
 <code>ref = "latest_pass"</code> selects an exact passing commit, not a
 moving branch:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">x</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/glc_open.html">glc_open</a></span><span class="op">(</span><span class="st">"tscnlab/guidolin-glee-datasetv2"</span><span class="op">)</span></span>
-<span><span class="va">x</span></span>
+<code class="sourceCode R"><span><span class="va">iztech_repository</span> <span class="op">&lt;-</span> <span class="st">"tscnlab/melidos-iztech-glc-dataset"</span></span>
+<span><span class="va">iztech</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/glc_open.html">glc_open</a></span><span class="op">(</span><span class="va">iztech_repository</span><span class="op">)</span></span>
+<span><span class="va">iztech</span></span>
 <span><span class="co">#&gt; &lt;GLC data package&gt;</span></span>
-<span><span class="co">#&gt; Source: tscnlab/guidolin-glee-datasetv2@8ec9034a3d96</span></span>
-<span><span class="co">#&gt; Schema: 2.0.0</span></span>
+<span><span class="co">#&gt; Source: tscnlab/melidos-iztech-glc-dataset@9353a0c4287d</span></span>
+<span><span class="co">#&gt; Schema: 3.0.2</span></span>
 <span><span class="co">#&gt; Registry revision: verified</span></span></code></pre></div>
 <p>Use <code>ref = "current"</code> when you explicitly need the
 registry’s current revision. If that revision is not passing,
@@ -181,20 +185,20 @@ commit SHA; commits that are not selected through a registry record are
 marked as unverified.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">current</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/glc_open.html">glc_open</a></span><span class="op">(</span></span>
-<span>  <span class="st">"tscnlab/guidolin-glee-datasetv2"</span>,</span>
+<span>  <span class="va">iztech_repository</span>,</span>
 <span>  ref <span class="op">=</span> <span class="st">"current"</span></span>
 <span><span class="op">)</span></span>
 <span><span class="va">current</span></span>
 <span><span class="co">#&gt; &lt;GLC data package&gt;</span></span>
-<span><span class="co">#&gt; Source: tscnlab/guidolin-glee-datasetv2@8ec9034a3d96</span></span>
-<span><span class="co">#&gt; Schema: 2.0.0</span></span>
+<span><span class="co">#&gt; Source: tscnlab/melidos-iztech-glc-dataset@9353a0c4287d</span></span>
+<span><span class="co">#&gt; Schema: 3.0.2</span></span>
 <span><span class="co">#&gt; Registry revision: verified</span></span>
 <span></span>
-<span><span class="va">registry_row</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/glc_search_packages.html">glc_search_packages</a></span><span class="op">(</span><span class="st">"guidolin"</span>, <span class="va">packages</span><span class="op">)</span></span>
+<span><span class="va">registry_row</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/glc_search_packages.html">glc_search_packages</a></span><span class="op">(</span><span class="st">"melidos-iztech"</span>, <span class="va">packages</span><span class="op">)</span></span>
 <span><span class="va">registry_row</span><span class="op">$</span><span class="va">repository</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span></span>
-<span><span class="co">#&gt; [1] "tscnlab/guidolin-glee-datasetv2"</span></span>
+<span><span class="co">#&gt; [1] "tscnlab/melidos-iztech-glc-dataset"</span></span>
 <span><span class="va">registry_row</span><span class="op">$</span><span class="va">latest_pass_commit</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span></span>
-<span><span class="co">#&gt; [1] "8ec9034a3d967580cb8c1b04e629cbbe7e502e6e"</span></span>
+<span><span class="co">#&gt; [1] "9353a0c4287d44cb400d30f45d7dbcf9910f9bde"</span></span>
 <span></span>
 <span><span class="va">pinned</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/glc_open.html">glc_open</a></span><span class="op">(</span></span>
 <span>  <span class="va">registry_row</span><span class="op">$</span><span class="va">repository</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span>,</span>
@@ -202,8 +206,8 @@ marked as unverified.</p>
 <span><span class="op">)</span></span>
 <span><span class="va">pinned</span></span>
 <span><span class="co">#&gt; &lt;GLC data package&gt;</span></span>
-<span><span class="co">#&gt; Source: tscnlab/guidolin-glee-datasetv2@8ec9034a3d96</span></span>
-<span><span class="co">#&gt; Schema: 2.0.0</span></span>
+<span><span class="co">#&gt; Source: tscnlab/melidos-iztech-glc-dataset@9353a0c4287d</span></span>
+<span><span class="co">#&gt; Schema: 3.0.2</span></span>
 <span><span class="co">#&gt; Registry revision: verified</span></span></code></pre></div>
 <p>For private repositories, pass <code>token</code> directly or define
 <code>GITHUB_PAT</code> or <code>GITHUB_TOKEN</code>. Do not put tokens
@@ -217,11 +221,11 @@ studies, datasets, participants, devices, file groups, files, and
 variables. It also summarizes modalities, time zones, and primary
 variables.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/glc_summary.html">glc_summary</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/glc_summary.html">glc_summary</a></span><span class="op">(</span><span class="va">iztech</span><span class="op">)</span></span>
 <span><span class="co">#&gt; &lt;GLC package summary&gt;</span></span>
-<span><span class="co">#&gt; Schema: 2.0.0</span></span>
-<span><span class="co">#&gt; Studies: 1 | Datasets: 2 | Participants: 3</span></span>
-<span><span class="co">#&gt; File groups: 2 | Files: 2 | Variables: 35</span></span></code></pre></div>
+<span><span class="co">#&gt; Schema: 3.0.2</span></span>
+<span><span class="co">#&gt; Studies: 1 | Datasets: 17 | Participants: 17</span></span>
+<span><span class="co">#&gt; File groups: 323 | Files: 323 | Variables: 5554</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="explore-inventories">Explore inventories<a class="anchor" aria-label="anchor" href="#explore-inventories"></a>
@@ -229,55 +233,115 @@ variables.</p>
 <p>The inventories are tibbles, so they can be printed, filtered, or
 joined using ordinary data-frame tools.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/glc_resources.html">glc_resources</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 7 × 10</span></span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/glc_resources.html">glc_resources</a></span><span class="op">(</span><span class="va">iztech</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 10</span></span></span>
 <span><span class="co">#&gt;   resource path  core  directory format media_type profile schema_path delimiter</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> study    data… TRUE  FALSE     <span style="color: #BB0000;">NA</span>     applicati… schema… schemas/2.… <span style="color: #BB0000;">NA</span>       </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> partici… data… TRUE  FALSE     json   applicati… tabula… schemas/2.… <span style="color: #BB0000;">NA</span>       </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> partici… data… TRUE  FALSE     csv    text/csv   tabula… schemas/2.… <span style="color: #BB0000;">NA</span>       </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> datasets data… TRUE  FALSE     <span style="color: #BB0000;">NA</span>     applicati… schema… schemas/2.… <span style="color: #BB0000;">NA</span>       </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> devices  data… TRUE  FALSE     <span style="color: #BB0000;">NA</span>     applicati… schema… schemas/2.… <span style="color: #BB0000;">NA</span>       </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> device_… data… TRUE  TRUE      <span style="color: #BB0000;">NA</span>     applicati… schema… schemas/2.… <span style="color: #BB0000;">NA</span>       </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">7</span> light_d… data… FALSE FALSE     csv    text/csv   tabula… schemas/li… ;        </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> study    data… TRUE  FALSE     <span style="color: #BB0000;">NA</span>     applicati… json-e… schemas/3.… <span style="color: #BB0000;">NA</span>       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> partici… data… TRUE  FALSE     csv    text/csv   tabula… schemas/3.… <span style="color: #BB0000;">NA</span>       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> partici… data… TRUE  FALSE     csv    text/csv   tabula… schemas/3.… <span style="color: #BB0000;">NA</span>       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> datasets data… TRUE  FALSE     <span style="color: #BB0000;">NA</span>     applicati… json-e… schemas/3.… <span style="color: #BB0000;">NA</span>       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> devices  data… TRUE  FALSE     <span style="color: #BB0000;">NA</span>     applicati… json-e… schemas/3.… <span style="color: #BB0000;">NA</span>       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> device_… data… TRUE  FALSE     <span style="color: #BB0000;">NA</span>     applicati… json-e… schemas/3.… <span style="color: #BB0000;">NA</span>       </span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1 more variable: decimal_mark &lt;chr&gt;</span></span></span></code></pre></div>
 <p><code><a href="../reference/glc_datasets.html">glc_datasets()</a></code> describes logical datasets and their
 associations. Once you have a dataset id, reuse it to narrow the other
 inventories.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/glc_datasets.html">glc_datasets</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 2 × 13</span></span></span>
-<span><span class="co">#&gt;   dataset_id schema_version study_id participant_id participant_associated</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>                 </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> DS001      2.0.0          CG2024   201            TRUE                  </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> DS002      2.0.0          CG2024   P001           TRUE                  </span></span>
+<code class="sourceCode R"><span><span class="va">iztech_dataset</span> <span class="op">&lt;-</span> <span class="st">"MELIDOS_IZTECH_S001"</span></span>
+<span><span class="va">iztech_demographics</span> <span class="op">&lt;-</span> <span class="st">"MELIDOS_IZTECH_S001:4"</span></span>
+<span><span class="va">iztech_chest_light</span> <span class="op">&lt;-</span> <span class="st">"MELIDOS_IZTECH_S001:17"</span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/glc_datasets.html">glc_datasets</a></span><span class="op">(</span><span class="va">iztech</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 17 × 13</span></span></span>
+<span><span class="co">#&gt;    dataset_id      schema_version study_id participant_id participant_associated</span></span>
+<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>                 </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> MELIDOS_IZTECH… 3.0.2          MELIDOS… IZTECH_S001    TRUE                  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> MELIDOS_IZTECH… 3.0.2          MELIDOS… IZTECH_S002    TRUE                  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> MELIDOS_IZTECH… 3.0.2          MELIDOS… IZTECH_S003    TRUE                  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> MELIDOS_IZTECH… 3.0.2          MELIDOS… IZTECH_S004    TRUE                  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> MELIDOS_IZTECH… 3.0.2          MELIDOS… IZTECH_S005    TRUE                  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> MELIDOS_IZTECH… 3.0.2          MELIDOS… IZTECH_S006    TRUE                  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> MELIDOS_IZTECH… 3.0.2          MELIDOS… IZTECH_S007    TRUE                  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> MELIDOS_IZTECH… 3.0.2          MELIDOS… IZTECH_S008    TRUE                  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> MELIDOS_IZTECH… 3.0.2          MELIDOS… IZTECH_S009    TRUE                  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> MELIDOS_IZTECH… 3.0.2          MELIDOS… IZTECH_S010    TRUE                  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">11</span> MELIDOS_IZTECH… 3.0.2          MELIDOS… IZTECH_S011    TRUE                  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">12</span> MELIDOS_IZTECH… 3.0.2          MELIDOS… IZTECH_S012    TRUE                  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">13</span> MELIDOS_IZTECH… 3.0.2          MELIDOS… IZTECH_S013    TRUE                  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">14</span> MELIDOS_IZTECH… 3.0.2          MELIDOS… IZTECH_S014    TRUE                  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">15</span> MELIDOS_IZTECH… 3.0.2          MELIDOS… IZTECH_S015    TRUE                  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">16</span> MELIDOS_IZTECH… 3.0.2          MELIDOS… IZTECH_S016    TRUE                  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">17</span> MELIDOS_IZTECH… 3.0.2          MELIDOS… IZTECH_S017    TRUE                  </span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 8 more variables: timezone &lt;chr&gt;, latitude &lt;dbl&gt;, longitude &lt;dbl&gt;,</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;">#   file_group_count &lt;int&gt;, file_count &lt;int&gt;, modalities &lt;list&gt;,</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;">#   device_ids &lt;list&gt;, primary_variables &lt;list&gt;</span></span></span>
 <span></span>
-<span><span class="fu"><a href="../reference/glc_files.html">glc_files</a></span><span class="op">(</span><span class="va">x</span>, dataset_id <span class="op">=</span> <span class="st">"DS001"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 19</span></span></span>
-<span><span class="co">#&gt;   dataset_id file_group file_group_id participant_id study_id path              </span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>             </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> DS001               1 DS001:1       201            CG2024   data/datasets/201…</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 13 more variables: declared_path &lt;chr&gt;, format &lt;chr&gt;, encoding &lt;chr&gt;,</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;">#   timezone &lt;chr&gt;, role &lt;chr&gt;, data_state &lt;chr&gt;, modalities &lt;list&gt;,</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;">#   device_id &lt;chr&gt;, storage &lt;chr&gt;, expected_bytes &lt;dbl&gt;, lfs_oid &lt;chr&gt;,</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;">#   blob_sha &lt;chr&gt;, available &lt;lgl&gt;</span></span></span>
+<span><span class="fu"><a href="../reference/glc_files.html">glc_files</a></span><span class="op">(</span><span class="va">iztech</span>, dataset_id <span class="op">=</span> <span class="va">iztech_dataset</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 19 × 30</span></span></span>
+<span><span class="co">#&gt;    dataset_id          file_group file_group_id    participant_id study_id path </span></span>
+<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                    <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> MELIDOS_IZTECH_S001          1 MELIDOS_IZTECH_… IZTECH_S001    MELIDOS… data…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> MELIDOS_IZTECH_S001          2 MELIDOS_IZTECH_… IZTECH_S001    MELIDOS… data…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> MELIDOS_IZTECH_S001          3 MELIDOS_IZTECH_… IZTECH_S001    MELIDOS… data…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> MELIDOS_IZTECH_S001          4 MELIDOS_IZTECH_… IZTECH_S001    MELIDOS… data…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> MELIDOS_IZTECH_S001          5 MELIDOS_IZTECH_… IZTECH_S001    MELIDOS… data…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> MELIDOS_IZTECH_S001          6 MELIDOS_IZTECH_… IZTECH_S001    MELIDOS… data…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> MELIDOS_IZTECH_S001          7 MELIDOS_IZTECH_… IZTECH_S001    MELIDOS… data…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> MELIDOS_IZTECH_S001          8 MELIDOS_IZTECH_… IZTECH_S001    MELIDOS… data…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> MELIDOS_IZTECH_S001          9 MELIDOS_IZTECH_… IZTECH_S001    MELIDOS… data…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> MELIDOS_IZTECH_S001         10 MELIDOS_IZTECH_… IZTECH_S001    MELIDOS… data…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">11</span> MELIDOS_IZTECH_S001         11 MELIDOS_IZTECH_… IZTECH_S001    MELIDOS… data…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">12</span> MELIDOS_IZTECH_S001         12 MELIDOS_IZTECH_… IZTECH_S001    MELIDOS… data…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">13</span> MELIDOS_IZTECH_S001         13 MELIDOS_IZTECH_… IZTECH_S001    MELIDOS… data…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">14</span> MELIDOS_IZTECH_S001         14 MELIDOS_IZTECH_… IZTECH_S001    MELIDOS… data…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">15</span> MELIDOS_IZTECH_S001         15 MELIDOS_IZTECH_… IZTECH_S001    MELIDOS… data…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">16</span> MELIDOS_IZTECH_S001         16 MELIDOS_IZTECH_… IZTECH_S001    MELIDOS… data…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">17</span> MELIDOS_IZTECH_S001         17 MELIDOS_IZTECH_… IZTECH_S001    MELIDOS… data…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">18</span> MELIDOS_IZTECH_S001         18 MELIDOS_IZTECH_… IZTECH_S001    MELIDOS… data…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">19</span> MELIDOS_IZTECH_S001         19 MELIDOS_IZTECH_… IZTECH_S001    MELIDOS… data…</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 24 more variables: declared_path &lt;chr&gt;, format &lt;chr&gt;, encoding &lt;chr&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   timezone &lt;chr&gt;, description &lt;chr&gt;, instructions &lt;chr&gt;, role &lt;chr&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   data_state &lt;chr&gt;, modalities &lt;list&gt;, modality_other &lt;chr&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   modality_other_type &lt;chr&gt;, device_id &lt;chr&gt;, device_location &lt;chr&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   device_location_type &lt;chr&gt;, temporal_type &lt;chr&gt;, temporal_value &lt;dbl&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   temporal_unit &lt;chr&gt;, header_row &lt;int&gt;, preprocessing &lt;list&gt;, storage &lt;chr&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   expected_bytes &lt;dbl&gt;, lfs_oid &lt;chr&gt;, blob_sha &lt;chr&gt;, available &lt;lgl&gt;</span></span></span>
 <span><span class="fu"><a href="../reference/glc_files.html">glc_files</a></span><span class="op">(</span></span>
-<span>  <span class="va">x</span>,</span>
-<span>  dataset_id <span class="op">=</span> <span class="st">"DS001"</span>,</span>
+<span>  <span class="va">iztech</span>,</span>
+<span>  <span class="co"># dataset_id = iztech_dataset,</span></span>
 <span>  modality <span class="op">=</span> <span class="st">"light"</span>,</span>
 <span>  available <span class="op">=</span> <span class="cn">TRUE</span></span>
-<span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 19</span></span></span>
-<span><span class="co">#&gt;   dataset_id file_group file_group_id participant_id study_id path              </span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>             </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> DS001               1 DS001:1       201            CG2024   data/datasets/201…</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 13 more variables: declared_path &lt;chr&gt;, format &lt;chr&gt;, encoding &lt;chr&gt;,</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;">#   timezone &lt;chr&gt;, role &lt;chr&gt;, data_state &lt;chr&gt;, modalities &lt;list&gt;,</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;">#   device_id &lt;chr&gt;, storage &lt;chr&gt;, expected_bytes &lt;dbl&gt;, lfs_oid &lt;chr&gt;,</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;">#   blob_sha &lt;chr&gt;, available &lt;lgl&gt;</span></span></span></code></pre></div>
+<span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">device_location</span> <span class="op">==</span> <span class="st">"eye level"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 18 × 30</span></span></span>
+<span><span class="co">#&gt;    dataset_id          file_group file_group_id    participant_id study_id path </span></span>
+<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                    <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> MELIDOS_IZTECH_S001         18 MELIDOS_IZTECH_… IZTECH_S001    MELIDOS… data…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> MELIDOS_IZTECH_S002         18 MELIDOS_IZTECH_… IZTECH_S002    MELIDOS… data…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> MELIDOS_IZTECH_S003         18 MELIDOS_IZTECH_… IZTECH_S003    MELIDOS… data…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> MELIDOS_IZTECH_S004         19 MELIDOS_IZTECH_… IZTECH_S004    MELIDOS… data…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> MELIDOS_IZTECH_S004         20 MELIDOS_IZTECH_… IZTECH_S004    MELIDOS… data…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> MELIDOS_IZTECH_S005         18 MELIDOS_IZTECH_… IZTECH_S005    MELIDOS… data…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> MELIDOS_IZTECH_S006         18 MELIDOS_IZTECH_… IZTECH_S006    MELIDOS… data…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> MELIDOS_IZTECH_S007         17 MELIDOS_IZTECH_… IZTECH_S007    MELIDOS… data…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> MELIDOS_IZTECH_S008         18 MELIDOS_IZTECH_… IZTECH_S008    MELIDOS… data…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> MELIDOS_IZTECH_S009         18 MELIDOS_IZTECH_… IZTECH_S009    MELIDOS… data…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">11</span> MELIDOS_IZTECH_S010         18 MELIDOS_IZTECH_… IZTECH_S010    MELIDOS… data…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">12</span> MELIDOS_IZTECH_S011         18 MELIDOS_IZTECH_… IZTECH_S011    MELIDOS… data…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">13</span> MELIDOS_IZTECH_S012         18 MELIDOS_IZTECH_… IZTECH_S012    MELIDOS… data…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">14</span> MELIDOS_IZTECH_S013         18 MELIDOS_IZTECH_… IZTECH_S013    MELIDOS… data…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">15</span> MELIDOS_IZTECH_S014         18 MELIDOS_IZTECH_… IZTECH_S014    MELIDOS… data…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">16</span> MELIDOS_IZTECH_S015         17 MELIDOS_IZTECH_… IZTECH_S015    MELIDOS… data…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">17</span> MELIDOS_IZTECH_S016         18 MELIDOS_IZTECH_… IZTECH_S016    MELIDOS… data…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">18</span> MELIDOS_IZTECH_S017         18 MELIDOS_IZTECH_… IZTECH_S017    MELIDOS… data…</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 24 more variables: declared_path &lt;chr&gt;, format &lt;chr&gt;, encoding &lt;chr&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   timezone &lt;chr&gt;, description &lt;chr&gt;, instructions &lt;chr&gt;, role &lt;chr&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   data_state &lt;chr&gt;, modalities &lt;list&gt;, modality_other &lt;chr&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   modality_other_type &lt;chr&gt;, device_id &lt;chr&gt;, device_location &lt;chr&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   device_location_type &lt;chr&gt;, temporal_type &lt;chr&gt;, temporal_value &lt;dbl&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   temporal_unit &lt;chr&gt;, header_row &lt;int&gt;, preprocessing &lt;list&gt;, storage &lt;chr&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   expected_bytes &lt;dbl&gt;, lfs_oid &lt;chr&gt;, blob_sha &lt;chr&gt;, available &lt;lgl&gt;</span></span></span></code></pre></div>
 <p>File inventories expose both declared and resolved paths, format,
 encoding, time zone, role, data state, device, storage type, expected
 size, and availability. Git LFS-backed files are identified without
@@ -285,41 +349,58 @@ requiring a local Git LFS installation.</p>
 <p>Variable inventories can be narrowed by dataset, file group, semantic
 term, or primary status:</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/glc_variables.html">glc_variables</a></span><span class="op">(</span><span class="va">x</span>, dataset_id <span class="op">=</span> <span class="st">"DS001"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 33 × 13</span></span></span>
-<span><span class="co">#&gt;    dataset_id file_group file_group_id name    label unit  type  term  term_name</span></span>
-<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> DS001               1 DS001:1       DATE/T… Time… N/A   guess other DATE/TIME</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> DS001               1 DS001:1       MS      Unkn… Unkn… guess other MS       </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> DS001               1 DS001:1       EVENT   Occu… 0 or… guess other EVENT    </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> DS001               1 DS001:1       TEMPER… Skin… °C    guess other TEMPERAT…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> DS001               1 DS001:1       EXT TE… envi… °C    guess other EXT. TEM…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> DS001               1 DS001:1       ORIENT… Unkn… Unkn… guess other ORIENTAT…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> DS001               1 DS001:1       PIM     Acce… Unkn… guess other PIM      </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> DS001               1 DS001:1       TAT     Acce… Unkn… guess other TAT      </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> DS001               1 DS001:1       ZCM     Acce… Unkn… guess other ZCM      </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> DS001               1 DS001:1       PIMn    Norm… Unkn… guess other PIMn     </span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 23 more rows</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 4 more variables: calibration &lt;chr&gt;, primary &lt;lgl&gt;, factor_values &lt;list&gt;,</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;">#   factor_labels &lt;list&gt;</span></span></span>
-<span><span class="fu"><a href="../reference/glc_variables.html">glc_variables</a></span><span class="op">(</span><span class="va">x</span>, dataset_id <span class="op">=</span> <span class="st">"DS001"</span>, primary <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 13</span></span></span>
-<span><span class="co">#&gt;   dataset_id file_group file_group_id name  label    unit  type  term  term_name</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> DS001               1 DS001:1       LIGHT Photopi… lx    guess phot… <span style="color: #BB0000;">NA</span>       </span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 4 more variables: calibration &lt;chr&gt;, primary &lt;lgl&gt;, factor_values &lt;list&gt;,</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;">#   factor_labels &lt;list&gt;</span></span></span>
-<span><span class="fu"><a href="../reference/glc_variables.html">glc_variables</a></span><span class="op">(</span><span class="va">x</span>, term <span class="op">=</span> <span class="st">"photopic illuminance"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 2 × 13</span></span></span>
-<span><span class="co">#&gt;   dataset_id file_group file_group_id name  label    unit  type  term  term_name</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> DS001               1 DS001:1       LIGHT Photopi… lx    guess phot… <span style="color: #BB0000;">NA</span>       </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> DS002               1 DS002:1       lux   Photopi… lux   guess phot… <span style="color: #BB0000;">NA</span>       </span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 4 more variables: calibration &lt;chr&gt;, primary &lt;lgl&gt;, factor_values &lt;list&gt;,</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;">#   factor_labels &lt;list&gt;</span></span></span></code></pre></div>
-<p>Use source variable names with the <code>variables</code> argument of
-<code><a href="../reference/glc_read.html">glc_read()</a></code> and semantic terms with its <code>terms</code>
-argument.</p>
+<code class="sourceCode R"><span><span class="va">demographic_variables</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/glc_variables.html">glc_variables</a></span><span class="op">(</span></span>
+<span>  <span class="va">iztech</span>,</span>
+<span>  file_group <span class="op">=</span> <span class="va">iztech_demographics</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">demographic_variables</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>  <span class="st">"name"</span>, <span class="st">"type"</span>, <span class="st">"factor_values"</span>, <span class="st">"primary"</span></span>
+<span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 8 × 4</span></span></span>
+<span><span class="co">#&gt;   name                   type    factor_values primary</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;list&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> Id                     string  <span style="color: #949494;">&lt;chr [0]&gt;</span>     FALSE  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> age                    numeric <span style="color: #949494;">&lt;chr [0]&gt;</span>     FALSE  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> sex                    factor  <span style="color: #949494;">&lt;chr [4]&gt;</span>     FALSE  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> gender                 factor  <span style="color: #949494;">&lt;chr [5]&gt;</span>     FALSE  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> native_language        boolean <span style="color: #949494;">&lt;chr [0]&gt;</span>     FALSE  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> language_specification factor  <span style="color: #949494;">&lt;chr [3]&gt;</span>     FALSE  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">7</span> employment_status      factor  <span style="color: #949494;">&lt;chr [6]&gt;</span>     FALSE  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">8</span> comments               boolean <span style="color: #949494;">&lt;chr [0]&gt;</span>     FALSE</span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/glc_variables.html">glc_variables</a></span><span class="op">(</span></span>
+<span>  <span class="va">iztech</span>,</span>
+<span>  file_group <span class="op">=</span> <span class="va">iztech_chest_light</span>,</span>
+<span>  primary <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 15</span></span></span>
+<span><span class="co">#&gt;   dataset_id  file_group file_group_id name  label description unit  type  term </span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> MELIDOS_IZ…         17 MELIDOS_IZTE… MEDI  Mela… <span style="color: #BB0000;">NA</span>          lx    nume… mela…</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 6 more variables: term_name &lt;chr&gt;, calibration &lt;chr&gt;, primary &lt;lgl&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   factor_values &lt;list&gt;, factor_labels &lt;list&gt;, factor_descriptions &lt;list&gt;</span></span></span>
+<span><span class="fu"><a href="../reference/glc_variables.html">glc_variables</a></span><span class="op">(</span><span class="va">iztech</span>, term <span class="op">=</span> <span class="st">"melanopic_edi"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 52 × 15</span></span></span>
+<span><span class="co">#&gt;    dataset_id file_group file_group_id name  label description unit  type  term </span></span>
+<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> MELIDOS_I…         17 MELIDOS_IZTE… MEDI  Mela… <span style="color: #BB0000;">NA</span>          lx    nume… mela…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> MELIDOS_I…         18 MELIDOS_IZTE… MEDI  Mela… <span style="color: #BB0000;">NA</span>          lx    nume… mela…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> MELIDOS_I…         19 MELIDOS_IZTE… MEDI  Mela… <span style="color: #BB0000;">NA</span>          lx    nume… mela…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> MELIDOS_I…         17 MELIDOS_IZTE… MEDI  Mela… <span style="color: #BB0000;">NA</span>          lx    nume… mela…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> MELIDOS_I…         18 MELIDOS_IZTE… MEDI  Mela… <span style="color: #BB0000;">NA</span>          lx    nume… mela…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> MELIDOS_I…         19 MELIDOS_IZTE… MEDI  Mela… <span style="color: #BB0000;">NA</span>          lx    nume… mela…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> MELIDOS_I…         17 MELIDOS_IZTE… MEDI  Mela… <span style="color: #BB0000;">NA</span>          lx    nume… mela…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> MELIDOS_I…         18 MELIDOS_IZTE… MEDI  Mela… <span style="color: #BB0000;">NA</span>          lx    nume… mela…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> MELIDOS_I…         19 MELIDOS_IZTE… MEDI  Mela… <span style="color: #BB0000;">NA</span>          lx    nume… mela…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> MELIDOS_I…         18 MELIDOS_IZTE… MEDI  Mela… <span style="color: #BB0000;">NA</span>          lx    nume… mela…</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 42 more rows</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 6 more variables: term_name &lt;chr&gt;, calibration &lt;chr&gt;, primary &lt;lgl&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   factor_values &lt;list&gt;, factor_labels &lt;list&gt;, factor_descriptions &lt;list&gt;</span></span></span></code></pre></div>
+<p>The <code>type</code> and <code>factor_values</code> columns are not
+merely descriptive: <code><a href="../reference/glc_read.html">glc_read()</a></code> uses them to construct the
+corresponding R columns and factor levels in schema-declared order. Use
+source variable names with its <code>variables</code> argument and
+semantic terms with its <code>terms</code> argument.</p>
 </div>
 <div class="section level2">
 <h2 id="load-and-search-metadata">Load and search metadata<a class="anchor" aria-label="anchor" href="#load-and-search-metadata"></a>
@@ -328,71 +409,122 @@ argument.</p>
 loads the core resources that the package declares. Requesting resources
 explicitly is often faster and makes dependencies clearer.</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">metadata</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/glc_metadata.html">glc_metadata</a></span><span class="op">(</span><span class="va">x</span>, resources <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"study"</span>, <span class="st">"participants"</span><span class="op">)</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">metadata</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/glc_metadata.html">glc_metadata</a></span><span class="op">(</span></span>
+<span>  <span class="va">iztech</span>,</span>
+<span>  resources <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"study"</span>, <span class="st">"participants"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">metadata</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "study"        "participants"</span></span>
 <span><span class="va">metadata</span><span class="op">$</span><span class="va">study</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 14</span></span></span>
-<span><span class="co">#&gt;   study_internal_id study_title study_ethics study_short_descript…¹ study_sample</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> CG2024            Near-corne… Ethics Comm… In this study, we mea… Participant…</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ abbreviated name: ¹​study_short_description</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 9 more variables: study_groups &lt;list&gt;, study_setting &lt;chr&gt;,</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;">#   study_geographical_location &lt;chr&gt;, study_datasets &lt;list&gt;, study_type &lt;chr&gt;,</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;">#   study_funding_sources &lt;list&gt;, study_keywords &lt;list&gt;,</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;">#   study_contributors &lt;list&gt;, schema_version &lt;chr&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 15</span></span></span>
+<span><span class="co">#&gt;   schema_version study_internal_id   study_title           study_preregistration</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>               <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                 <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 3.0.2          MELIDOS_IZTECH_2025 Personal light expos… The study was not pr…</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 11 more variables: study_ethics &lt;chr&gt;, study_short_description &lt;chr&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   study_sample &lt;chr&gt;, study_groups &lt;list&gt;, study_setting &lt;chr&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   study_geographical_location &lt;chr&gt;, study_contributors &lt;list&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   study_datasets &lt;list&gt;, study_type &lt;chr&gt;, study_funding_sources &lt;list&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   study_keywords &lt;list&gt;</span></span></span>
 <span><span class="va">metadata</span><span class="op">$</span><span class="va">participants</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 3 × 4</span></span></span>
-<span><span class="co">#&gt;   participant_internal_id participant_age participant_sex participant_gender</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                             <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>             </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 201                                  29 male            <span style="color: #949494;">""</span>                </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> P001                                 34 female          <span style="color: #949494;">""</span>                </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> P003                                 22 other           <span style="color: #BB0000;">NA</span></span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 17 × 4</span></span></span>
+<span><span class="co">#&gt;    participant_internal_id participant_age participant_sex participant_gender</span></span>
+<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                             <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>             </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> IZTECH_S001                          27 Female          Woman             </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> IZTECH_S002                          24 Female          Woman             </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> IZTECH_S003                          23 Female          Woman             </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> IZTECH_S004                          25 Female          Woman             </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> IZTECH_S005                          25 Female          Woman             </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> IZTECH_S006                          29 Male            Man               </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> IZTECH_S007                          23 Male            Man               </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> IZTECH_S008                          23 Female          Woman             </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> IZTECH_S009                          32 Female          Woman             </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> IZTECH_S010                          26 Female          Woman             </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">11</span> IZTECH_S011                          22 Male            Man               </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">12</span> IZTECH_S012                          24 Male            Man               </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">13</span> IZTECH_S013                          23 Female          Woman             </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">14</span> IZTECH_S014                          21 Male            Man               </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">15</span> IZTECH_S015                          27 Female          Woman             </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">16</span> IZTECH_S016                          24 Male            Man               </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">17</span> IZTECH_S017                          21 Female          Woman</span></span></code></pre></div>
 <p>JSON objects remain lists, tabular resources become tibbles, and
 directory resources become named lists keyed by package-relative
 path.</p>
 <p>Search traverses nested metadata and reports the resource, record,
 complete field path, value, and context for each match:</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/glc_search_metadata.html">glc_search_metadata</a></span><span class="op">(</span><span class="va">x</span>, <span class="st">"light exposure"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 2 × 5</span></span></span>
-<span><span class="co">#&gt;   resource record field                   value                          context</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                          <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> study         1 study_title             Near-corneal plane light expo… record…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> study         1 study_short_description In this study, we measured li… record…</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/glc_search_metadata.html">glc_search_metadata</a></span><span class="op">(</span><span class="va">iztech</span>, <span class="st">"light exposure"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 153 × 5</span></span></span>
+<span><span class="co">#&gt;    resource record field                                           value context</span></span>
+<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                                           <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> study         1 study_title                                     Pers… record…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> study         1 study_keywords                                  ligh… record…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> datasets      1 dataset_variable_terms.label                    Ligh… record…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> datasets      1 dataset_file.dataset_file_variables.dataset_fi… Wear… record…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> datasets      1 dataset_file.dataset_file_variables.dataset_fi… It i… record…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> datasets      1 dataset_file.dataset_file_variables.dataset_fi… At t… record…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> datasets      1 dataset_file.dataset_file_instructions          Comp… record…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> datasets      1 dataset_file.dataset_file_instrument.instrumen… Ligh… record…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> datasets      1 dataset_file.dataset_file_variables.dataset_fi… Addi… record…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> datasets      1 dataset_file.dataset_file_variables.dataset_fi… How … record…</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 143 more rows</span></span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/glc_search_metadata.html">glc_search_metadata</a></span><span class="op">(</span></span>
-<span>  <span class="va">x</span>,</span>
-<span>  <span class="st">"age|chronotype"</span>,</span>
-<span>  resources <span class="op">=</span> <span class="st">"participant_characteristics"</span>,</span>
-<span>  fixed <span class="op">=</span> <span class="cn">FALSE</span></span>
-<span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 5</span></span></span>
-<span><span class="co">#&gt;   resource                    record field                         value context</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                        <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                         <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> participant_characteristics      1 participant_characteristic_n… Chro… record…</span></span>
-<span></span>
-<span><span class="va">city_fields</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/glc_search_metadata.html">glc_search_metadata</a></span><span class="op">(</span></span>
-<span>  <span class="va">x</span>,</span>
-<span>  <span class="st">"city"</span>,</span>
-<span>  resources <span class="op">=</span> <span class="st">"study"</span>,</span>
+<span>  <span class="va">iztech</span>,</span>
+<span>  <span class="st">"age"</span>,</span>
+<span>  resources <span class="op">=</span> <span class="st">"participants"</span>,</span>
 <span>  search_in <span class="op">=</span> <span class="st">"fields"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">city_fields</span><span class="op">$</span><span class="va">field</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "study_contributors.contributor_institution.contributor_institution_city"</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 17 × 5</span></span></span>
+<span><span class="co">#&gt;    resource     record field           value context  </span></span>
+<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> participants      1 participant_age 27    record 1 </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> participants      2 participant_age 24    record 2 </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> participants      3 participant_age 23    record 3 </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> participants      4 participant_age 25    record 4 </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> participants      5 participant_age 25    record 5 </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> participants      6 participant_age 29    record 6 </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> participants      7 participant_age 23    record 7 </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> participants      8 participant_age 23    record 8 </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> participants      9 participant_age 32    record 9 </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> participants     10 participant_age 26    record 10</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">11</span> participants     11 participant_age 22    record 11</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">12</span> participants     12 participant_age 24    record 12</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">13</span> participants     13 participant_age 23    record 13</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">14</span> participants     14 participant_age 21    record 14</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">15</span> participants     15 participant_age 27    record 15</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">16</span> participants     16 participant_age 24    record 16</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">17</span> participants     17 participant_age 21    record 17</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/glc_search_metadata.html">glc_search_metadata</a></span><span class="op">(</span></span>
-<span>  <span class="va">x</span>,</span>
-<span>  <span class="st">"Munich"</span>,</span>
-<span>  resources <span class="op">=</span> <span class="st">"study"</span>,</span>
-<span>  fields <span class="op">=</span> <span class="st">"contributor_institution_city"</span></span>
+<span>  <span class="va">iztech</span>,</span>
+<span>  <span class="st">"meq_type"</span>,</span>
+<span>  resources <span class="op">=</span> <span class="st">"participant_characteristics"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 3 × 5</span></span></span>
-<span><span class="co">#&gt;   resource record field                                            value context</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                                            <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> study         1 study_contributors.contributor_institution.cont… Muni… record…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> study         1 study_contributors.contributor_institution.cont… Tueb… record…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> study         1 study_contributors.contributor_institution.cont… Tueb… record…</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 34 × 5</span></span></span>
+<span><span class="co">#&gt;    resource                    record field                        value context</span></span>
+<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                        <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> participant_characteristics      2 participant_characteristic_… meq_… record…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> participant_characteristics      2 participant_characteristic_… Deri… record…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> participant_characteristics     25 participant_characteristic_… meq_… record…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> participant_characteristics     25 participant_characteristic_… Deri… record…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> participant_characteristics     48 participant_characteristic_… meq_… record…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> participant_characteristics     48 participant_characteristic_… Deri… record…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> participant_characteristics     71 participant_characteristic_… meq_… record…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> participant_characteristics     71 participant_characteristic_… Deri… record…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> participant_characteristics     94 participant_characteristic_… meq_… record…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> participant_characteristics     94 participant_characteristic_… Deri… record…</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 24 more rows</span></span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/glc_search_metadata.html">glc_search_metadata</a></span><span class="op">(</span></span>
+<span>  <span class="va">iztech</span>,</span>
+<span>  <span class="st">"Izmir"</span>,</span>
+<span>  resources <span class="op">=</span> <span class="st">"study"</span>,</span>
+<span>  fields <span class="op">=</span> <span class="st">"study_geographical_location"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 5</span></span></span>
+<span><span class="co">#&gt;   resource record field                       value               context </span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>               <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> study         1 study_geographical_location Izmir-Türkiye, city record 1</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="work-with-local-packages">Work with local packages<a class="anchor" aria-label="anchor" href="#work-with-local-packages"></a>
@@ -400,9 +532,9 @@ complete field path, value, and context for each match:</p>
 <p>Local packages use the same public interface, which makes them useful
 for development, validation follow-up, and offline analysis:</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">x_local</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/glc_open.html">glc_open</a></span><span class="op">(</span><span class="st">"path/to/package"</span>, quiet <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/glc_summary.html">glc_summary</a></span><span class="op">(</span><span class="va">x_local</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/glc_files.html">glc_files</a></span><span class="op">(</span><span class="va">x_local</span>, available <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">iztech_local</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/glc_open.html">glc_open</a></span><span class="op">(</span><span class="st">"path/to/iztech-subset"</span>, quiet <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/glc_summary.html">glc_summary</a></span><span class="op">(</span><span class="va">iztech_local</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/glc_files.html">glc_files</a></span><span class="op">(</span><span class="va">iztech_local</span>, available <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
 <p>The directory must contain a <code>datapackage.json</code> descriptor
 and all paths needed by the selected operation. A subset created by
 <code><a href="../reference/glc_download.html">glc_download()</a></code> can be reopened in exactly the same way.</p>
