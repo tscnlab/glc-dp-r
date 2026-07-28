@@ -71,7 +71,7 @@ new_glc_registry <- function(x, generated_at = NA_character_, source = NULL) {
 #'
 #' @examplesIf interactive()
 #' packages <- glc_packages()
-#' glc_search_packages("guidolin", packages)
+#' glc_search_packages("iztech", packages)
 glc_packages <- function(registry = glc_default_registry(), refresh = FALSE) {
   glc_assert_string(registry, "registry")
   glc_assert_flag(refresh, "refresh")

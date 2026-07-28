@@ -156,7 +156,8 @@ glc_group_selected <- function(group, file_group, role, modality) {
 #' @param modality Optional modality.
 #' @param available Optional logical filter for file availability.
 #'
-#' @return A tibble with one row per concrete declared file.
+#' @return A tibble with one row per concrete declared file, including the
+#'   file-specific encoding declared by its file group.
 #' @export
 glc_files <- function(
   x,
@@ -168,13 +169,38 @@ glc_files <- function(
 ) {
   glc_assert_package(x)
   if (!is.null(available)) glc_assert_flag(available, "available")
+  cacheable <- identical(x$source_type, "remote") &&
+    all(vapply(
+      list(dataset_id, file_group, role, modality, available),
+      is.null,
+      logical(1)
+    ))
+  if (cacheable && !is.null(x$transport$file_inventory)) {
+    return(x$transport$file_inventory)
+  }
   datasets <- glc_selected_datasets(x, dataset_id)
+  declared_paths <- unlist(
+    lapply(datasets, function(dataset) {
+      unlist(
+        lapply(dataset$groups, function(group) {
+          if (!glc_group_selected(group, file_group, role, modality)) {
+            return(character())
+          }
+          group$files
+        }),
+        use.names = FALSE
+      )
+    }),
+    use.names = FALSE
+  )
+  glc_prefetch_file_info_internal(x, declared_paths)
   rows <- list()
   row_index <- 0L
   for (dataset in datasets) {
     for (group in dataset$groups) {
       if (!glc_group_selected(group, file_group, role, modality)) next
-      for (declared_path in group$files) {
+      for (file_index in seq_along(group$files)) {
+        declared_path <- group$files[[file_index]]
         info <- tryCatch(
           glc_file_info_internal(x, declared_path),
           glcdp_missing_path = function(cnd)
@@ -197,12 +223,23 @@ glc_files <- function(
           path = info$path,
           declared_path = declared_path,
           format = group$format,
-          encoding = group$encoding,
+          encoding = group$encodings[[file_index]],
           timezone = group$timezone,
+          description = group$description,
+          instructions = group$instructions,
           role = group$role,
           data_state = group$data_state,
           modalities = list(group$modality),
+          modality_other = group$modality_other,
+          modality_other_type = group$modality_other_type,
           device_id = group$device_id,
+          device_location = group$device_location,
+          device_location_type = group$device_location_type,
+          temporal_type = group$temporal_type,
+          temporal_value = group$temporal_value,
+          temporal_unit = group$temporal_unit,
+          header_row = group$header_row,
+          preprocessing = list(group$preprocessing),
           storage = info$storage,
           expected_bytes = info$expected_size,
           lfs_oid = info$lfs_oid,
@@ -224,10 +261,21 @@ glc_files <- function(
       format = character(),
       encoding = character(),
       timezone = character(),
+      description = character(),
+      instructions = character(),
       role = character(),
       data_state = character(),
       modalities = list(),
+      modality_other = character(),
+      modality_other_type = character(),
       device_id = character(),
+      device_location = character(),
+      device_location_type = character(),
+      temporal_type = character(),
+      temporal_value = numeric(),
+      temporal_unit = character(),
+      header_row = integer(),
+      preprocessing = list(),
       storage = character(),
       expected_bytes = numeric(),
       lfs_oid = character(),
@@ -240,6 +288,9 @@ glc_files <- function(
   if (!is.null(available)) {
     result <- result[result$available == available, , drop = FALSE]
   }
+  if (cacheable) {
+    x$transport$file_inventory <- result
+  }
   result
 }
 
@@ -251,7 +302,8 @@ glc_files <- function(
 #' @param term Optional semantic term or terms.
 #' @param primary Optional logical filter for primary variables.
 #'
-#' @return A tibble with one row per declared variable.
+#' @return A tibble with one row per declared variable, including its declared
+#'   type and factor values, labels, and descriptions.
 #' @export
 glc_variables <- function(
   x,
@@ -262,6 +314,15 @@ glc_variables <- function(
 ) {
   glc_assert_package(x)
   if (!is.null(primary)) glc_assert_flag(primary, "primary")
+  cacheable <- identical(x$source_type, "remote") &&
+    all(vapply(
+      list(dataset_id, file_group, term, primary),
+      is.null,
+      logical(1)
+    ))
+  if (cacheable && !is.null(x$transport$variable_inventory)) {
+    return(x$transport$variable_inventory)
+  }
   datasets <- glc_selected_datasets(x, dataset_id)
   rows <- list()
   row_index <- 0L
@@ -269,44 +330,119 @@ glc_variables <- function(
     for (group in dataset$groups) {
       if (!glc_group_selected(group, file_group, role = NULL, modality = NULL))
         next
-      for (variable in group$variables) {
-        if (!is.null(term) && !variable$term %in% term) next
-        if (!is.null(primary) && !identical(variable$primary, primary)) next
-        levels <- variable$factor_levels
-        row_index <- row_index + 1L
-        rows[[row_index]] <- tibble::tibble(
-          dataset_id = dataset$id,
-          file_group = group$index,
-          file_group_id = group$id,
-          name = variable$name,
-          label = variable$label,
-          unit = variable$unit,
-          type = variable$type,
-          term = variable$term,
-          term_name = variable$term_name,
-          calibration = variable$calibration,
-          primary = variable$primary,
-          factor_values = list(vapply(
-            levels,
+      variables <- group$variables
+      keep <- vapply(
+        variables,
+        function(variable) {
+          (is.null(term) || variable$term %in% term) &&
+            (is.null(primary) || identical(variable$primary, primary))
+        },
+        logical(1)
+      )
+      variables <- variables[keep]
+      if (length(variables) == 0L) {
+        next
+      }
+      row_index <- row_index + 1L
+      rows[[row_index]] <- tibble::tibble(
+        dataset_id = rep(dataset$id, length(variables)),
+        file_group = rep(group$index, length(variables)),
+        file_group_id = rep(group$id, length(variables)),
+        name = vapply(
+          variables,
+          function(variable) {
+            variable$name
+          },
+          character(1)
+        ),
+        label = vapply(
+          variables,
+          function(variable) {
+            variable$label
+          },
+          character(1)
+        ),
+        description = vapply(
+          variables,
+          function(variable) {
+            variable$description
+          },
+          character(1)
+        ),
+        unit = vapply(
+          variables,
+          function(variable) {
+            variable$unit
+          },
+          character(1)
+        ),
+        type = vapply(
+          variables,
+          function(variable) {
+            variable$type
+          },
+          character(1)
+        ),
+        term = vapply(
+          variables,
+          function(variable) {
+            variable$term
+          },
+          character(1)
+        ),
+        term_name = vapply(
+          variables,
+          function(variable) {
+            variable$term_name
+          },
+          character(1)
+        ),
+        calibration = vapply(
+          variables,
+          function(variable) {
+            variable$calibration
+          },
+          character(1)
+        ),
+        primary = vapply(
+          variables,
+          function(variable) {
+            variable$primary
+          },
+          logical(1)
+        ),
+        factor_values = lapply(variables, function(variable) {
+          vapply(
+            variable$factor_levels,
             function(level) level$value,
             character(1)
-          )),
-          factor_labels = list(vapply(
-            levels,
+          )
+        }),
+        factor_labels = lapply(variables, function(variable) {
+          vapply(
+            variable$factor_levels,
             function(level) level$label,
             character(1)
-          ))
-        )
-      }
+          )
+        }),
+        factor_descriptions = lapply(variables, function(variable) {
+          vapply(
+            variable$factor_levels,
+            function(level) level$description,
+            character(1)
+          )
+        })
+      )
     }
   }
   if (length(rows) == 0L) {
-    return(tibble::tibble(
+    result <- tibble::tibble(
       dataset_id = character(),
       file_group = integer(),
       file_group_id = character(),
       name = character(),
       label = character(),
+      description = character(),
       unit = character(),
       type = character(),
       term = character(),
@@ -314,15 +450,21 @@ glc_variables <- function(
       calibration = character(),
       primary = logical(),
       factor_values = list(),
-      factor_labels = list()
-    ))
+      factor_labels = list(),
+      factor_descriptions = list()
+    )
+  } else {
+    result <- dplyr::bind_rows(rows)
   }
-  dplyr::bind_rows(rows)
+  if (cacheable) {
+    x$transport$variable_inventory <- result
+  }
+  result
 }
 
 glc_optional_resource_records <- function(x, name) {
   tryCatch(
-    glc_records(glc_read_named_resource_raw(x, name)),
+    glc_records(glc_metadata_package_table(x, name)),
     glcdp_missing_resource = function(cnd) list(),
     glcdp_missing_path = function(cnd) list()
   )
@@ -338,6 +480,12 @@ glc_optional_resource_records <- function(x, name) {
 #' @export
 glc_summary <- function(x) {
   glc_assert_package(x)
+  if (
+    identical(x$source_type, "remote") &&
+      !is.null(x$transport$summary)
+  ) {
+    return(x$transport$summary)
+  }
   datasets <- glc_model(x)$datasets
   files <- glc_files(x)
   groups <- unlist(
@@ -363,7 +511,11 @@ glc_summary <- function(x) {
     file_count = nrow(files),
     available_file_count = sum(available_files),
     missing_file_count = sum(!available_files),
-    variable_count = nrow(glc_variables(x)),
+    variable_count = sum(vapply(
+      groups,
+      function(group) length(group$variables),
+      integer(1)
+    )),
     declared_bytes = sum(files$expected_bytes, na.rm = TRUE),
     modalities = list(glc_unique_chr(lapply(
       groups,
@@ -378,6 +530,9 @@ glc_summary <- function(x) {
     ))
   )
   class(result) <- c("glc_summary", class(result))
+  if (identical(x$source_type, "remote")) {
+    x$transport$summary <- result
+  }
   result
 }
 

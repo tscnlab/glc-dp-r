@@ -4,7 +4,14 @@
 
 .glcdp_state <- new.env(parent = emptyenv())
 .glcdp_state$registry <- list()
-.glcdp_state$schema_3_notice <- FALSE
+
+glc_typed_schema_versions <- function() {
+  c("3.0.0", "3.0.1", "3.0.2")
+}
+
+glc_supported_schema_versions <- function() {
+  c("1.0.0", "2.0.0", glc_typed_schema_versions())
+}
 
 glc_abort <- function(message, ..., class = NULL, .envir = parent.frame()) {
   cli::cli_abort(

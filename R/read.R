@@ -30,12 +30,12 @@ glc_detect_layout <- function(
   delimiter = NA_character_
 ) {
   line_count <- if (is.na(header_row)) 60L else max(60L, header_row)
-  lines <- readLines(
+  lines <- readr::read_lines(
     path,
-    n = line_count,
-    warn = FALSE,
-    encoding = encoding,
-    skipNul = TRUE
+    n_max = line_count,
+    locale = readr::locale(encoding = encoding),
+    progress = FALSE,
+    skip_empty_rows = FALSE
   )
   if (length(lines) == 0L) {
     glc_abort("Data file is empty: {.path {path}}.", class = "glcdp_empty_data")
@@ -194,10 +194,10 @@ glc_cast_variable <- function(value, variable, locale, mode) {
     type,
     string = original,
     boolean = {
-      lower <- tolower(original)
-      result <- rep(NA, length(lower))
-      result[lower == "true"] <- TRUE
-      result[lower == "false"] <- FALSE
+      normalized <- tolower(trimws(original))
+      result <- rep(NA, length(normalized))
+      result[normalized %in% c("true", "1")] <- TRUE
+      result[normalized %in% c("false", "0")] <- FALSE
       result[is.na(original) | !nzchar(trimws(original))] <- NA
       result
     },
@@ -331,6 +331,7 @@ glc_read_group_file <- function(
   dataset,
   group,
   path,
+  encoding,
   variables,
   terms,
   primary_only,
@@ -354,7 +355,7 @@ glc_read_group_file <- function(
   layout <- glc_detect_layout(
     local_path,
     variable_names = declared_names,
-    encoding = group$encoding,
+    encoding = encoding,
     header_row = group$header_row,
     delimiter = delimiter
   )
@@ -364,7 +365,7 @@ glc_read_group_file <- function(
   )
   locale <- readr::locale(
     decimal_mark = decimal_mark,
-    encoding = group$encoding
+    encoding = encoding
   )
   data <- readr::read_delim(
     local_path,
@@ -616,6 +617,7 @@ glc_read <- function(
       if (!glc_group_matches_variables(group, variables, terms, primary_only))
         next
       group_files <- group$files
+      group_file_indices <- seq_along(group_files)
       resolved_all <- vapply(
         group_files,
         function(path) glc_resolve_read_path(x, path),
@@ -627,10 +629,12 @@ glc_read <- function(
           resolved_all %in% files |
           basename(resolved_all) %in% files
         group_files <- group_files[keep]
+        group_file_indices <- group_file_indices[keep]
         resolved_all <- resolved_all[keep]
       }
       available_files <- !is.na(resolved_all)
       group_files <- group_files[available_files]
+      group_file_indices <- group_file_indices[available_files]
       resolved_all <- resolved_all[available_files]
       if (length(group_files) == 0L) next
       resolved <- resolved_all
@@ -639,7 +643,8 @@ glc_read <- function(
       selected_groups[[group_index]] <- list(
         dataset = dataset,
         group = group,
-        resolved = resolved
+        resolved = resolved,
+        encodings = group$encodings[group_file_indices]
       )
     }
   }
@@ -673,7 +678,9 @@ glc_read <- function(
     dataset <- selection$dataset
     group <- selection$group
     resolved <- selection$resolved
-    data <- lapply(resolved, function(path) {
+    encodings <- selection$encodings
+    data <- lapply(seq_along(resolved), function(file_index) {
+      path <- resolved[[file_index]]
       if (progress) {
         cli::cli_progress_update(
           id = progress_id,
@@ -687,6 +694,7 @@ glc_read <- function(
         dataset,
         group,
         path,
+        encodings[[file_index]],
         variables,
         terms,
         primary_only,

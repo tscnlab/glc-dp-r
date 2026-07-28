@@ -27,7 +27,8 @@ glc_files(
 \item{available}{Optional logical filter for file availability.}
 }
 \value{
-A tibble with one row per concrete declared file.
+A tibble with one row per concrete declared file, including the
+file-specific encoding declared by its file group.
 }
 \description{
 Inventory declared data files

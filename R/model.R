@@ -156,20 +156,85 @@ glc_normalize_levels <- function(levels) {
   })
 }
 
-glc_normalize_variable <- function(variable, primary_variables) {
+glc_normalize_file_encodings <- function(encodings, file_count, version) {
+  values <- as.character(unlist(
+    encodings,
+    recursive = TRUE,
+    use.names = FALSE
+  ))
+  values <- values[!is.na(values) & nzchar(values)]
+  if (length(values) == 0L) {
+    if (version %in% glc_typed_schema_versions()) {
+      glc_abort(
+        "Schema {version} file group does not declare `dataset_file_encoding`.",
+        class = "glcdp_file_metadata"
+      )
+    }
+    values <- "UTF-8"
+  }
+  if (file_count == 0L) {
+    return(character())
+  }
+  if (length(values) == 1L) {
+    return(rep(values, file_count))
+  }
+  if (length(values) != file_count) {
+    glc_abort(
+      "File group declares {file_count} file{?s} but {length(values)} encoding value{?s}.",
+      class = "glcdp_file_metadata"
+    )
+  }
+  values
+}
+
+glc_normalize_variable <- function(variable, primary_variables, version) {
   term <- variable$dataset_file_variables_term %||% list()
   name <- glc_scalar_character(variable$dataset_file_variables_name)
+  type <- glc_scalar_character(
+    variable$dataset_file_variables_type,
+    if (version %in% c("1.0.0", "2.0.0")) "guess" else NA_character_
+  )
+  factor_levels <- glc_normalize_levels(
+    variable$dataset_file_variables_factor_levels
+  )
+  if (version %in% glc_typed_schema_versions() && is.na(type)) {
+    glc_abort(
+      "Schema {version} variable {.val {name}} does not declare `dataset_file_variables_type`.",
+      class = "glcdp_variable_metadata"
+    )
+  }
+  supported_types <- c(
+    "string",
+    "boolean",
+    "numeric",
+    "integer",
+    "factor",
+    "guess"
+  )
+  if (!type %in% supported_types) {
+    glc_abort(
+      "Variable {.val {name}} declares unsupported type {.val {type}}.",
+      class = "glcdp_variable_metadata"
+    )
+  }
+  if (identical(type, "factor") && length(factor_levels) == 0L) {
+    glc_abort(
+      "Factor variable {.val {name}} does not declare any factor levels.",
+      class = "glcdp_variable_metadata"
+    )
+  }
   list(
     name = name,
     label = glc_scalar_character(variable$dataset_file_variables_labels),
+    description = glc_scalar_character(
+      variable$dataset_file_variables_description
+    ),
     unit = glc_scalar_character(variable$dataset_file_variables_units),
     calibration = glc_scalar_character(
       variable$dataset_file_variables_calibration
     ),
-    type = glc_scalar_character(variable$dataset_file_variables_type, "guess"),
-    factor_levels = glc_normalize_levels(
-      variable$dataset_file_variables_factor_levels
-    ),
+    type = type,
+    factor_levels = factor_levels,
     term = glc_scalar_character(term$variable_term),
     term_name = glc_scalar_character(term$variable_name),
     primary = name %in% primary_variables
@@ -200,7 +265,8 @@ glc_normalize_group <- function(group, dataset, version, index) {
   variables <- lapply(
     glc_records(group$dataset_file_variables),
     glc_normalize_variable,
-    primary_variables = primary_variables
+    primary_variables = primary_variables,
+    version = version
   )
   legacy <- version %in% c("1.0.0", "2.0.0")
   crossref <- dataset$dataset_crossref %||% list()
@@ -213,6 +279,12 @@ glc_normalize_group <- function(group, dataset, version, index) {
   }
   temporal <- group$dataset_file_temporal_resolution %||% list()
   sampling <- glc_scalar_number(dataset$dataset_sampling_interval)
+  files <- glc_compact_character(group$dataset_file_names)
+  encodings <- glc_normalize_file_encodings(
+    group$dataset_file_encoding,
+    length(files),
+    version
+  )
   modality <- glc_compact_character(group$dataset_file_modality)
   if (length(modality) == 0L) {
     modality <- glc_infer_modalities(variables)
@@ -227,6 +299,10 @@ glc_normalize_group <- function(group, dataset, version, index) {
     ),
     modality = modality,
     modality_other = glc_scalar_character(group$dataset_file_modality_other),
+    modality_other_type = glc_scalar_character(
+      group$dataset_file_modality_other_type
+    ),
+    description = glc_scalar_character(group$dataset_file_description),
     device_id = glc_scalar_character(
       group$dataset_file_crossref_device_id %||%
         crossref$dataset_crossref_device_id
@@ -253,9 +329,9 @@ glc_normalize_group <- function(group, dataset, version, index) {
     instructions = glc_scalar_character(
       group$dataset_file_instructions %||% dataset$dataset_instructions
     ),
-    files = glc_compact_character(group$dataset_file_names),
+    files = files,
     format = tolower(glc_scalar_character(group$dataset_file_format)),
-    encoding = glc_scalar_character(group$dataset_file_encoding, "UTF-8"),
+    encodings = encodings,
     timezone = glc_scalar_character(
       group$dataset_file_timezone %||% dataset$dataset_timezone
     ),
@@ -334,6 +410,36 @@ glc_normalize_dataset <- function(dataset, version) {
   )
 }
 
+glc_check_dataset_schema_versions <- function(dataset_records, version) {
+  record_versions <- vapply(
+    dataset_records,
+    function(dataset) glc_scalar_character(dataset$schema_version),
+    character(1)
+  )
+  record_versions <- unique(
+    record_versions[!is.na(record_versions) & nzchar(record_versions)]
+  )
+  if (length(record_versions) > 1L) {
+    glc_abort(
+      "Dataset records declare multiple GLC schema versions: {.val {record_versions}}.",
+      class = "glcdp_schema_error"
+    )
+  }
+  if (
+    length(record_versions) == 1L &&
+      !identical(record_versions[[1L]], version)
+  ) {
+    glc_abort(
+      paste0(
+        "Dataset schema version `{record_versions[[1L]]}` conflicts with ",
+        "package schema version `{version}`."
+      ),
+      class = "glcdp_schema_error"
+    )
+  }
+  invisible(version)
+}
+
 glc_model <- function(x) {
   glc_assert_package(x)
   if (!is.null(x$transport$model)) {
@@ -341,6 +447,7 @@ glc_model <- function(x) {
   }
   datasets_raw <- glc_read_named_resource_raw(x, "datasets")
   dataset_records <- glc_records(datasets_raw)
+  glc_check_dataset_schema_versions(dataset_records, x$schema_version)
   datasets <- lapply(
     dataset_records,
     glc_normalize_dataset,

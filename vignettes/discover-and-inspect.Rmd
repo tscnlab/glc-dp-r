@@ -14,9 +14,11 @@ live <- identical(Sys.getenv("IN_PKGDOWN"), "true") &&
 ```
 
 This article shows how to choose a Global Light Commons package and understand
-its contents before downloading or importing measurements. Remote examples run
-on the pkgdown website but remain unevaluated in ordinary package and CRAN
-builds. Set `GLCDP_SKIP_LIVE=true` to request an offline website build.
+its contents before downloading or importing measurements. Every example uses
+the validated MELIDOS IZTECH package, whose current passing revision uses
+schema 3.0.2. Remote examples run on the pkgdown website but remain unevaluated
+in ordinary package and CRAN builds. Set `GLCDP_SKIP_LIVE=true` to request an
+offline website build.
 
 ```{r load}
 library(glcdp)
@@ -53,7 +55,7 @@ packages <- glc_packages(refresh = TRUE)
 Searches are fixed and case-insensitive by default:
 
 ```{r registry-search, eval = live}
-glc_search_packages("guidolin", packages)
+glc_search_packages("iztech", packages)
 glc_search_packages(packages = packages, status = c("pass", "fail"))
 glc_search_packages(packages = packages, has_pass = FALSE)
 ```
@@ -64,8 +66,9 @@ Opening a registered package with the default `ref = "latest_pass"` selects an
 exact passing commit, not a moving branch:
 
 ```{r open-latest-pass, eval = live}
-x <- glc_open("tscnlab/guidolin-glee-datasetv2")
-x
+iztech_repository <- "tscnlab/melidos-iztech-glc-dataset"
+iztech <- glc_open(iztech_repository)
+iztech
 ```
 
 Use `ref = "current"` when you explicitly need the registry's current
@@ -75,12 +78,12 @@ registry record are marked as unverified.
 
 ```{r open-revisions, eval = live}
 current <- glc_open(
-  "tscnlab/guidolin-glee-datasetv2",
+  iztech_repository,
   ref = "current"
 )
 current
 
-registry_row <- glc_search_packages("guidolin", packages)
+registry_row <- glc_search_packages("melidos-iztech", packages)
 registry_row$repository[[1]]
 registry_row$latest_pass_commit[[1]]
 
@@ -101,7 +104,7 @@ participants, devices, file groups, files, and variables. It also summarizes
 modalities, time zones, and primary variables.
 
 ```{r summary, eval = live}
-glc_summary(x)
+glc_summary(iztech)
 ```
 
 ## Explore inventories
@@ -110,22 +113,27 @@ The inventories are tibbles, so they can be printed, filtered, or joined using
 ordinary data-frame tools.
 
 ```{r resources, eval = live}
-glc_resources(x)
+glc_resources(iztech)
 ```
 
 `glc_datasets()` describes logical datasets and their associations. Once you
 have a dataset id, reuse it to narrow the other inventories.
 
 ```{r datasets, eval = live}
-glc_datasets(x)
+iztech_dataset <- "MELIDOS_IZTECH_S001"
+iztech_demographics <- "MELIDOS_IZTECH_S001:4"
+iztech_chest_light <- "MELIDOS_IZTECH_S001:17"
 
-glc_files(x, dataset_id = "DS001")
+glc_datasets(iztech)
+
+glc_files(iztech, dataset_id = iztech_dataset)
 glc_files(
-  x,
-  dataset_id = "DS001",
+  iztech,
+  # dataset_id = iztech_dataset,
   modality = "light",
   available = TRUE
-)
+) |>
+  dplyr::filter(device_location == "eye level")
 ```
 
 File inventories expose both declared and resolved paths, format, encoding,
@@ -137,13 +145,26 @@ Variable inventories can be narrowed by dataset, file group, semantic term, or
 primary status:
 
 ```{r variables, eval = live}
-glc_variables(x, dataset_id = "DS001")
-glc_variables(x, dataset_id = "DS001", primary = TRUE)
-glc_variables(x, term = "photopic illuminance")
+demographic_variables <- glc_variables(
+  iztech,
+  file_group = iztech_demographics
+)
+demographic_variables[, c(
+  "name", "type", "factor_values", "primary"
+)]
+
+glc_variables(
+  iztech,
+  file_group = iztech_chest_light,
+  primary = TRUE
+)
+glc_variables(iztech, term = "melanopic_edi")
 ```
 
-Use source variable names with the `variables` argument of `glc_read()` and
-semantic terms with its `terms` argument.
+The `type` and `factor_values` columns are not merely descriptive:
+`glc_read()` uses them to construct the corresponding R columns and factor
+levels in schema-declared order. Use source variable names with its `variables`
+argument and semantic terms with its `terms` argument.
 
 ## Load and search metadata
 
@@ -152,7 +173,10 @@ the package declares. Requesting resources explicitly is often faster and
 makes dependencies clearer.
 
 ```{r metadata, eval = live}
-metadata <- glc_metadata(x, resources = c("study", "participants"))
+metadata <- glc_metadata(
+  iztech,
+  resources = c("study", "participants")
+)
 names(metadata)
 metadata$study
 metadata$participants
@@ -165,28 +189,26 @@ Search traverses nested metadata and reports the resource, record, complete
 field path, value, and context for each match:
 
 ```{r metadata-search, eval = live}
-glc_search_metadata(x, "light exposure")
+glc_search_metadata(iztech, "light exposure")
 
 glc_search_metadata(
-  x,
-  "age|chronotype",
-  resources = "participant_characteristics",
-  fixed = FALSE
-)
-
-city_fields <- glc_search_metadata(
-  x,
-  "city",
-  resources = "study",
+  iztech,
+  "age",
+  resources = "participants",
   search_in = "fields"
 )
-unique(city_fields$field)
 
 glc_search_metadata(
-  x,
-  "Munich",
+  iztech,
+  "meq_type",
+  resources = "participant_characteristics"
+)
+
+glc_search_metadata(
+  iztech,
+  "Izmir",
   resources = "study",
-  fields = "contributor_institution_city"
+  fields = "study_geographical_location"
 )
 ```
 
@@ -196,9 +218,9 @@ Local packages use the same public interface, which makes them useful for
 development, validation follow-up, and offline analysis:
 
 ```{r local, eval = FALSE}
-x_local <- glc_open("path/to/package", quiet = TRUE)
-glc_summary(x_local)
-glc_files(x_local, available = FALSE)
+iztech_local <- glc_open("path/to/iztech-subset", quiet = TRUE)
+glc_summary(iztech_local)
+glc_files(iztech_local, available = FALSE)
 ```
 
 The directory must contain a `datapackage.json` descriptor and all paths needed

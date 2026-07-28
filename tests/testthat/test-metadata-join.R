@@ -251,7 +251,7 @@ test_that("join columns and public inputs are validated", {
 })
 
 test_that("named join mappings work with explicit and inferred package resources", {
-  root <- make_glc_fixture("3.0.0")
+  root <- make_glc_fixture("3.0.2")
   write_fixture_json(
     list(list(
       participant_internal_id = "P1",
@@ -288,7 +288,7 @@ test_that("named join mappings work with explicit and inferred package resources
 })
 
 test_that("file groups traverse linked package metadata", {
-  root <- make_glc_fixture("3.0.0")
+  root <- make_glc_fixture("3.0.2")
   datasets <- fixture_read_datasets(root)
   datasets[[1]]$dataset_file[[2]] <- datasets[[1]]$dataset_file[[1]]
   fixture_write_datasets(root, datasets)
@@ -404,7 +404,7 @@ test_that("linked package metadata retains partial and rejects absent matches", 
 
 test_that("missing participant and device links are partial matches", {
   root <- make_glc_fixture(
-    "3.0.0",
+    "3.0.2",
     participant_associated = FALSE
   )
   datasets <- fixture_read_datasets(root)
@@ -439,7 +439,7 @@ test_that("missing participant and device links are partial matches", {
 })
 
 test_that("linked metadata identifiers must be unique", {
-  root <- make_glc_fixture("3.0.0")
+  root <- make_glc_fixture("3.0.2")
   write_fixture_json(
     list(
       list(participant_internal_id = "P1", participant_age = 31),
@@ -461,7 +461,7 @@ test_that("linked metadata identifiers must be unique", {
 })
 
 test_that("connected fields must identify one resource", {
-  root <- make_glc_fixture("3.0.0")
+  root <- make_glc_fixture("3.0.2")
   write_fixture_json(
     list(list(participant_internal_id = "P1", shared_label = "person")),
     file.path(root, "data", "participants.json")
@@ -488,7 +488,7 @@ test_that("connected fields must identify one resource", {
 })
 
 test_that("file groups resolve devices but dataset-level lookup rejects several", {
-  root <- make_glc_fixture("3.0.0")
+  root <- make_glc_fixture("3.0.2")
   datasets <- fixture_read_datasets(root)
   second_group <- datasets[[1]]$dataset_file[[1]]
   second_group$dataset_file_crossref_device_id <- "D2"
@@ -523,7 +523,7 @@ test_that("file groups resolve devices but dataset-level lookup rejects several"
 })
 
 test_that("ambiguous package resources require an explicit resource", {
-  root <- make_glc_fixture("3.0.0")
+  root <- make_glc_fixture("3.0.2")
   write_fixture_json(
     list(list(participant_internal_id = "P1", cohort = "primary")),
     file.path(root, "data", "participants.json")
@@ -657,7 +657,7 @@ test_that("resource arguments are validated and object resources are supported",
     class = "glcdp_metadata_source_error"
   )
 
-  package <- glc_open(make_glc_fixture("3.0.0"), quiet = TRUE)
+  package <- glc_open(make_glc_fixture("3.0.2"), quiet = TRUE)
   study <- extract_metadata(
     tibble::tibble(study = "S1"),
     package,

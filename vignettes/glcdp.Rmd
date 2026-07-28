@@ -26,9 +26,12 @@ analysis-ready R data:
 4. read only the data you need; and
 5. collect compatible file groups for analysis.
 
-Remote examples run when pkgdown builds the package website. They are displayed
-without execution during ordinary package and CRAN builds, which keeps those
-checks independent of network availability. Website maintainers can also set
+This article uses the validated MELIDOS IZTECH package throughout. Its current
+passing revision uses schema 3.0.2 and exercises the stable 3.0 import contract
+with real questionnaire, participant, and light-sensor data. Remote examples
+run when pkgdown builds the package website. They are displayed without
+execution during ordinary package and CRAN builds, which keeps those checks
+independent of network availability. Website maintainers can also set
 `GLCDP_SKIP_LIVE=true` for an explicitly offline pkgdown build.
 
 ## Install and load
@@ -57,7 +60,7 @@ packages with problems.
 packages <- glc_packages()
 packages
 
-glc_search_packages("guidolin", packages)
+glc_search_packages("iztech", packages)
 ```
 
 You can also filter on validation status or on whether a package has a recorded
@@ -75,8 +78,13 @@ returned handle records the repository, exact commit, schema version, and
 whether the revision was verified against the registry.
 
 ```{r open, eval = live}
-guidolin <- glc_open("tscnlab/guidolin-glee-datasetv2")
-guidolin
+iztech_repository <- "tscnlab/melidos-iztech-glc-dataset"
+iztech_dataset <- "MELIDOS_IZTECH_S001"
+iztech_demographics <- "MELIDOS_IZTECH_S001:4"
+iztech_chest_light <- "MELIDOS_IZTECH_S001:17"
+
+iztech <- glc_open(iztech_repository)
+iztech
 ```
 
 The same function opens a local package directory or its `datapackage.json`
@@ -91,44 +99,92 @@ local_package <- glc_open("path/to/data-package")
 A compact summary is a useful first look:
 
 ```{r inspect-summary, eval = live}
-glc_summary(guidolin)
+glc_summary(iztech)
 ```
 
 The inventories make data selection explicit. List datasets, then narrow the
-file and variable inventories to the dataset you intend to read.
+file and variable inventories to the dataset and file groups you intend to
+read.
 
 ```{r inspect-inventories, eval = live}
-glc_datasets(guidolin)
-glc_files(guidolin, dataset_id = "DS001")
-glc_variables(guidolin, dataset_id = "DS001", primary = TRUE)
+glc_datasets(iztech)
+glc_files(iztech, dataset_id = "MELIDOS_IZTECH_S001")
+glc_variables(
+  iztech,
+  file_group = "MELIDOS_IZTECH_S001:17",
+  primary = TRUE
+)
 ```
 
 Use `glc_metadata()` for structured metadata and `glc_search_metadata()` when
 you need to locate a value without knowing its resource or field in advance.
 
 ```{r inspect-metadata, eval = live}
-metadata <- glc_metadata(guidolin, resources = c("study", "participants"))
+metadata <- glc_metadata(
+  iztech,
+  resources = c("study", "participants")
+)
 metadata$study
 metadata$participants
 
-glc_search_metadata(guidolin, "light", resources = "study")
-glc_search_metadata(guidolin, "light", resources = "datasets")
+glc_search_metadata(iztech, "Izmir", resources = "study")
+glc_search_metadata(
+  iztech,
+  "participant_age",
+  resources = "participants",
+  search_in = "fields"
+)
 ```
 
-## Read selected data
+## Let the schema define R column types
 
-`glc_read()` follows the package metadata when it chooses headers, column
-types, factor levels, datetime formats, decimal marks, encodings, and time
-zones. A dataset selection is required so that a large package is not imported
-accidentally.
+Schema 3.0.2 declares every source column's data type and, for factors, its
+allowed levels in schema-declared order. `glc_read()` applies those
+declarations instead of guessing from the first rows of a file. The compact
+demographics file contains numeric, logical, and factor columns:
+
+```{r inspect-types, eval = live}
+demographic_variables <- glc_variables(
+  iztech,
+  file_group = "MELIDOS_IZTECH_S001:4"
+)
+demographic_variables[, c("name", "type", "factor_values")]
+```
+
+The imported R classes and factor levels follow that inventory:
+
+```{r read-types, eval = live}
+demographics <- glc_read(
+  iztech,
+  dataset_id = "MELIDOS_IZTECH_S001",
+  file_group = "MELIDOS_IZTECH_S001:4"
+)
+demographic_data <- demographics$data[[1]]
+demographic_data
+levels(demographic_data$sex)
+```
+
+The same metadata-driven import also handles headers, datetime formats,
+decimal marks, encodings, and time zones. By default, values that cannot be
+parsed to the declared type or factor level are reported as errors rather than
+silently changing the column.
+
+## Read selected light data
+
+A dataset selection is required so that a large package is not imported
+accidentally. File-group and variable selectors keep the request precise. This
+example reads only photopic illuminance from the S001 chest sensor and limits
+parsing to the first 10,000 records:
 
 ```{r read, eval = live}
-collection <- glc_read(
-  guidolin,
-  dataset_id = "DS001",
-  primary_only = TRUE
+light_collection <- glc_read(
+  iztech,
+  dataset_id = "MELIDOS_IZTECH_S001",
+  file_group = "MELIDOS_IZTECH_S001:17",
+  variables = "LIGHT",
+  n_max = 10000
 )
-collection
+light_collection
 ```
 
 In interactive sessions, `glc_read()` displays progress across the selected
@@ -140,33 +196,26 @@ in its `data` list-column. Inspect or process groups separately when their
 roles, modalities, or schemas differ.
 
 ```{r inspect-collection, eval = live}
-collection$data[[1]]
+names(light_collection$data[[1]])
 ```
 
-For quick exploration, limit the number of rows read from each file:
-
-```{r sample, eval = live}
-sample <- glc_read(
-  guidolin,
-  dataset_id = "DS001",
-  variables = "LIGHT",
-  n_max = 100
-)
-```
+`n_max` limits rows parsed after the selected remote file is available; it does
+not turn a source file into a byte-range download.
 
 ## Collect compatible groups
 
 `glc_collect()` checks that the selected groups have compatible columns, types,
 time zones, modalities, roles, data states, and datetime specifications before
 combining them. Its default output maps the dataset id to `Id`, the participant
-id to `participant_Id`, and adds `Datetime` and `file.name`. Internal `.glc_*`
-provenance columns are removed from this analysis-ready result, matching the
-core conventions described in
+id to `participant_Id`, parses `Datetime`, and retains a declared source
+`file.name` column when present (otherwise deriving it from the package path).
+Internal `.glc_*` provenance columns are removed from this analysis-ready
+result, matching the core conventions described in
 [LightLogR's import documentation](https://tscnlab.github.io/LightLogR/reference/import_Dataset.html).
 
 ```{r collect, eval = live}
-light_data <- glc_collect(collection)
-light_data
+light_data <- glc_collect(light_collection)
+head(light_data[!is.na(light_data$LIGHT), ])
 ```
 
 The result can be passed directly to LightLogR. Continue with its guides to
@@ -177,13 +226,19 @@ Use `standardize = "none"` to leave the source columns and `.glc_*` provenance
 columns unchanged:
 
 ```{r collect-unstandardized, eval = live}
-source_data <- glc_collect(sample, standardize = "none")
-source_data
+source_data <- glc_collect(
+  light_collection,
+  standardize = "none"
+)
+head(source_data)
 ```
 
 ## Where to go next
 
+- [Explore and hand off data with the Shiny app](glc-data-explorer.html)
+  follows the same IZTECH package through a guided browser workflow.
 - [Discover and inspect data packages](discover-and-inspect.html) covers
   registry, revision, inventory, and metadata workflows.
-- [Import and download data](import-and-download.html) covers precise import
-  selections, persistent downloads, and reproducibility manifests.
+- [Import and download data](import-and-download.html) covers schema-defined
+  column types, precise imports, persistent downloads, and reproducibility
+  manifests.

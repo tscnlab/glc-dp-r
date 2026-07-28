@@ -24,7 +24,8 @@ glc_variables(
 \item{primary}{Optional logical filter for primary variables.}
 }
 \value{
-A tibble with one row per declared variable.
+A tibble with one row per declared variable, including its declared
+type and factor values, labels, and descriptions.
 }
 \description{
 Inventory and search declared variables

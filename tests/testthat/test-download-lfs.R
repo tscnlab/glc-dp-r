@@ -1,5 +1,5 @@
 test_that("metadata and selected data downloads are reproducible local packages", {
-  package <- glc_open(make_glc_fixture("2.0.0"), quiet = TRUE)
+  package <- glc_open(make_glc_fixture("3.0.2"), quiet = TRUE)
   metadata_destination <- tempfile("metadata-download-")
   metadata_result <- glc_download(package, metadata_destination)
 
@@ -16,7 +16,7 @@ test_that("metadata and selected data downloads are reproducible local packages"
   )))
   expect_true(all(metadata_result$storage == "git"))
   reopened_metadata <- glc_open(metadata_destination, quiet = TRUE)
-  expect_equal(reopened_metadata$schema_version, "2.0.0")
+  expect_equal(reopened_metadata$schema_version, "3.0.2")
 
   data_destination <- tempfile("data-download-")
   data_result <- glc_download(
@@ -164,6 +164,49 @@ test_that("authenticated Git files retain Contents API transport", {
 
   expect_match(request$url, "api.github.com/repos/example/data/contents")
   expect_match(request$url, "ref=", fixed = TRUE)
+})
+
+test_that("remote small-file metadata is prefetched and cached", {
+  package <- make_lfs_package()
+  oid <- paste(rep("b", 64), collapse = "")
+  pointer <- paste(
+    "version https://git-lfs.github.com/spec/v1",
+    paste0("oid sha256:", oid),
+    "size 4096",
+    sep = "\n"
+  )
+  paths <- c("data/ordinary.csv", "data/tracked.csv")
+  package$transport$tree <- tibble::tibble(
+    path = paths,
+    type = rep("blob", length(paths)),
+    size = c(24, nchar(pointer, type = "bytes")),
+    sha = c("ordinary-blob", "lfs-pointer-blob")
+  )
+  request_count <- 0L
+  httr2::local_mocked_responses(function(req) {
+    request_count <<- request_count + 1L
+    body <- if (grepl("tracked.csv", req$url, fixed = TRUE)) {
+      charToRaw(pointer)
+    } else {
+      charToRaw("ordinary small Git blob")
+    }
+    httr2::response(status_code = 200, body = body)
+  })
+
+  glcdp:::glc_prefetch_file_info_internal(package, paths)
+  ordinary <- glcdp:::glc_file_info_internal(
+    package,
+    "data/ordinary.csv"
+  )
+  tracked <- glcdp:::glc_file_info_internal(package, "data/tracked.csv")
+
+  expect_equal(request_count, 2L)
+  expect_equal(ordinary$storage, "git")
+  expect_equal(ordinary$expected_size, 24)
+  expect_equal(tracked$storage, "lfs")
+  expect_equal(tracked$expected_size, 4096)
+  expect_equal(tracked$lfs_oid, oid)
+  expect_length(package$transport$file_info, 2L)
 })
 
 lfs_batch_response <- function(

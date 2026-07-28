@@ -227,13 +227,19 @@ registry_browser_server <- function(
     opening_id <- shiny::reactiveVal(NULL)
     registered_action_ids <- character()
     status <- shiny::reactiveVal(glc_explorer_status(
-      "Loading the package registry\u2026",
+      paste(
+        "Loading the package registry:",
+        "fetching validation and revision records\u2026"
+      ),
       "loading"
     ))
 
     fetch_registry <- function(refresh = FALSE) {
       status(glc_explorer_status(
-        "Loading the package registry\u2026",
+        paste(
+          "Loading the package registry:",
+          "fetching validation and revision records\u2026"
+        ),
         "loading"
       ))
       value <- tryCatch(
@@ -391,7 +397,10 @@ registry_browser_server <- function(
       requested_row(row)
       status(glc_explorer_status(
         sprintf(
-          "Opening %s at its latest passing revision\u2026",
+          paste0(
+            "Opening %s: resolving its latest passing revision ",
+            "and package descriptor\u2026"
+          ),
           row$id[[1L]]
         ),
         "loading"
@@ -537,7 +546,7 @@ registry_browser_app <- function(
       ref_kind = "commit",
       verified = TRUE,
       descriptor = list(resources = list()),
-      schema_version = "2.0.0",
+      schema_version = "3.0.2",
       registry_row = row
     )
   }

@@ -19,6 +19,10 @@ new_glc_package <- function(
   transport$local_paths <- NULL
   transport$model <- NULL
   transport$resource_raw <- list()
+  transport$file_info <- list()
+  transport$file_inventory <- NULL
+  transport$variable_inventory <- NULL
+  transport$summary <- NULL
 
   structure(
     list(
@@ -86,21 +90,43 @@ glc_local_manifest <- function(root) {
   if (file.exists(path)) glc_read_json_file(path, simplify = FALSE) else NULL
 }
 
-glc_detect_schema_version <- function(x) {
-  version <- glc_scalar_character(x$descriptor$schema_version)
-  if (!is.na(version)) {
-    return(version)
+glc_profile_schema_version <- function(profile) {
+  profile <- glc_scalar_character(profile)
+  if (is.na(profile)) {
+    return(NA_character_)
   }
+  version_match <- regexpr(
+    "[0-9]+\\.[0-9]+\\.[0-9]+",
+    profile,
+    perl = TRUE
+  )
+  if (version_match[[1L]] < 0L) {
+    return(NA_character_)
+  }
+  regmatches(profile, version_match)
+}
 
-  profile <- glc_scalar_character(x$descriptor$profile)
-  if (!is.na(profile)) {
-    profile_match <- regmatches(
-      profile,
-      regexpr("[123]\\.0\\.0", profile, perl = TRUE)
+glc_detect_schema_version <- function(x) {
+  root_version <- glc_scalar_character(x$descriptor$schema_version)
+  profile_version <- glc_profile_schema_version(x$descriptor$profile)
+  if (
+    !is.na(root_version) &&
+      !is.na(profile_version) &&
+      !identical(root_version, profile_version)
+  ) {
+    glc_abort(
+      paste0(
+        "Conflicting GLC schema declarations: root `schema_version` is ",
+        "`{root_version}`, while `profile` identifies `{profile_version}`."
+      ),
+      class = "glcdp_schema_error"
     )
-    if (length(profile_match) == 1L && nzchar(profile_match)) {
-      return(profile_match)
-    }
+  }
+  if (!is.na(root_version)) {
+    return(root_version)
+  }
+  if (!is.na(profile_version)) {
+    return(profile_version)
   }
 
   dataset_value <- tryCatch(
@@ -116,6 +142,12 @@ glc_detect_schema_version <- function(x) {
   record_versions <- record_versions[!is.na(record_versions)]
   if (length(record_versions) == 1L) {
     return(record_versions)
+  }
+  if (length(record_versions) > 1L) {
+    glc_abort(
+      "Dataset records declare multiple GLC schema versions: {.val {record_versions}}.",
+      class = "glcdp_schema_error"
+    )
   }
 
   resource_names <- vapply(
@@ -145,22 +177,12 @@ glc_detect_schema_version <- function(x) {
 }
 
 glc_check_schema_version <- function(version, quiet = FALSE) {
-  supported <- c("1.0.0", "2.0.0", "3.0.0")
+  supported <- glc_supported_schema_versions()
   if (!version %in% supported) {
     glc_abort(
       "Unsupported GLC schema version {.val {version}}. Supported versions are {.val {supported}}.",
       class = "glcdp_unsupported_schema"
     )
-  }
-  if (
-    identical(version, "3.0.0") &&
-      !isTRUE(.glcdp_state$schema_3_notice) &&
-      !quiet
-  ) {
-    glc_inform(
-      "Schema 3.0.0 support follows the current development schema and is experimental."
-    )
-    .glcdp_state$schema_3_notice <- TRUE
   }
   invisible(version)
 }
@@ -303,7 +325,7 @@ glc_open_remote <- function(source, ref, token, cache_dir, registry, quiet) {
 #' @export
 #'
 #' @examplesIf interactive()
-#' package <- glc_open("tscnlab/guidolin-glee-datasetv2")
+#' package <- glc_open("tscnlab/melidos-iztech-glc-dataset")
 #' package
 glc_open <- function(
   source,
@@ -338,12 +360,14 @@ glc_open <- function(
 #' glc_schema_versions()
 glc_schema_versions <- function() {
   tibble::tibble(
-    version = c("1.0.0", "2.0.0", "3.0.0"),
-    status = c("stable", "stable", "experimental"),
+    version = glc_supported_schema_versions(),
+    status = c("legacy", "legacy", "stable", "stable", "stable"),
     notes = c(
-      "Legacy packages may omit the root schema version.",
-      "Current released schema supported by the validator.",
-      "Follows the schema-3.0.0-development branch."
+      "Barebones support for recognizable packages without a root version.",
+      "Barebones compatibility for the unimplemented legacy schema.",
+      "Compatible stable predecessor using the typed import contract.",
+      "Compatible stable predecessor using the typed import contract.",
+      "Current default schema and primary metadata-driven import implementation."
     )
   )
 }

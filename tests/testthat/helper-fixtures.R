@@ -35,7 +35,6 @@ fixture_variables_v3 <- function() {
     list(
       dataset_file_variables_name = "timestamp",
       dataset_file_variables_labels = "Timestamp",
-      dataset_file_variables_units = "ISO8601",
       dataset_file_variables_type = "string",
       dataset_file_variables_term = list(
         variable_term = "other",
@@ -52,7 +51,6 @@ fixture_variables_v3 <- function() {
     list(
       dataset_file_variables_name = "worn",
       dataset_file_variables_labels = "Worn",
-      dataset_file_variables_units = "1",
       dataset_file_variables_type = "boolean",
       dataset_file_variables_term = list(
         variable_term = "other",
@@ -62,7 +60,6 @@ fixture_variables_v3 <- function() {
     list(
       dataset_file_variables_name = "quality",
       dataset_file_variables_labels = "Quality",
-      dataset_file_variables_units = "1",
       dataset_file_variables_type = "factor",
       dataset_file_variables_factor_levels = list(
         list(value = "good", label = "Good"),
@@ -77,13 +74,14 @@ fixture_variables_v3 <- function() {
 }
 
 make_glc_fixture <- function(
-  version = "2.0.0",
+  version = "3.0.2",
   preamble = FALSE,
   explicit_header = preamble,
   extra_column = FALSE,
   invalid_boolean = FALSE,
   participant_associated = TRUE
 ) {
+  stable_v3 <- version %in% c("3.0.0", "3.0.1", "3.0.2")
   root <- tempfile("glcdp-fixture-")
   dir.create(file.path(root, "data", "files"), recursive = TRUE)
   dir.create(file.path(root, "data", "datasheets"), recursive = TRUE)
@@ -128,7 +126,16 @@ make_glc_fixture <- function(
       ))
     )
   )
-  if (!identical(version, "1.0.0")) descriptor$schema_version <- version
+  if (!identical(version, "1.0.0")) {
+    descriptor$schema_version <- version
+  }
+  if (stable_v3) {
+    descriptor$profile <- paste0(
+      "schemas/",
+      version,
+      "/glc-dp-profile.json"
+    )
+  }
 
   write_fixture_json(
     list(study_internal_id = "S1", title = "Light study"),
@@ -151,7 +158,7 @@ make_glc_fixture <- function(
   writeLines("key,value\nnote,example", file.path(root, "data", "notes.csv"))
 
   data_path <- "data/files/light.csv"
-  if (identical(version, "3.0.0")) {
+  if (stable_v3) {
     datetime <- list(
       dataset_file_datetime_source = "column",
       dataset_file_datetime_date = "timestamp",
@@ -176,22 +183,21 @@ make_glc_fixture <- function(
       dataset_file_role = "primary",
       dataset_file_data_state = "raw",
       dataset_file_preprocessing = list(
-        dataset_file_preprocessing_bol = FALSE,
-        dataset_file_preprocessing_desc = NULL
+        dataset_file_preprocessing_bol = FALSE
       ),
       dataset_file_variables = fixture_variables_v3(),
       primary_variables = list("lux")
     )
     if (explicit_header) group$dataset_file_header_row <- 3L
+    dataset_crossref <- list(dataset_crossref_study_id = "S1")
+    if (participant_associated) {
+      dataset_crossref$dataset_crossref_participant_id <- "P1"
+    }
     dataset <- list(
-      schema_version = "3.0.0",
+      schema_version = version,
       dataset_internal_id = "DS1",
       dataset_participant_associated = participant_associated,
-      dataset_crossref = list(
-        dataset_crossref_study_id = "S1",
-        dataset_crossref_participant_id = if (participant_associated) "P1" else
-          NULL
-      ),
+      dataset_crossref = dataset_crossref,
       dataset_timezone = "Europe/Berlin",
       dataset_location = list(48.1, 11.5),
       dataset_variable_terms = list(
@@ -255,6 +261,103 @@ make_glc_fixture <- function(
   root
 }
 
+make_v3_contract_fixture <- function(version = "3.0.2") {
+  root <- make_glc_fixture(version)
+  descriptor_path <- file.path(root, "datapackage.json")
+  descriptor <- jsonlite::fromJSON(
+    descriptor_path,
+    simplifyVector = FALSE
+  )
+  participant_index <- which(vapply(
+    descriptor$resources,
+    function(resource) identical(resource$name, "participants"),
+    logical(1)
+  ))
+  descriptor$resources[[participant_index]] <- list(
+    name = "participants",
+    path = "data/participants.csv",
+    format = "csv",
+    mediatype = "text/csv",
+    profile = "tabular-data-resource"
+  )
+  writeLines(
+    c(
+      "participant_internal_id,participant_age",
+      "P1,34"
+    ),
+    file.path(root, "data", "participants.csv")
+  )
+  unlink(file.path(root, "data", "participants.json"))
+
+  variable <- function(name, label, type, term_name = name, levels = NULL) {
+    value <- list(
+      dataset_file_variables_name = name,
+      dataset_file_variables_labels = label,
+      dataset_file_variables_description = paste(label, "description"),
+      dataset_file_variables_type = type,
+      dataset_file_variables_term = list(
+        variable_term = "other",
+        variable_name = term_name
+      )
+    )
+    if (type %in% c("numeric", "integer")) {
+      value$dataset_file_variables_units <- "1"
+    }
+    if (!is.null(levels)) {
+      value$dataset_file_variables_factor_levels <- levels
+    }
+    value
+  }
+  variables <- list(
+    variable("Id", "Participant identifier", "string", "participant_id"),
+    variable("file.name", "Source file name", "string", "source_file"),
+    variable("Datetime", "Timestamp", "string", "datetime"),
+    variable("lux", "Illuminance", "numeric", "illuminance"),
+    variable("count", "Observation count", "integer", "count"),
+    variable("worn", "Worn", "boolean", "worn"),
+    variable(
+      "quality",
+      "Quality",
+      "factor",
+      "quality",
+      list(
+        list(
+          value = "good",
+          label = "Good",
+          description = "Accepted observation"
+        ),
+        list(
+          value = "bad",
+          label = "Bad",
+          description = "Rejected observation"
+        )
+      )
+    )
+  )
+  datasets <- fixture_read_datasets(root)
+  group <- datasets[[1L]]$dataset_file[[1L]]
+  group$dataset_file_datetime <- list(
+    dataset_file_datetime_source = "column",
+    dataset_file_datetime_date = "Datetime",
+    dataset_file_datetime_dateformat = "YYYY-MM-DD HH:mm:ss"
+  )
+  group$dataset_file_description <- "Typed observations"
+  group$dataset_file_variables <- variables
+  group$primary_variables <- list("lux")
+  datasets[[1L]]$dataset_file[[1L]] <- group
+  fixture_write_datasets(root, datasets)
+  writeLines(
+    c(
+      "Id,file.name,Datetime,lux,count,worn,quality",
+      "P1,raw-a.csv,2026-01-01 08:00:00,12.5,1,1,good",
+      "P1,,2026-01-01 08:01:00,15,2,0,bad"
+    ),
+    file.path(root, "data", "files", "light.csv")
+  )
+  write_fixture_json(descriptor, descriptor_path)
+  root
+}
+
 make_registry_fixture <- function() {
   path <- tempfile(fileext = ".json")
   sha_a <- paste(rep("a", 40), collapse = "")
@@ -311,15 +414,13 @@ fixture_write_datasets <- function(root, datasets) {
 }
 
 make_collection_datetime_fixture <- function() {
-  root <- make_glc_fixture("3.0.0")
+  root <- make_glc_fixture("3.0.2")
   datasets <- fixture_read_datasets(root)
   group <- datasets[[1]]$dataset_file[[1]]
   group$dataset_file_datetime <- list(
     dataset_file_datetime_source = "collection",
     dataset_file_datetime_date = "2026-01-01 09:30:00",
-    dataset_file_datetime_dateformat = "YYYY-MM-DD HH:mm:ss",
-    dataset_file_datetime_time = NULL,
-    dataset_file_datetime_timeformat = NULL
+    dataset_file_datetime_dateformat = "YYYY-MM-DD HH:mm:ss"
   )
   datasets[[1]]$dataset_file[[1]] <- group
   fixture_write_datasets(root, datasets)
@@ -327,7 +428,7 @@ make_collection_datetime_fixture <- function() {
 }
 
 make_separate_datetime_fixture <- function() {
-  root <- make_glc_fixture("3.0.0")
+  root <- make_glc_fixture("3.0.2")
   datasets <- fixture_read_datasets(root)
   group <- datasets[[1]]$dataset_file[[1]]
   group$dataset_file_datetime <- list(
@@ -363,7 +464,7 @@ make_separate_datetime_fixture <- function() {
 }
 
 make_multi_dataset_fixture <- function() {
-  root <- make_glc_fixture("3.0.0")
+  root <- make_glc_fixture("3.0.2")
   datasets <- fixture_read_datasets(root)
   second <- datasets[[1]]
   second$dataset_internal_id <- "DS2"

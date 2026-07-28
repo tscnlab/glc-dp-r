@@ -13,21 +13,31 @@ live <- identical(Sys.getenv("IN_PKGDOWN"), "true") &&
   !identical(Sys.getenv("GLCDP_SKIP_LIVE"), "true")
 ```
 
-This article covers two related workflows:
+This article covers two related workflows with the validated MELIDOS IZTECH
+package:
 
 - import selected files directly into R with `glc_read()`; and
 - create a persistent, reproducible local subset with `glc_download()`.
 
-Remote examples run on the pkgdown website but remain unevaluated in ordinary
-package and CRAN builds. Set `GLCDP_SKIP_LIVE=true` to request an offline
-website build.
+The current passing IZTECH revision uses schema 3.0.2. The examples deliberately
+use both a tiny demographics file and a light-sensor file. The first makes
+schema-defined R types and factor levels easy to inspect; the second produces
+analysis-ready light data. Remote examples run on the pkgdown website but
+remain unevaluated in ordinary package and CRAN builds. Set
+`GLCDP_SKIP_LIVE=true` to request an offline website build.
 
 ```{r load}
 library(glcdp)
 ```
 
 ```{r open, eval = live}
-x <- glc_open("tscnlab/guidolin-glee-datasetv2")
+iztech_repository <- "tscnlab/melidos-iztech-glc-dataset"
+iztech_dataset <- "MELIDOS_IZTECH_S001"
+iztech_demographics <- "MELIDOS_IZTECH_S001:4"
+iztech_chest_light <- "MELIDOS_IZTECH_S001:17"
+
+iztech <- glc_open(iztech_repository)
+iztech
 ```
 
 ## Select before importing
@@ -37,57 +47,117 @@ unneeded data and gives you the stable ids and source names used by the read
 selectors.
 
 ```{r inspect, eval = live}
-glc_datasets(x)
-glc_files(x, dataset_id = "DS001")
-glc_variables(x, dataset_id = "DS001")
+glc_datasets(iztech)
+glc_files(iztech, dataset_id = iztech_dataset)
+glc_variables(iztech, dataset_id = iztech_dataset)
 ```
 
 `dataset_id` is required by `glc_read()`. Use `dataset_id = "all"` only when
-you deliberately want every dataset.
+you deliberately want every locally available dataset. A dataset can contain
+questionnaires, diaries, and several sensor streams that should be processed
+separately, so selecting an entire dataset does not imply that all its file
+groups can be collected into one table.
 
-```{r read-dataset, eval = live}
-collection <- glc_read(x, dataset_id = "DS001")
-collection
+Narrow an import with any combination of file-group ids or indices, file paths
+or basenames, source variable names, and semantic terms. Here, the file
+inventory identifies the S001 chest-sensor file:
+
+```{r select-light-file, eval = live}
+file_inventory <- glc_files(
+  iztech,
+  dataset_id = iztech_dataset
+)
+sensor_file <- file_inventory[
+  file_inventory$file_group_id == iztech_chest_light,
+]
+sensor_file[, c(
+  "file_group_id", "path", "device_id", "expected_bytes"
+)]
+
+source_file <- basename(sensor_file$path[[1]])
+source_file
+```
+
+Read only its declared melanopic EDI variable and parse at most 10,000
+rows:
+
+```{r read-selection, eval = live}
+light_collection <- glc_read(
+  iztech,
+  dataset_id = iztech_dataset,
+  file_group = iztech_chest_light,
+  files = source_file,
+  variables = "MEDI",
+  n_max = 10000
+)
+light_collection
+```
+
+When `variables` or `terms` are selected, the imported tables contain only the
+matching source variables. `glcdp` still uses required date or time columns
+internally to construct `.glc_datetime`, but does not retain them unless the
+filters select them. Set `primary_only = TRUE` to select declared primary
+variables:
+
+```{r read-primary, eval = live}
+primary_light <- glc_read(
+  iztech,
+  dataset_id = iztech_dataset,
+  file_group = iztech_chest_light,
+  primary_only = TRUE,
+  n_max = 10000
+)
+primary_data <- primary_light$data[[1]]
+primary_data[stats::complete.cases(primary_data), ]
 ```
 
 Interactive calls show progress across the selected files by default. Use
 `progress = FALSE` to suppress the indicator when a script or application
-provides its own progress reporting.
+provides its own progress reporting. `n_max` limits rows parsed after a remote
+file is available; it does not reduce the whole-file transfer.
 
-Narrow the import with any combination of file-group ids or indices, file
-paths or basenames, source variable names, and semantic terms:
+## Import schema-defined R types and factor levels
 
-```{r read-selection, eval = live}
-file_inventory <- glc_files(x, dataset_id = "DS001")
-first_file <- file_inventory[1, ]
-first_file
-file_group <- first_file$file_group_id[[1]]
-file_group
-files <- basename(first_file$path[[1]])
-files
+Schema 3.0.2 declares a type for each source column. Factor declarations also
+contain their levels in schema-declared order. These declarations are exposed
+by the variable inventory:
 
-selected <- glc_read(
-  x,
-  dataset_id = "DS001",
-  file_group = file_group,
-  files = files,
-  variables = c("LIGHT"),
-  n_max = 1000
+```{r schema-types, eval = live}
+demographic_variables <- glc_variables(
+  iztech,
+  file_group = iztech_demographics
 )
-selected$data
+demographic_variables[, c("name", "type", "factor_values")]
 ```
 
-When `variables` or `terms` are selected, the imported tables contain only the
-matching source variables. `glcdp` still uses any required date or time columns
-internally to construct `.glc_datetime`, but does not retain them unless the
-filters select them. Set `primary_only = TRUE` to select all declared primary
-variables.
+`glc_read()` uses those declarations rather than guessing from file contents.
+The IZTECH demographics file therefore yields numeric, logical, and factor
+columns with the declared levels:
 
-```{r read-primary, eval = live}
-primary <- glc_read(
-  x,
-  dataset_id = "DS001",
-  primary_only = TRUE
+```{r read-types, eval = live}
+demographics <- glc_read(
+  iztech,
+  dataset_id = iztech_dataset,
+  file_group = iztech_demographics
+)
+demographic_data <- demographics$data[[1]]
+
+levels(demographic_data$sex)
+levels(demographic_data$employment_status)
+```
+
+The same import metadata controls headers, datetime construction, decimal
+marks, encodings, and time zones. By default, undeclared extra columns, values
+that cannot be parsed to the declared type, and values outside declared factor
+levels are errors. During exploratory work, use `problems = "warn"` to retain
+problematic data with warnings; inspect the result before analysis.
+
+```{r read-warn, eval = live}
+exploratory_demographics <- glc_read(
+  iztech,
+  dataset_id = iztech_dataset,
+  file_group = iztech_demographics,
+  problems = "warn"
 )
 ```
 
@@ -99,49 +169,72 @@ datetime specification, and source files. The imported table is in the `data`
 list-column.
 
 ```{r collection, eval = live}
-collection[, setdiff(names(collection), "data")]
-collection$data[[1]]
+light_collection[, setdiff(names(light_collection), "data")]
+names(light_collection$data[[1]])
 ```
 
 Each imported table also contains `.glc_*` provenance columns such as the
 dataset id, participant id, source file, and constructed datetime. These make
 row origins explicit after tables are combined.
 
-By default, metadata mismatches such as undeclared extra columns or values that
-cannot be parsed to the declared type are errors. During exploratory work, use
-`problems = "warn"` to retain problematic data with warnings; inspect the
-result before analysis.
-
-```{r read-warn, eval = live}
-exploratory <- glc_read(
-  x,
-  dataset_id = "DS001",
-  problems = "warn"
-)
-```
-
 ## Collect analysis-ready data
 
 Combine file groups only when their structures and meanings are compatible:
 
 ```{r collect, eval = live}
-light_data <- glc_collect(collection)
-light_data
+light_data <- glc_collect(light_collection)
+head(light_data[!is.na(light_data$MEDI), ])
 ```
+
+The default `standardize = "lightlogr"` follows the data conventions used by
+[LightLogR](https://tscnlab.github.io/LightLogR/) and adds:
+
+- `Id`, derived from the dataset id;
+- `file_group_id`, the stable dataset file-group id used by the metadata
+  helpers;
+- `participant_Id`, derived from the participant id;
+- `Datetime`, constructed from the metadata-defined datetime specification;
+  and
+- `file.name`, retained from a declared source column when present or derived
+  from the package path otherwise.
+
+The standardized result contains no internal `.glc_*` provenance columns. It
+is ordered by `Id` and `Datetime` and grouped by `Id`. Use `standardize =
+"none"` if you want an ungrouped tibble whose source and provenance columns
+are left unchanged.
+
+```{r collect-none, eval = live}
+source_data <- glc_collect(
+  light_collection,
+  standardize = "none"
+)
+head(source_data)
+```
+
+`glc_collect()` refuses to combine groups that differ in columns, types, time
+zones, modalities, roles, data states, or datetime specifications. It also
+rejects contradictory file-group relationships and multiple device links
+within one dataset. Keep those groups separate or select a compatible subset
+with `glc_read()`.
+
+Collected data can be used directly with LightLogR's
+[data-quality and insight functions](https://tscnlab.github.io/LightLogR/reference/index.html#insight),
+[visualization guide](https://tscnlab.github.io/LightLogR/articles/Visualizations.html),
+and [metrics guide](https://tscnlab.github.io/LightLogR/articles/Metrics.html).
 
 ## Extract or add metadata
 
 Use `extract_metadata()` when you want one concise row per imported file group,
 and `add_metadata()` when the same fields should be available on every
-observation. Both functions require an explicit metadata source and an explicit
-field selection. The default key is `file_group_id`, which `glc_collect()` adds
-to standardized data. If the input is grouped, the extracted tibble retains
-that grouping and includes its grouping columns before `file_group_id`.
+observation. Both functions require an explicit metadata source and field
+selection. The default key is `file_group_id`, which `glc_collect()` adds to
+standardized data. If the input is grouped, the extracted tibble retains that
+grouping and includes its grouping columns before `file_group_id`.
 
 ```{r metadata-pair, eval = live}
 analysis_metadata <- tibble::tibble(
   file_group_id = unique(as.character(light_data$file_group_id)),
-  analysis_set = "primary"
+  analysis_set = "chest sensor"
 )
 
 metadata_summary <- extract_metadata(
@@ -157,7 +250,9 @@ enriched_data <- add_metadata(
   fields = "analysis_set"
 )
 
-enriched_data |> head() |> dplyr::select(-file.name)
+enriched_data |>
+  head() |>
+  dplyr::select(-file.name)
 ```
 
 The metadata source can also be a local CSV/TSV path or the package handle.
@@ -171,13 +266,16 @@ restrict field discovery when the same field occurs in multiple connected
 resources.
 
 ```{r metadata-resource, eval = live}
-# Searches metadata:
-glc_search_metadata(x, "age", search_in = "fields")
+glc_search_metadata(
+  iztech,
+  "participant_age",
+  resources = "participants",
+  search_in = "fields"
+)
 
-# Extracts relevant metadata for collected dataset:
 dataset_metadata <- extract_metadata(
   light_data,
-  x,
+  iztech,
   fields = c(
     "dataset_timezone",
     "dataset_location",
@@ -188,10 +286,9 @@ dataset_metadata <- extract_metadata(
 )
 dataset_metadata
 
-# Adds relevant metadata into collected dataset
 add_metadata(
   light_data,
-  x,
+  iztech,
   fields = c(
     "dataset_timezone",
     "dataset_location",
@@ -201,8 +298,14 @@ add_metadata(
   )
 ) |>
   head() |>
-  dplyr::select(Id, dataset_timezone, dataset_location,
-                participant_age, study_title, device_model)
+  dplyr::select(
+    Id,
+    dataset_timezone,
+    dataset_location,
+    participant_age,
+    study_title,
+    device_model
+  )
 ```
 
 When adding project-specific metadata to a data package, store it under a
@@ -210,37 +313,6 @@ stable package-relative path such as `data/metadata.csv` and declare it as a
 resource in `datapackage.json`. The functions never guess from the working
 directory or neighboring files. They error when no identifiers or fields
 match, and warn while retaining useful results for partial matches.
-
-The default `standardize = "lightlogr"` follows the data conventions used by
-[LightLogR](https://tscnlab.github.io/LightLogR/) and adds:
-
-- `Id`, derived from the dataset id;
-- `file_group_id`, the stable dataset file-group id used by the metadata
-  helpers;
-- `participant_Id`, derived from the participant id;
-- `Datetime`, constructed from the metadata-defined datetime specification;
-  and
-- `file.name`, derived from the source file path.
-
-The standardized result contains no internal `.glc_*` provenance columns. It
-is ordered by `Id` and `Datetime` and grouped by `Id`. Use `standardize =
-"none"` if you want an ungrouped tibble whose source and provenance columns
-are left unchanged.
-
-```{r collect-none, eval = live}
-source_data <- glc_collect(collection, standardize = "none")
-```
-
-`glc_collect()` refuses to combine groups that differ in columns, types, time
-zones, modalities, roles, data states, or datetime specifications. It also
-rejects contradictory file-group relationships and multiple device links
-within one dataset. Keep those groups separate or select a compatible subset
-with `glc_read()`.
-
-Collected data can be used directly with LightLogR's
-[data-quality and insight functions](https://tscnlab.github.io/LightLogR/reference/index.html#insight),
-[visualization guide](https://tscnlab.github.io/LightLogR/articles/Visualizations.html),
-and [metrics guide](https://tscnlab.github.io/LightLogR/articles/Metrics.html).
 
 ## Download a reproducible subset
 
@@ -254,20 +326,21 @@ supplied to `glc_open()` continues to use the authenticated API transport,
 including for private repositories.
 
 ```{r download-metadata, eval = live}
-metadata_dir <- file.path(tempdir(), "guidolin-metadata")
-glc_download(x, metadata_dir)
+metadata_dir <- tempfile("iztech-metadata-")
+glc_download(iztech, metadata_dir)
 ```
 
-Request data explicitly and apply the same kinds of selectors used during
-inspection:
+Request data explicitly and apply the same selectors used during inspection.
+This compact example downloads the S001 demographics group:
 
 ```{r download-data, eval = live}
-data_dir <- file.path(tempdir(), "guidolin-ds001")
+data_dir <- tempfile("iztech-s001-demographics-")
 downloads <- glc_download(
-  x,
+  iztech,
   data_dir,
   include = "data",
-  dataset_id = "DS001"
+  dataset_id = iztech_dataset,
+  file_group = iztech_demographics
 )
 downloads
 ```
@@ -284,10 +357,15 @@ same inspection and import API without fetching the package again:
 ```{r reopen, eval = live}
 local <- glc_open(data_dir)
 glc_summary(local)
-glc_files(local, available = FALSE)
+glc_files(local, dataset_id = iztech_dataset, available = TRUE)
 
-local_collection <- glc_read(local, dataset_id = "all")
+local_collection <- glc_read(
+  local,
+  dataset_id = iztech_dataset,
+  file_group = iztech_demographics
+)
 local_data <- glc_collect(local_collection)
+local_data
 ```
 
 The descriptor and core metadata retain the records declared by the source
@@ -296,7 +374,7 @@ datasets, file groups, and files from those declared records. When the package
 is incomplete, `glc_read()` also reports how many declared datasets and files
 are locally available, then skips absent files. Thus, `dataset_id = "all"`
 reads all data included in the subset. Use
-`glc_files(local, available = FALSE)` to inspect the omitted file records.
+`glc_files(local, available = FALSE)` to inspect omitted file records.
 
 ## Temporary reads versus persistent storage
 
@@ -309,8 +387,8 @@ subset with a manifest:
 
 ```{r cache, eval = live}
 cached <- glc_open(
-  "tscnlab/guidolin-glee-datasetv2",
-  cache_dir = file.path(tempdir(), "glcdp-cache")
+  iztech_repository,
+  cache_dir = file.path(tempdir(), "glcdp-iztech-cache")
 )
 ```
 

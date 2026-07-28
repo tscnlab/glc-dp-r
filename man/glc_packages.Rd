@@ -22,6 +22,6 @@ non-passing current revisions are retained.
 \examples{
 \dontshow{if (interactive()) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
 packages <- glc_packages()
-glc_search_packages("guidolin", packages)
+glc_search_packages("iztech", packages)
 \dontshow{\}) # examplesIf}
 }

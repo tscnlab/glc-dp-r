@@ -100,6 +100,39 @@ glc_explorer_summary_link <- function(
   link
 }
 
+glc_explorer_summary_contents_action <- function(
+  input_id,
+  mode = c("load", "retry", "open")
+) {
+  mode <- match.arg(mode)
+  config <- switch(
+    mode,
+    load = list(
+      label = "Load package contents",
+      icon = "database",
+      title = "Load datasets, file groups, variables, and metadata"
+    ),
+    retry = list(
+      label = "Retry loading package contents",
+      icon = "rotate-right",
+      title = "Retry loading datasets, file groups, variables, and metadata"
+    ),
+    open = list(
+      label = "Open package contents",
+      icon = "arrow-right",
+      title = "Open the loaded package contents"
+    )
+  )
+  shiny::actionButton(
+    input_id,
+    label = config$label,
+    icon = shiny::icon(config$icon),
+    class = "btn-primary",
+    title = config$title,
+    `aria-label` = config$label
+  )
+}
+
 package_summary_ui <- function(id) {
   ns <- shiny::NS(id)
 
@@ -132,6 +165,8 @@ package_summary_server <- function(
     ))
     navigation <- shiny::reactiveVal(NULL)
     navigation_request <- 0L
+    contents_load <- shiny::reactiveVal(NULL)
+    contents_load_request <- 0L
 
     request_contents <- function(tab, metadata_resource = NULL) {
       navigation_request <<- navigation_request + 1L
@@ -173,6 +208,26 @@ package_summary_server <- function(
       request_contents("Variables"),
       ignoreInit = TRUE
     )
+    shiny::observeEvent(
+      input$load_contents,
+      {
+        value <- package()
+        if (is.null(value)) {
+          return()
+        }
+        contents_load_request <<- contents_load_request + 1L
+        contents_load(list(
+          package_key = glc_explorer_package_key(value),
+          request_id = contents_load_request
+        ))
+      },
+      ignoreInit = TRUE
+    )
+    shiny::observeEvent(
+      input$open_contents,
+      request_contents("Metadata"),
+      ignoreInit = TRUE
+    )
 
     summarize_package <- function(value, request) {
       if (!identical(request, summary_request)) {
@@ -200,6 +255,7 @@ package_summary_server <- function(
         summary_request <<- summary_request + 1L
         request <- summary_request
         value <- package()
+        contents_load(NULL)
         if (is.null(value)) {
           summary(NULL)
           status(glc_explorer_status(
@@ -210,7 +266,10 @@ package_summary_server <- function(
         }
 
         status(glc_explorer_status(
-          "Reading the package summary\u2026",
+          paste(
+            "Building the package summary:",
+            "reading metadata, file storage, and declared variables\u2026"
+          ),
           "loading"
         ))
         summary(NULL)
@@ -312,6 +371,7 @@ package_summary_server <- function(
         glc_explorer_repository_url(package())
       ),
       navigation = shiny::reactive(navigation()),
+      contents_load = shiny::reactive(contents_load()),
       status = shiny::reactive(status())
     )
   })

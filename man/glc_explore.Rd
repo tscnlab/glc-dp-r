@@ -14,7 +14,9 @@ glc_explore(
 \item{registry}{Optional registry JSON URL or local path. Defaults to the
 official registry or the value of option \code{glcdp.registry_url}.}
 
-\item{launch.browser}{Whether to open the application in a browser.}
+\item{launch.browser}{Whether to open the application in a browser, or a
+function that Shiny calls with the application URL. The default respects
+IDE viewer functions supplied through \code{shiny.launch.browser}.}
 
 \item{...}{Additional arguments passed to \code{\link[shiny:runApp]{shiny::runApp()}}.}
 }
@@ -24,9 +26,10 @@ Called for its side effect of running a Shiny application.
 \description{
 Launches a local Shiny application for browsing the GLC registry, opening
 the immutable latest passing revision of a package, reviewing its contents,
-and filtering participants, devices, datasets, file groups, and variables.
-The app can preview the resulting selection and export an annotated,
-reproducible R script without uploading package data to another service.
+and filtering participants, devices, datasets, file groups, semantic terms,
+and source variables. The app can preview the resulting selection and
+export an annotated, reproducible R script without uploading package data
+to another service.
 }
 \examples{
 \dontshow{if (interactive()) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}

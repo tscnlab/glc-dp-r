@@ -17,11 +17,12 @@ and provenance columns unchanged.}
 \value{
 A combined tibble. In LightLogR-standardized output, \code{Id} contains
 the dataset id, \code{file_group_id} identifies the source file group,
-\code{participant_Id} contains the participant id, and the result is grouped by
-\code{Id}.
+\code{participant_Id} contains the participant id, an existing source
+\code{file.name} column is retained, and the result is grouped by \code{Id}.
 }
 \description{
 Explicitly combines file-group tibbles after checking their columns, types,
-time zones, modalities, roles, data states, and relationship consistency.
-Multiple non-missing device links within one dataset are rejected.
+factor-level contracts, time zones, modalities, roles, data states, and
+relationship consistency. Multiple non-missing device links within one
+dataset are rejected.
 }

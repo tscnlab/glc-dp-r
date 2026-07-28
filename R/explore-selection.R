@@ -227,11 +227,57 @@ glc_explorer_group_inventory <- function(package) {
           function(variable) variable$name,
           character(1)
         ),
+        label = vapply(
+          group$variables,
+          function(variable) variable$label,
+          character(1)
+        ),
+        description = vapply(
+          group$variables,
+          function(variable) variable$description,
+          character(1)
+        ),
+        unit = vapply(
+          group$variables,
+          function(variable) variable$unit,
+          character(1)
+        ),
         type = vapply(
           group$variables,
           function(variable) variable$type,
           character(1)
         ),
+        term = vapply(
+          group$variables,
+          function(variable) variable$term,
+          character(1)
+        ),
+        term_name = vapply(
+          group$variables,
+          function(variable) variable$term_name,
+          character(1)
+        ),
+        factor_values = lapply(group$variables, function(variable) {
+          vapply(
+            variable$factor_levels,
+            function(level) level$value,
+            character(1)
+          )
+        }),
+        factor_labels = lapply(group$variables, function(variable) {
+          vapply(
+            variable$factor_levels,
+            function(level) level$label,
+            character(1)
+          )
+        }),
+        factor_descriptions = lapply(group$variables, function(variable) {
+          vapply(
+            variable$factor_levels,
+            function(level) level$description,
+            character(1)
+          )
+        }),
         primary = vapply(
           group$variables,
           function(variable) variable$primary,
@@ -243,16 +289,25 @@ glc_explorer_group_inventory <- function(package) {
         file_group = group$index,
         file_group_id = group$id,
         device_id = group$device_id,
+        device_location = group$device_location,
+        device_location_type = group$device_location_type,
         format = group$format,
         timezone = group$timezone,
         modalities = list(group$modality),
+        modality_other = group$modality_other,
+        modality_other_type = group$modality_other_type,
         role = group$role,
         data_state = group$data_state,
+        temporal_type = group$temporal_type,
+        temporal_value = group$temporal_value,
+        temporal_unit = group$temporal_unit,
         datetime_source = group$datetime$source,
         datetime_date = group$datetime$date,
         datetime_format = group$datetime$date_format,
         datetime_time = group$datetime$time,
         datetime_time_format = group$datetime$time_format,
+        variable_names = list(glc_explorer_nonempty_values(variables$name)),
+        variable_terms = list(glc_explorer_nonempty_values(variables$term)),
         variables = list(variables)
       )
     }
@@ -265,16 +320,25 @@ glc_explorer_group_inventory <- function(package) {
     file_group = integer(),
     file_group_id = character(),
     device_id = character(),
+    device_location = character(),
+    device_location_type = character(),
     format = character(),
     timezone = character(),
     modalities = list(),
+    modality_other = character(),
+    modality_other_type = character(),
     role = character(),
     data_state = character(),
+    temporal_type = character(),
+    temporal_value = numeric(),
+    temporal_unit = character(),
     datetime_source = character(),
     datetime_date = character(),
     datetime_format = character(),
     datetime_time = character(),
     datetime_time_format = character(),
+    variable_names = list(),
+    variable_terms = list(),
     variables = list()
   )
 }
@@ -327,17 +391,19 @@ glc_explorer_numeric_age_range <- function(value) {
   range(ages)
 }
 
-glc_explorer_age_slider_spec <- function(value) {
-  ages <- suppressWarnings(as.numeric(value %||% numeric()))
-  ages <- ages[is.finite(ages)]
-  if (length(ages) == 0L) {
+glc_explorer_numeric_slider_spec <- function(value) {
+  numbers <- suppressWarnings(as.numeric(value %||% numeric()))
+  numbers <- numbers[is.finite(numbers)]
+  if (length(numbers) == 0L) {
     return(NULL)
   }
-  bounds <- range(ages)
-  whole_years <- all(abs(ages - round(ages)) < sqrt(.Machine$double.eps))
-  step <- if (whole_years) 1 else NULL
+  bounds <- range(numbers)
+  whole_numbers <- all(
+    abs(numbers - round(numbers)) < sqrt(.Machine$double.eps)
+  )
+  step <- if (whole_numbers) 1 else NULL
   if (identical(bounds[[1L]], bounds[[2L]])) {
-    bounds[[2L]] <- bounds[[2L]] + if (whole_years) 1 else 0.1
+    bounds[[2L]] <- bounds[[2L]] + if (whole_numbers) 1 else 0.1
   }
   list(
     min = bounds[[1L]],
@@ -345,6 +411,10 @@ glc_explorer_age_slider_spec <- function(value) {
     value = bounds,
     step = step
   )
+}
+
+glc_explorer_age_slider_spec <- function(value) {
+  glc_explorer_numeric_slider_spec(value)
 }
 
 glc_explorer_age_filter_value <- function(value, available_range) {
@@ -357,6 +427,45 @@ glc_explorer_age_filter_value <- function(value, available_range) {
     return(numeric())
   }
   selected
+}
+
+glc_explorer_characteristic_filter_spec <- function(
+  characteristics,
+  name
+) {
+  name <- glc_explorer_nonempty_values(name)
+  if (
+    length(name) != 1L ||
+      !inherits(characteristics, "data.frame") ||
+      nrow(characteristics) == 0L
+  ) {
+    return(list(
+      type = "categorical",
+      name = "",
+      values = character(),
+      slider = NULL
+    ))
+  }
+  values <- glc_explorer_nonempty_values(
+    characteristics$characteristic_value[
+      characteristics$characteristic_name == name
+    ]
+  )
+  numbers <- suppressWarnings(as.numeric(values))
+  numeric <- length(values) > 0L && all(is.finite(numbers))
+  list(
+    type = if (numeric) "numeric" else "categorical",
+    name = name[[1L]],
+    values = values,
+    slider = if (numeric) glc_explorer_numeric_slider_spec(numbers) else NULL
+  )
+}
+
+glc_explorer_characteristic_filter_value <- function(value, spec) {
+  if (!identical(spec$type, "numeric") || is.null(spec$slider)) {
+    return(value %||% character())
+  }
+  glc_explorer_age_filter_value(value, spec$slider$value)
 }
 
 glc_explorer_participant_facets_active <- function(facets) {
@@ -407,11 +516,32 @@ glc_explorer_filter_participant_ids <- function(
     length(characteristic_name) > 0L &&
       length(characteristic_values) > 0L
   ) {
-    matched <- characteristics$participant_id[
-      characteristics$characteristic_name %in%
-        characteristic_name &
+    characteristic_rows <- characteristics$characteristic_name %in%
+      characteristic_name
+    characteristic_spec <- glc_explorer_characteristic_filter_spec(
+      characteristics,
+      characteristic_name
+    )
+    if (identical(characteristic_spec$type, "numeric")) {
+      selected_range <- glc_explorer_numeric_age_range(
+        characteristic_values
+      )
+      if (length(selected_range) == 0L) {
+        characteristic_rows[] <- FALSE
+      } else {
+        values <- suppressWarnings(as.numeric(
+          characteristics$characteristic_value
+        ))
+        characteristic_rows <- characteristic_rows &
+          is.finite(values) &
+          values >= selected_range[[1L]] &
+          values <= selected_range[[2L]]
+      }
+    } else {
+      characteristic_rows <- characteristic_rows &
         characteristics$characteristic_value %in% characteristic_values
-    ]
+    }
+    matched <- characteristics$participant_id[characteristic_rows]
     keep <- keep & participants$participant_id %in% matched
   }
   unique(participants$participant_id[keep])
@@ -497,30 +627,244 @@ glc_explorer_selection_scope <- function(
 }
 
 glc_explorer_datetime_signature <- function(groups) {
-  paste(
+  glc_datetime_compatibility_signature(
     groups$datetime_source,
     groups$datetime_date,
     groups$datetime_format,
     groups$datetime_time,
-    groups$datetime_time_format,
-    sep = "|"
+    groups$datetime_time_format
   )
+}
+
+glc_explorer_selected_variable_rows <- function(
+  variables,
+  variable_names = character(),
+  variable_terms = character()
+) {
+  variable_names <- glc_explorer_nonempty_values(variable_names)
+  variable_terms <- glc_explorer_nonempty_values(variable_terms)
+  if (!inherits(variables, "data.frame") || nrow(variables) == 0L) {
+    return(variables)
+  }
+  selected <- rep(TRUE, nrow(variables))
+  if (length(variable_names) > 0L) {
+    selected <- selected & variables$name %in% variable_names
+  }
+  if (length(variable_terms) > 0L) {
+    terms <- if ("term" %in% names(variables)) {
+      variables$term
+    } else {
+      rep(NA_character_, nrow(variables))
+    }
+    selected <- selected & terms %in% variable_terms
+  }
+  variables[selected, , drop = FALSE]
+}
+
+glc_explorer_group_provides_variable_filters <- function(
+  variables,
+  variable_names,
+  variable_terms
+) {
+  variable_names <- glc_explorer_nonempty_values(variable_names)
+  variable_terms <- glc_explorer_nonempty_values(variable_terms)
+  if (length(variable_names) == 0L && length(variable_terms) == 0L) {
+    return(TRUE)
+  }
+  selected <- glc_explorer_selected_variable_rows(
+    variables,
+    variable_names,
+    variable_terms
+  )
+  if (nrow(selected) == 0L) {
+    return(FALSE)
+  }
+  selected_terms <- if ("term" %in% names(selected)) {
+    selected$term
+  } else {
+    character()
+  }
+  (length(variable_names) == 0L ||
+    all(variable_names %in% selected$name)) &&
+    (length(variable_terms) == 0L ||
+      all(variable_terms %in% selected_terms))
+}
+
+glc_explorer_group_variable_signature <- function(
+  variables,
+  variable_names,
+  variable_terms
+) {
+  selected <- glc_explorer_selected_variable_rows(
+    variables,
+    variable_names,
+    variable_terms
+  )
+  factor_values <- if ("factor_values" %in% names(selected)) {
+    vapply(selected$factor_values, paste, character(1), collapse = "\035")
+  } else {
+    rep("", nrow(selected))
+  }
+  factor_labels <- if ("factor_labels" %in% names(selected)) {
+    vapply(selected$factor_labels, paste, character(1), collapse = "\035")
+  } else {
+    rep("", nrow(selected))
+  }
+  paste(
+    selected$name,
+    selected$type,
+    factor_values,
+    factor_labels,
+    sep = "=",
+    collapse = "\r"
+  )
+}
+
+glc_explorer_one_device_per_dataset <- function(groups) {
+  if (nrow(groups) == 0L) {
+    return(groups)
+  }
+  keep <- rep(TRUE, nrow(groups))
+  dataset_keys <- ifelse(
+    is.na(groups$dataset_id),
+    "<missing>",
+    as.character(groups$dataset_id)
+  )
+  for (dataset_key in unique(dataset_keys)) {
+    rows <- which(dataset_keys == dataset_key)
+    devices <- as.character(groups$device_id[rows])
+    present <- devices[!is.na(devices) & nzchar(devices)]
+    candidates <- unique(present)
+    if (length(candidates) <= 1L) {
+      next
+    }
+    counts <- vapply(
+      candidates,
+      function(candidate) sum(present == candidate),
+      integer(1)
+    )
+    selected_device <- candidates[[which.max(counts)]]
+    keep[rows] <- is.na(devices) |
+      !nzchar(devices) |
+      devices == selected_device
+  }
+  groups[keep, , drop = FALSE]
+}
+
+glc_explorer_filter_compatible_groups <- function(
+  groups,
+  variable_names = character(),
+  variable_terms = character()
+) {
+  variable_names <- glc_explorer_nonempty_values(variable_names)
+  variable_terms <- glc_explorer_nonempty_values(variable_terms)
+  active <- length(variable_names) > 0L || length(variable_terms) > 0L
+  candidate_count <- nrow(groups)
+  result <- list(
+    active = active,
+    candidate_count = candidate_count,
+    matching_count = candidate_count,
+    included_count = candidate_count,
+    excluded_count = 0L,
+    groups = groups
+  )
+  if (!active || candidate_count == 0L) {
+    return(result)
+  }
+
+  matches <- vapply(
+    groups$variables,
+    glc_explorer_group_provides_variable_filters,
+    logical(1),
+    variable_names = variable_names,
+    variable_terms = variable_terms
+  )
+  matching <- groups[matches, , drop = FALSE]
+  result$matching_count <- nrow(matching)
+  if (nrow(matching) == 0L) {
+    result$included_count <- 0L
+    result$excluded_count <- candidate_count
+    result$groups <- matching
+    return(result)
+  }
+
+  valid_timezone <- !is.na(matching$timezone) &
+    matching$timezone %in% OlsonNames()
+  complete_datetime <- !is.na(matching$datetime_date) &
+    nzchar(matching$datetime_date) &
+    !is.na(matching$datetime_format) &
+    nzchar(matching$datetime_format) &
+    (is.na(matching$datetime_time) |
+      !nzchar(matching$datetime_time) |
+      (!is.na(matching$datetime_time_format) &
+        nzchar(matching$datetime_time_format)))
+  valid <- matching$format %in%
+    c("csv", "txt", "tsv") &
+    valid_timezone &
+    complete_datetime
+  matching <- matching[valid, , drop = FALSE]
+  if (nrow(matching) == 0L) {
+    result$included_count <- 0L
+    result$excluded_count <- candidate_count
+    result$groups <- matching
+    return(result)
+  }
+
+  column_signature <- vapply(
+    matching$variables,
+    glc_explorer_group_variable_signature,
+    character(1),
+    variable_names = variable_names,
+    variable_terms = variable_terms
+  )
+  modality_signature <- vapply(
+    matching$modalities,
+    paste,
+    character(1),
+    collapse = "|"
+  )
+  compatibility_key <- paste(
+    column_signature,
+    matching$timezone,
+    modality_signature,
+    matching$role,
+    matching$data_state,
+    glc_explorer_datetime_signature(matching),
+    sep = "\034"
+  )
+  keys <- unique(compatibility_key)
+  candidates <- lapply(keys, function(key) {
+    glc_explorer_one_device_per_dataset(
+      matching[compatibility_key == key, , drop = FALSE]
+    )
+  })
+  dataset_counts <- vapply(
+    candidates,
+    function(candidate) {
+      length(glc_explorer_nonempty_values(candidate$dataset_id))
+    },
+    integer(1)
+  )
+  row_counts <- vapply(candidates, nrow, integer(1))
+  selected <- order(-dataset_counts, -row_counts, seq_along(candidates))[[1L]]
+  included <- candidates[[selected]]
+
+  result$included_count <- nrow(included)
+  result$excluded_count <- candidate_count - nrow(included)
+  result$groups <- included
+  result
 }
 
 glc_explorer_selection_compatibility <- function(
   groups,
-  variable_names
+  variable_names,
+  variable_terms = character()
 ) {
   issues <- character()
   variable_names <- glc_explorer_nonempty_values(variable_names)
+  variable_terms <- glc_explorer_nonempty_values(variable_terms)
   if (nrow(groups) == 0L) {
     return(list(ok = FALSE, issues = "No file groups are included."))
-  }
-  if (length(variable_names) == 0L) {
-    return(list(
-      ok = FALSE,
-      issues = "No source variables are available for the included file groups."
-    ))
   }
   unsupported <- unique(groups$format[
     !groups$format %in% c("csv", "txt", "tsv")
@@ -540,13 +884,16 @@ glc_explorer_selection_compatibility <- function(
   columns <- vector("list", nrow(groups))
   types <- vector("list", nrow(groups))
   for (index in seq_len(nrow(groups))) {
-    variables <- groups$variables[[index]]
-    selected <- variables$name %in% variable_names
-    columns[[index]] <- variables$name[selected]
-    types[[index]] <- paste(
-      variables$name[selected],
-      variables$type[selected],
-      sep = "="
+    variables <- glc_explorer_selected_variable_rows(
+      groups$variables[[index]],
+      variable_names,
+      variable_terms
+    )
+    columns[[index]] <- variables$name
+    types[[index]] <- glc_explorer_group_variable_signature(
+      variables,
+      character(),
+      character()
     )
     if (length(columns[[index]]) == 0L) {
       issues <- c(
@@ -577,7 +924,10 @@ glc_explorer_selection_compatibility <- function(
     } else if (!all(same_types)) {
       issues <- c(
         issues,
-        "Included file groups use different source variable types."
+        paste0(
+          "Included file groups use different source variable types or ",
+          "factor levels."
+        )
       )
     }
   }
@@ -602,6 +952,23 @@ glc_explorer_selection_compatibility <- function(
       glc_explorer_datetime_signature(groups),
       "datetime specifications"
     )
+    dataset_ids <- glc_explorer_nonempty_values(groups$dataset_id)
+    multiple_device_datasets <- dataset_ids[vapply(
+      dataset_ids,
+      function(dataset_id) {
+        rows <- !is.na(groups$dataset_id) &
+          groups$dataset_id == dataset_id
+        devices <- glc_explorer_nonempty_values(groups$device_id[rows])
+        length(devices) > 1L
+      },
+      logical(1)
+    )]
+    if (length(multiple_device_datasets) > 0L) {
+      issues <- c(
+        issues,
+        "Included file groups link one dataset to multiple devices."
+      )
+    }
 
     invalid_timezone <- is.na(groups$timezone) |
       !groups$timezone %in% OlsonNames()
@@ -679,12 +1046,63 @@ glc_explorer_script_source_issues <- function(package_info) {
   issues
 }
 
-glc_explorer_selection_hash <- function(package_info, datasets, groups) {
+glc_explorer_handoff_mode <- function(mode) {
+  mode <- as.character(mode %||% "data")
+  if (length(mode) != 1L || is.na(mode) || !mode %in% c("metadata", "data")) {
+    glc_abort(
+      "{.arg mode} must be one of {.val metadata} or {.val data}."
+    )
+  }
+  mode
+}
+
+glc_explorer_row_limit <- function(value = Inf) {
+  if (is.null(value) || length(value) == 0L) {
+    return(Inf)
+  }
+  value <- suppressWarnings(as.numeric(value[[1L]]))
+  if (
+    is.na(value) || value <= 0 || (!is.infinite(value) && value != floor(value))
+  ) {
+    glc_abort(
+      "{.arg n_max} must be a positive whole number or {.code Inf}."
+    )
+  }
+  value
+}
+
+glc_explorer_metadata_resources <- function(package, resources = NULL) {
+  inventory <- glc_resources(package)
+  available <- unique(inventory$resource)
+  if (
+    is.null(resources) || length(glc_explorer_nonempty_values(resources)) == 0L
+  ) {
+    return(unique(inventory$resource[inventory$core %in% TRUE]))
+  }
+  resources <- glc_explorer_nonempty_values(resources)
+  unknown <- setdiff(resources, available)
+  if (length(unknown) > 0L) {
+    glc_abort(
+      "Unknown metadata resource{?s}: {.val {unknown}}."
+    )
+  }
+  unique(resources)
+}
+
+glc_explorer_selection_hash <- function(
+  package_info,
+  datasets,
+  groups,
+  mode = "data",
+  metadata_resources = character()
+) {
   value <- list(
     repository = package_info$repository,
     commit = package_info$commit,
+    mode = glc_explorer_handoff_mode(mode),
     dataset_ids = sort(unique(datasets)),
-    file_group_ids = sort(unique(groups))
+    file_group_ids = sort(unique(groups)),
+    metadata_resources = sort(unique(metadata_resources))
   )
   substr(digest::digest(value, algo = "xxhash64", serialize = TRUE), 1L, 10L)
 }
@@ -700,20 +1118,112 @@ glc_explorer_build_selection_plan <- function(
   package,
   selection,
   facets,
+  mode = c("data", "metadata"),
+  metadata_resources = NULL,
   participant_ids = character(),
   device_ids = character(),
   dataset_ids = character(),
+  group_filters = NULL,
   file_group_ids = character(),
   variables = character(),
-  standardize = c("lightlogr", "none")
+  terms = character(),
+  n_max = Inf,
+  standardize = c("lightlogr", "none"),
+  resolved_scope = NULL,
+  resolved_group_discovery = NULL
 ) {
+  mode <- glc_explorer_handoff_mode(mode[[1L]])
   standardize <- match.arg(standardize)
-  scope <- glc_explorer_selection_scope(
-    selection,
-    facets,
-    participant_ids = participant_ids,
-    device_ids = device_ids
-  )
+  n_max <- glc_explorer_row_limit(n_max)
+  package_info <- glc_explorer_package_selection_info(package)
+  source_issues <- glc_explorer_script_source_issues(package_info)
+
+  if (identical(mode, "metadata")) {
+    metadata_resources <- glc_explorer_metadata_resources(
+      package,
+      metadata_resources
+    )
+    selection_hash <- glc_explorer_selection_hash(
+      package_info,
+      character(),
+      character(),
+      mode = mode,
+      metadata_resources = metadata_resources
+    )
+    directory_name <- paste(
+      glc_explorer_safe_path_component(package_info$package_id),
+      substr(package_info$commit, 1L, 12L),
+      selection_hash,
+      sep = "-"
+    )
+    return(list(
+      mode = mode,
+      package_id = package_info$package_id,
+      repository = package_info$repository,
+      commit = package_info$commit,
+      registry_generated_at = package_info$registry_generated_at,
+      facets = facets,
+      metadata_resources = metadata_resources,
+      requested = list(
+        participant_ids = character(),
+        device_ids = character(),
+        dataset_ids = character(),
+        group_filters = NULL,
+        file_group_ids = character(),
+        variables = character(),
+        terms = character()
+      ),
+      participants = character(),
+      devices = character(),
+      datasets = character(),
+      file_groups = character(),
+      variables = character(),
+      terms = character(),
+      variable_filter = NULL,
+      term_filter = NULL,
+      name_filter_active = FALSE,
+      term_filter_active = FALSE,
+      variable_filter_active = FALSE,
+      group_discovery = list(
+        active = FALSE,
+        candidate_count = 0L,
+        included_count = 0L,
+        excluded_count = 0L,
+        dataset_count = 0L,
+        filters = NULL
+      ),
+      group_filter = list(
+        active = FALSE,
+        candidate_count = 0L,
+        matching_count = 0L,
+        included_count = 0L,
+        excluded_count = 0L
+      ),
+      files = tibble::tibble(),
+      estimated_bytes = 0,
+      unknown_file_sizes = 0L,
+      preview_files = character(),
+      n_max = Inf,
+      standardization = standardize,
+      compatibility = list(ok = TRUE, issues = character()),
+      issues = character(),
+      script_issues = source_issues,
+      preview_ready = FALSE,
+      script_ready = length(source_issues) == 0L,
+      selection_hash = selection_hash,
+      data_directory = file.path("metadata", directory_name)
+    ))
+  }
+
+  scope <- resolved_scope
+  if (is.null(scope)) {
+    scope <- glc_explorer_selection_scope(
+      selection,
+      facets,
+      participant_ids = participant_ids,
+      device_ids = device_ids
+    )
+  }
   requested_datasets <- glc_explorer_nonempty_values(dataset_ids)
   selected_datasets <- selection$datasets$dataset_id[
     selection$datasets$dataset_id %in%
@@ -732,15 +1242,35 @@ glc_explorer_build_selection_plan <- function(
       drop = FALSE
     ]
   }
+  group_discovery <- resolved_group_discovery
+  valid_discovery <- is.list(group_discovery) &&
+    inherits(group_discovery$groups, "data.frame")
+  if (!valid_discovery) {
+    group_discovery <- glc_explorer_selection_group_filter_result(
+      available_groups,
+      group_filters
+    )
+  }
+  available_groups <- group_discovery$groups
+  group_discovery$groups <- NULL
   requested_groups <- glc_explorer_nonempty_values(file_group_ids)
-  groups <- available_groups
+  candidate_groups <- available_groups
   if (length(requested_groups) > 0L) {
-    groups <- groups[
-      groups$file_group_id %in% requested_groups,
+    candidate_groups <- candidate_groups[
+      candidate_groups$file_group_id %in% requested_groups,
       ,
       drop = FALSE
     ]
   }
+  requested_variables <- glc_explorer_nonempty_values(variables)
+  requested_terms <- glc_explorer_nonempty_values(terms)
+  group_filter <- glc_explorer_filter_compatible_groups(
+    candidate_groups,
+    requested_variables,
+    requested_terms
+  )
+  groups <- group_filter$groups
+  group_filter$groups <- NULL
   resolved_dataset_ids <- unique(groups$dataset_id)
   group_ids <- unique(groups$file_group_id)
   available_variables <- selection$variables[
@@ -748,17 +1278,22 @@ glc_explorer_build_selection_plan <- function(
     ,
     drop = FALSE
   ]
-  requested_variables <- glc_explorer_nonempty_values(variables)
-  variable_filter_active <- length(requested_variables) > 0L
-  selected_variables <- if (variable_filter_active) {
-    unique(available_variables$name[
-      available_variables$name %in% requested_variables
-    ])
-  } else {
-    unique(available_variables$name)
-  }
-  variable_filter <- if (variable_filter_active) {
+  selected_variable_rows <- glc_explorer_selected_variable_rows(
+    available_variables,
+    requested_variables,
+    requested_terms
+  )
+  selected_variables <- unique(selected_variable_rows$name)
+  name_filter_active <- length(requested_variables) > 0L
+  term_filter_active <- length(requested_terms) > 0L
+  variable_filter_active <- name_filter_active || term_filter_active
+  variable_filter <- if (name_filter_active) {
     selected_variables
+  } else {
+    NULL
+  }
+  term_filter <- if (term_filter_active) {
+    requested_terms
   } else {
     NULL
   }
@@ -774,26 +1309,46 @@ glc_explorer_build_selection_plan <- function(
   if (length(selected_datasets) == 0L) {
     issues <- c(issues, "Select at least one eligible dataset.")
   }
-  if (length(selected_datasets) > 0L && nrow(groups) == 0L) {
+  if (length(selected_datasets) > 0L && nrow(candidate_groups) == 0L) {
     issues <- c(
       issues,
-      if (length(requested_groups) > 0L) {
+      if (
+        isTRUE(group_discovery$active) &&
+          identical(group_discovery$included_count, 0L)
+      ) {
+        "No file groups match the current file-group field filters."
+      } else if (length(requested_groups) > 0L) {
         "None of the chosen file groups is available for the current filters."
       } else {
         "No file groups are available for the selected datasets."
       }
     )
+  } else if (
+    length(selected_datasets) > 0L &&
+      isTRUE(group_filter$active) &&
+      nrow(groups) == 0L
+  ) {
+    issues <- c(
+      issues,
+      paste0(
+        "No eligible file groups provide a compatible complete match for ",
+        "the chosen source variables or semantic terms."
+      )
+    )
   }
   compatibility <- if (nrow(groups) > 0L) {
-    glc_explorer_selection_compatibility(groups, selected_variables)
+    glc_explorer_selection_compatibility(
+      groups,
+      requested_variables,
+      requested_terms
+    )
   } else {
     list(ok = FALSE, issues = character())
   }
   issues <- unique(c(issues, compatibility$issues))
-  package_info <- glc_explorer_package_selection_info(package)
   script_issues <- unique(c(
     issues,
-    glc_explorer_script_source_issues(package_info)
+    source_issues
   ))
   resolved_datasets <- selection$datasets[
     selection$datasets$dataset_id %in% resolved_dataset_ids,
@@ -809,7 +1364,8 @@ glc_explorer_build_selection_plan <- function(
   selection_hash <- glc_explorer_selection_hash(
     package_info,
     resolved_dataset_ids,
-    group_ids
+    group_ids,
+    mode = mode
   )
   directory_name <- paste(
     glc_explorer_safe_path_component(package_info$package_id),
@@ -819,29 +1375,40 @@ glc_explorer_build_selection_plan <- function(
   )
 
   list(
+    mode = mode,
     package_id = package_info$package_id,
     repository = package_info$repository,
     commit = package_info$commit,
     registry_generated_at = package_info$registry_generated_at,
     facets = facets,
+    metadata_resources = character(),
     requested = list(
       participant_ids = glc_explorer_nonempty_values(participant_ids),
       device_ids = glc_explorer_nonempty_values(device_ids),
       dataset_ids = requested_datasets,
+      group_filters = group_discovery$filters,
       file_group_ids = requested_groups,
-      variables = requested_variables
+      variables = requested_variables,
+      terms = requested_terms
     ),
     participants = resolved_participants,
     devices = resolved_devices,
     datasets = resolved_dataset_ids,
     file_groups = group_ids,
     variables = selected_variables,
+    terms = requested_terms,
     variable_filter = variable_filter,
+    term_filter = term_filter,
+    name_filter_active = name_filter_active,
+    term_filter_active = term_filter_active,
     variable_filter_active = variable_filter_active,
+    group_discovery = group_discovery,
+    group_filter = group_filter,
     files = files,
     estimated_bytes = estimated_bytes,
     unknown_file_sizes = sum(!known_bytes),
     preview_files = preview_files,
+    n_max = n_max,
     standardization = standardize,
     compatibility = compatibility,
     issues = issues,
@@ -863,6 +1430,100 @@ glc_explorer_r_literal <- function(value) {
   )
 }
 
+glc_explorer_cleanup_lines <- function(temporary_objects, section) {
+  object_lines <- strsplit(
+    glc_explorer_r_literal(unique(temporary_objects)),
+    "\n",
+    fixed = TRUE
+  )[[1L]]
+  object_lines <- paste0("    ", object_lines)
+  object_lines[[length(object_lines)]] <- paste0(
+    object_lines[[length(object_lines)]],
+    ","
+  )
+
+  c(
+    sprintf(
+      "# ---- %d. Clean up temporary handoff objects ----",
+      as.integer(section)
+    ),
+    "# Keep only the imported result and local package handle.",
+    "rm(",
+    "  list = intersect(",
+    object_lines,
+    "    ls(envir = environment(), all.names = TRUE)",
+    "  ),",
+    "  envir = environment()",
+    ")"
+  )
+}
+
+glc_explorer_metadata_script <- function(plan) {
+  registry_timestamp <- if (is.na(plan$registry_generated_at)) {
+    "not recorded"
+  } else {
+    plan$registry_generated_at
+  }
+  lines <- c(
+    "# Generated by the GLC data explorer.",
+    paste0("# Registry timestamp: ", registry_timestamp),
+    paste0("# Exact latest-passing SHA: ", plan$commit),
+    "# This script downloads package metadata only; it imports no data files.",
+    "# glcdp functions are called explicitly and no packages are attached.",
+    "",
+    "# ---- 1. Reproducible package settings ----",
+    paste0("repository <- ", glc_explorer_r_literal(plan$repository)),
+    paste0("commit_sha <- ", glc_explorer_r_literal(plan$commit)),
+    paste0(
+      "metadata_resources <- ",
+      glc_explorer_r_literal(plan$metadata_resources)
+    ),
+    paste0(
+      "metadata_dir <- ",
+      glc_explorer_r_literal(plan$data_directory)
+    ),
+    "",
+    "# ---- 2. Download the selected metadata when needed ----",
+    "# Reuse an existing manifest-backed directory to avoid downloading twice.",
+    "manifest_path <- file.path(metadata_dir, \"glcdp-manifest.json\")",
+    "if (!file.exists(manifest_path)) {",
+    paste0(
+      "  remote_package <- glcdp::glc_open(",
+      "repository, ref = commit_sha, quiet = TRUE)"
+    ),
+    "  glcdp::glc_download(",
+    "    remote_package,",
+    "    dest_dir = metadata_dir,",
+    "    include = \"metadata\",",
+    "    resources = metadata_resources,",
+    "    overwrite = FALSE",
+    "  )",
+    "}",
+    "",
+    "# ---- 3. Open the local package and load its metadata ----",
+    "local_package <- glcdp::glc_open(metadata_dir, quiet = TRUE)",
+    paste0(
+      "glc_metadata <- glcdp::glc_metadata(",
+      "local_package, resources = metadata_resources)"
+    ),
+    "",
+    glc_explorer_cleanup_lines(
+      c(
+        "repository",
+        "commit_sha",
+        "metadata_resources",
+        "metadata_dir",
+        "manifest_path",
+        "remote_package"
+      ),
+      section = 4L
+    ),
+    "",
+    "# local_package is the package handle; glc_metadata is a named metadata list."
+  )
+  paste(lines, collapse = "\n")
+}
+
 glc_explorer_selection_script <- function(plan) {
   if (!isTRUE(plan$script_ready)) {
     glc_abort(
@@ -872,6 +1533,9 @@ glc_explorer_selection_script <- function(plan) {
       ),
       class = "glcdp_explorer_invalid_selection"
     )
+  }
+  if (identical(plan$mode %||% "data", "metadata")) {
+    return(glc_explorer_metadata_script(plan))
   }
   registry_timestamp <- if (is.na(plan$registry_generated_at)) {
     "not recorded"
@@ -910,6 +1574,11 @@ glc_explorer_selection_script <- function(plan) {
       "source_variables <- ",
       glc_explorer_r_literal(plan$variable_filter)
     ),
+    paste0(
+      "source_terms <- ",
+      glc_explorer_r_literal(plan$term_filter)
+    ),
+    paste0("row_limit <- ", glc_explorer_r_literal(plan$n_max %||% Inf)),
     paste0("data_dir <- ", glc_explorer_r_literal(plan$data_directory)),
     "",
     "# ---- 2. Download the selected files when needed ----",
@@ -940,7 +1609,9 @@ glc_explorer_selection_script <- function(plan) {
     "  local_package,",
     "  dataset_id = dataset_ids,",
     "  file_group = file_groups,",
-    "  variables = source_variables",
+    "  variables = source_variables,",
+    "  terms = source_terms,",
+    "  n_max = row_limit",
     ")",
     "",
     "# ---- 5. Import and combine the data ----",
@@ -950,6 +1621,26 @@ glc_explorer_selection_script <- function(plan) {
       "glc_selection, standardize = ",
       glc_explorer_r_literal(plan$standardization),
       ")"
+    ),
+    "",
+    glc_explorer_cleanup_lines(
+      c(
+        "repository",
+        "commit_sha",
+        "selection_facets",
+        "participant_ids",
+        "device_ids",
+        "dataset_ids",
+        "file_groups",
+        "source_variables",
+        "source_terms",
+        "row_limit",
+        "data_dir",
+        "manifest_path",
+        "remote_package",
+        "glc_selection"
+      ),
+      section = 6L
     ),
     "",
     "# glc_data is the final imported table and is ready for analysis."
@@ -968,7 +1659,74 @@ glc_explorer_preview_row_limit <- function(value, default = 10L) {
   max(1L, min(1000L, value))
 }
 
-glc_explorer_preview_selection <- function(package, plan, n_max = 10L) {
+glc_explorer_preview_file_limit <- function(
+  value,
+  available,
+  default = 2L
+) {
+  if (length(available) == 0L || is.null(available)) {
+    return(0L)
+  }
+  available <- suppressWarnings(as.integer(available[[1L]] %||% 0L))
+  if (is.na(available) || available < 1L) {
+    return(0L)
+  }
+  if (length(value) == 0L || is.null(value) || is.na(value[[1L]])) {
+    value <- default
+  }
+  value <- suppressWarnings(as.integer(value[[1L]]))
+  if (is.na(value)) {
+    value <- as.integer(default)
+  }
+  max(1L, min(available, value))
+}
+
+glc_explorer_preview_files <- function(plan, file_limit = 2L) {
+  available <- glc_explorer_nonempty_values(plan$preview_files)
+  limit <- glc_explorer_preview_file_limit(
+    file_limit,
+    length(available)
+  )
+  utils::head(available, limit)
+}
+
+glc_explorer_preview_transfer <- function(plan, file_limit = 2L) {
+  files <- glc_explorer_preview_files(plan, file_limit)
+  inventory <- plan$files
+  if (
+    !inherits(inventory, "data.frame") ||
+      !all(c("declared_path", "expected_bytes") %in% names(inventory))
+  ) {
+    return(list(
+      files = files,
+      available = length(glc_explorer_nonempty_values(plan$preview_files)),
+      estimated_bytes = 0,
+      unknown_file_sizes = length(files)
+    ))
+  }
+  file_rows <- inventory[
+    match(files, inventory$declared_path, nomatch = 0L),
+    ,
+    drop = FALSE
+  ]
+  known_bytes <- !is.na(file_rows$expected_bytes)
+  list(
+    files = files,
+    available = length(glc_explorer_nonempty_values(plan$preview_files)),
+    estimated_bytes = sum(
+      file_rows$expected_bytes[known_bytes],
+      na.rm = TRUE
+    ),
+    unknown_file_sizes = sum(!known_bytes)
+  )
+}
+
+glc_explorer_preview_selection <- function(
+  package,
+  plan,
+  n_max = 10L,
+  file_limit = 2L
+) {
   if (!isTRUE(plan$preview_ready)) {
     glc_abort(
       paste(
@@ -978,27 +1736,76 @@ glc_explorer_preview_selection <- function(package, plan, n_max = 10L) {
       class = "glcdp_explorer_invalid_selection"
     )
   }
+  preview_limit <- glc_explorer_preview_row_limit(n_max)
+  final_limit <- plan$n_max %||% Inf
+  if (is.finite(final_limit)) {
+    preview_limit <- min(preview_limit, final_limit)
+  }
+  preview_files <- glc_explorer_preview_files(plan, file_limit)
   collection <- glc_read(
     package,
     dataset_id = plan$datasets,
     file_group = plan$file_groups,
-    files = plan$preview_files,
+    files = preview_files,
     variables = plan$variable_filter,
-    n_max = glc_explorer_preview_row_limit(n_max),
+    terms = plan$term_filter,
+    n_max = preview_limit,
     progress = FALSE
   )
   result <- glc_collect(collection, standardize = plan$standardization)
   tibble::as_tibble(result)
 }
 
+glc_explorer_format_preview <- function(data) {
+  if (is.null(data)) return(NULL)
+  result <- data
+  datetime_columns <- names(result)[vapply(
+    result,
+    inherits,
+    logical(1),
+    what = "POSIXct"
+  )]
+  for (name in datetime_columns) {
+    timezone <- attr(result[[name]], "tzone")
+    if (is.null(timezone) || length(timezone) == 0L || is.na(timezone[[1L]])) {
+      timezone <- "UTC"
+    } else {
+      timezone <- timezone[[1L]]
+    }
+    result[[name]] <- format(
+      result[[name]],
+      format = "%Y-%m-%d %H:%M:%S %Z",
+      tz = timezone
+    )
+  }
+  result
+}
+
 glc_explorer_download_filename <- function(plan) {
+  suffix <- if (identical(plan$mode %||% "data", "metadata")) {
+    "-metadata.R"
+  } else {
+    "-selection.R"
+  }
   paste0(
     glc_explorer_safe_path_component(plan$package_id),
-    "-selection.R"
+    suffix
   )
 }
 
-glc_explorer_download_complete_modal <- function(filename) {
+glc_explorer_download_complete_modal <- function(filename, mode = "data") {
+  mode <- glc_explorer_handoff_mode(mode)
+  description <- if (identical(mode, "metadata")) {
+    paste0(
+      " in R to download the selected package metadata and load both the ",
+      "package handle and metadata list."
+    )
+  } else {
+    paste0(
+      " in R to download, import, and collect the data exactly as ",
+      "specified in your selection."
+    )
+  }
   shiny::modalDialog(
     title = shiny::tagList(
       shiny::icon("circle-check"),
@@ -1007,10 +1814,7 @@ glc_explorer_download_complete_modal <- function(filename) {
     shiny::tags$p(
       "Use ",
       shiny::tags$code(filename),
-      paste0(
-        " in R to download, import, and collect the data exactly as ",
-        "specified in your selection."
-      )
+      description
     ),
     shiny::tags$p("You can now:"),
     shiny::tags$ul(
@@ -1028,9 +1832,271 @@ glc_explorer_choice_values <- function(value) {
   stats::setNames(value, value)
 }
 
+glc_explorer_preserve_selected_choices <- function(
+  choices,
+  selected,
+  universe = choices
+) {
+  normalize <- function(value) {
+    labels <- names(value)
+    value <- as.character(value)
+    if (is.null(labels) || length(labels) != length(value)) {
+      labels <- value
+    } else {
+      missing <- is.na(labels) | !nzchar(labels)
+      labels[missing] <- value[missing]
+    }
+    stats::setNames(value, labels)
+  }
+
+  choices <- normalize(choices)
+  universe <- normalize(universe)
+  selected <- intersect(
+    glc_explorer_nonempty_values(selected),
+    unname(universe)
+  )
+  missing <- setdiff(selected, unname(choices))
+  if (length(missing) > 0L) {
+    choices <- c(
+      choices,
+      universe[match(missing, unname(universe))]
+    )
+  }
+  choices[!duplicated(unname(choices))]
+}
+
+glc_explorer_variable_term_choices <- function(variables) {
+  if (
+    !inherits(variables, "data.frame") ||
+      nrow(variables) == 0L ||
+      !"term" %in% names(variables)
+  ) {
+    return(character())
+  }
+  terms <- sort(glc_explorer_nonempty_values(variables$term))
+  term_names <- if ("term_name" %in% names(variables)) {
+    vapply(
+      terms,
+      function(term) {
+        names <- glc_explorer_nonempty_values(
+          variables$term_name[variables$term == term]
+        )
+        if (length(names) == 0L) "" else names[[1L]]
+      },
+      character(1)
+    )
+  } else {
+    rep("", length(terms))
+  }
+  labels <- ifelse(
+    nzchar(term_names),
+    paste(terms, term_names, sep = " \u2014 "),
+    terms
+  )
+  stats::setNames(terms, labels)
+}
+
 glc_explorer_default_variables <- function(variables) {
   primary <- unique(variables$name[variables$primary %in% TRUE])
   if (length(primary) > 0L) primary else unique(variables$name)
+}
+
+glc_explorer_selection_group_filter_spec <- function(
+  device_ids = character(),
+  device_locations = character(),
+  location_types = character(),
+  modalities = character(),
+  roles = character(),
+  data_states = character(),
+  variable_names = character(),
+  variable_terms = character()
+) {
+  filters <- list(
+    device_ids = glc_explorer_nonempty_values(device_ids),
+    device_locations = glc_explorer_nonempty_values(device_locations),
+    location_types = glc_explorer_nonempty_values(location_types),
+    modalities = glc_explorer_nonempty_values(modalities),
+    roles = glc_explorer_nonempty_values(roles),
+    data_states = glc_explorer_nonempty_values(data_states),
+    variable_names = glc_explorer_nonempty_values(variable_names),
+    variable_terms = glc_explorer_nonempty_values(variable_terms)
+  )
+  filters$active <- any(lengths(filters) > 0L)
+  filters
+}
+
+glc_explorer_normalize_selection_group_filters <- function(filters = NULL) {
+  filters <- filters %||% list()
+  glc_explorer_selection_group_filter_spec(
+    device_ids = filters$device_ids,
+    device_locations = filters$device_locations,
+    location_types = filters$location_types,
+    modalities = filters$modalities,
+    roles = filters$roles,
+    data_states = filters$data_states,
+    variable_names = filters$variable_names,
+    variable_terms = filters$variable_terms
+  )
+}
+
+glc_explorer_selection_group_column <- function(groups, name) {
+  if (!name %in% names(groups)) {
+    return(rep(NA_character_, nrow(groups)))
+  }
+  as.character(groups[[name]])
+}
+
+glc_explorer_selection_group_list_column <- function(groups, name) {
+  if (!name %in% names(groups)) {
+    return(rep(list(character()), nrow(groups)))
+  }
+  groups[[name]]
+}
+
+glc_explorer_selection_group_filter_result <- function(
+  groups,
+  filters = NULL
+) {
+  filters <- glc_explorer_normalize_selection_group_filters(filters)
+  candidate_count <- nrow(groups)
+  keep <- rep(TRUE, candidate_count)
+  scalar_fields <- list(
+    device_ids = "device_id",
+    device_locations = "device_location",
+    location_types = "device_location_type",
+    roles = "role",
+    data_states = "data_state"
+  )
+  for (filter_name in names(scalar_fields)) {
+    selected <- filters[[filter_name]]
+    if (length(selected) > 0L) {
+      values <- glc_explorer_selection_group_column(
+        groups,
+        scalar_fields[[filter_name]]
+      )
+      keep <- keep & !is.na(values) & nzchar(values) & values %in% selected
+    }
+  }
+  if (length(filters$modalities) > 0L) {
+    values <- glc_explorer_selection_group_list_column(groups, "modalities")
+    keep <- keep &
+      vapply(
+        values,
+        function(value) {
+          any(glc_explorer_nonempty_values(value) %in% filters$modalities)
+        },
+        logical(1)
+      )
+  }
+  if (
+    length(filters$variable_names) > 0L ||
+      length(filters$variable_terms) > 0L
+  ) {
+    cached_names <- if ("variable_names" %in% names(groups)) {
+      groups$variable_names
+    } else {
+      NULL
+    }
+    cached_terms <- if ("variable_terms" %in% names(groups)) {
+      groups$variable_terms
+    } else {
+      NULL
+    }
+    variables <- if (is.null(cached_names) || is.null(cached_terms)) {
+      glc_explorer_selection_group_list_column(groups, "variables")
+    } else {
+      NULL
+    }
+    keep <- keep &
+      vapply(
+        seq_len(candidate_count),
+        function(index) {
+          if (!is.null(variables)) {
+            value <- variables[[index]]
+            if (!inherits(value, "data.frame")) {
+              return(FALSE)
+            }
+            names <- if ("name" %in% names(value)) {
+              glc_explorer_nonempty_values(value$name)
+            } else {
+              character()
+            }
+            terms <- if ("term" %in% names(value)) {
+              glc_explorer_nonempty_values(value$term)
+            } else {
+              character()
+            }
+          } else {
+            names <- cached_names[[index]]
+            terms <- cached_terms[[index]]
+          }
+          all(filters$variable_names %in% names) &&
+            all(filters$variable_terms %in% terms)
+        },
+        logical(1)
+      )
+  }
+  filtered <- groups[keep, , drop = FALSE]
+  list(
+    active = isTRUE(filters$active),
+    candidate_count = candidate_count,
+    included_count = nrow(filtered),
+    excluded_count = candidate_count - nrow(filtered),
+    dataset_count = length(glc_explorer_nonempty_values(
+      filtered$dataset_id
+    )),
+    filters = filters,
+    groups = filtered
+  )
+}
+
+glc_explorer_selection_group_field_choices <- function(groups) {
+  nested_values <- function(column) {
+    values <- glc_explorer_selection_group_list_column(groups, "variables")
+    unlist(
+      lapply(values, function(value) {
+        if (!inherits(value, "data.frame") || !column %in% names(value)) {
+          return(character())
+        }
+        value[[column]]
+      }),
+      use.names = FALSE
+    )
+  }
+  list(
+    device_ids = glc_explorer_choice_values(
+      glc_explorer_selection_group_column(groups, "device_id")
+    ),
+    device_locations = glc_explorer_choice_values(
+      glc_explorer_selection_group_column(groups, "device_location")
+    ),
+    location_types = glc_explorer_choice_values(
+      glc_explorer_selection_group_column(groups, "device_location_type")
+    ),
+    modalities = glc_explorer_choice_values(unlist(
+      glc_explorer_selection_group_list_column(groups, "modalities"),
+      use.names = FALSE
+    )),
+    roles = glc_explorer_choice_values(
+      glc_explorer_selection_group_column(groups, "role")
+    ),
+    data_states = glc_explorer_choice_values(
+      glc_explorer_selection_group_column(groups, "data_state")
+    ),
+    variable_names = glc_explorer_choice_values(
+      if ("variable_names" %in% names(groups)) {
+        unlist(groups$variable_names, use.names = FALSE)
+      } else {
+        nested_values("name")
+      }
+    ),
+    variable_terms = glc_explorer_variable_term_choices(
+      tibble::tibble(
+        term = nested_values("term"),
+        term_name = nested_values("term_name")
+      )
+    )
+  )
 }
 
 glc_explorer_file_group_choices <- function(groups) {
@@ -1062,7 +2128,8 @@ glc_explorer_resolved_group_rows <- function(
   selection,
   scope,
   dataset_ids,
-  file_group_ids = character()
+  file_group_ids = character(),
+  group_filters = NULL
 ) {
   selected_datasets <- intersect(
     scope$dataset_ids,
@@ -1080,6 +2147,10 @@ glc_explorer_resolved_group_rows <- function(
       drop = FALSE
     ]
   }
+  groups <- glc_explorer_selection_group_filter_result(
+    groups,
+    group_filters
+  )$groups
   requested_groups <- glc_explorer_nonempty_values(file_group_ids)
   if (length(requested_groups) > 0L) {
     groups <- groups[
@@ -1095,13 +2166,15 @@ glc_explorer_available_variables <- function(
   selection,
   scope,
   dataset_ids,
-  file_group_ids = character()
+  file_group_ids = character(),
+  group_filters = NULL
 ) {
   groups <- glc_explorer_resolved_group_rows(
     selection,
     scope,
     dataset_ids,
-    file_group_ids
+    file_group_ids,
+    group_filters
   )
   selection$variables[
     selection$variables$file_group_id %in% groups$file_group_id,
@@ -1131,11 +2204,53 @@ glc_explorer_format_bytes <- function(bytes, unknown = 0L) {
   }
 }
 
+glc_explorer_display_selection_values <- function(values, limit = 8L) {
+  values <- glc_explorer_nonempty_values(values)
+  limit <- suppressWarnings(as.integer(limit[[1L]] %||% 8L))
+  if (is.na(limit) || limit < 1L) {
+    limit <- 8L
+  }
+  if (length(values) <= limit) {
+    return(glc_explorer_display_values(values))
+  }
+  paste0(
+    paste(utils::head(values, limit), collapse = ", "),
+    " \u2026 (+",
+    length(values) - limit,
+    " more)"
+  )
+}
+
 glc_explorer_selection_summary_table <- function(plan) {
+  if (identical(plan$mode %||% "data", "metadata")) {
+    return(data.frame(
+      Selection = c(
+        "Handoff",
+        "Repository",
+        "Exact revision",
+        "Metadata resources",
+        "Relative metadata directory"
+      ),
+      Value = c(
+        "Package and metadata only",
+        plan$repository,
+        plan$commit,
+        glc_explorer_display_selection_values(plan$metadata_resources),
+        plan$data_directory
+      ),
+      check.names = FALSE,
+      stringsAsFactors = FALSE
+    ))
+  }
   variable_selection <- if (isTRUE(plan$variable_filter_active)) {
-    glc_explorer_display_values(plan$variables)
+    glc_explorer_display_selection_values(plan$variables)
   } else {
     paste0("All available (", length(plan$variables), ")")
+  }
+  term_selection <- if (isTRUE(plan$term_filter_active)) {
+    glc_explorer_display_selection_values(plan$terms)
+  } else {
+    "Not filtered"
   }
   data.frame(
     Selection = c(
@@ -1144,24 +2259,32 @@ glc_explorer_selection_summary_table <- function(plan) {
       "Datasets",
       "File groups",
       "Source variables",
+      "Semantic terms",
       "Files",
       "Preview files",
       "Estimated transfer",
+      "Maximum rows per file",
       "Collection mode",
       "Relative data directory"
     ),
     Value = c(
-      glc_explorer_display_values(plan$participants),
-      glc_explorer_display_values(plan$devices),
-      glc_explorer_display_values(plan$datasets),
-      glc_explorer_display_values(plan$file_groups),
+      glc_explorer_display_selection_values(plan$participants),
+      glc_explorer_display_selection_values(plan$devices),
+      glc_explorer_display_selection_values(plan$datasets),
+      glc_explorer_display_selection_values(plan$file_groups),
       variable_selection,
+      term_selection,
       nrow(plan$files),
       length(plan$preview_files),
       glc_explorer_format_bytes(
         plan$estimated_bytes,
         plan$unknown_file_sizes
       ),
+      if (is.finite(plan$n_max %||% Inf)) {
+        format(plan$n_max, big.mark = ",", scientific = FALSE)
+      } else {
+        "All rows"
+      },
       if (identical(plan$standardization, "lightlogr")) {
         "LightLogR-compatible"
       } else {
@@ -1180,6 +2303,7 @@ glc_explorer_selection_group_table <- function(selection, plan) {
     ,
     drop = FALSE
   ]
+  location <- glc_explorer_selection_group_column(groups, "device_location")
   data.frame(
     Dataset = groups$dataset_id,
     `File group` = groups$file_group_id,
@@ -1187,6 +2311,11 @@ glc_explorer_selection_group_table <- function(selection, plan) {
       is.na(groups$device_id) | !nzchar(groups$device_id),
       "\u2014",
       groups$device_id
+    ),
+    `Wearing position` = ifelse(
+      is.na(location) | !nzchar(location),
+      "\u2014",
+      location
     ),
     Format = groups$format,
     `Time zone` = groups$timezone,
@@ -1203,11 +2332,84 @@ glc_explorer_selection_group_table <- function(selection, plan) {
 }
 
 glc_explorer_selection_issues_tag <- function(plan) {
+  if (identical(plan$mode %||% "data", "metadata")) {
+    if (isTRUE(plan$script_ready)) {
+      return(shiny::tags$div(
+        class = "alert alert-success py-2",
+        role = "status",
+        shiny::icon("circle-check"),
+        sprintf(
+          " Package metadata is ready to export for %d resource(s).",
+          length(plan$metadata_resources)
+        )
+      ))
+    }
+    return(shiny::tags$div(
+      class = "alert alert-warning py-2",
+      role = "status",
+      shiny::icon("triangle-exclamation"),
+      shiny::tags$strong(" Metadata handoff needs attention"),
+      shiny::tags$ul(
+        class = "mb-0 mt-1",
+        lapply(plan$script_issues, shiny::tags$li)
+      )
+    ))
+  }
   if (isTRUE(plan$script_ready)) {
     variables <- if (isTRUE(plan$variable_filter_active)) {
       paste0(length(plan$variables), " source variable(s)")
     } else {
       paste0("all ", length(plan$variables), " available source variable(s)")
+    }
+    discovery_notice <- if (isTRUE(plan$group_discovery$active)) {
+      shiny::tags$div(
+        class = "mt-1",
+        shiny::icon("magnifying-glass"),
+        sprintf(
+          paste0(
+            " File-group fields match %d of %d eligible groups across ",
+            "%d dataset(s); %d group(s) are excluded by those fields."
+          ),
+          plan$group_discovery$included_count,
+          plan$group_discovery$candidate_count,
+          plan$group_discovery$dataset_count,
+          plan$group_discovery$excluded_count
+        )
+      )
+    } else {
+      NULL
+    }
+    group_filter_notice <- if (isTRUE(plan$group_filter$active)) {
+      file_group_label <- if (
+        identical(plan$group_filter$candidate_count, 1L)
+      ) {
+        "file group"
+      } else {
+        "file groups"
+      }
+      excluded_verb <- if (identical(plan$group_filter$excluded_count, 1L)) {
+        "is"
+      } else {
+        "are"
+      }
+      shiny::tags$div(
+        class = "mt-1",
+        shiny::icon("filter"),
+        sprintf(
+          paste0(
+            " Variable filters include %d of %d eligible %s; ",
+            "%d %s excluded automatically because they are not compatible ",
+            "with this selection."
+          ),
+          plan$group_filter$included_count,
+          plan$group_filter$candidate_count,
+          file_group_label,
+          plan$group_filter$excluded_count,
+          excluded_verb
+        )
+      )
+    } else {
+      NULL
     }
     return(shiny::tags$div(
       class = "alert alert-success py-2",
@@ -1221,7 +2423,9 @@ glc_explorer_selection_issues_tag <- function(plan) {
         " file group(s), and ",
         variables,
         "."
-      )
+      ),
+      discovery_notice,
+      group_filter_notice
     ))
   }
   issues <- unique(c(plan$issues, plan$script_issues))
@@ -1250,6 +2454,129 @@ glc_explorer_selection_issues_tag <- function(plan) {
   )
 }
 
+glc_explorer_handoff_information_ui <- function(ns) {
+  data_only <- function(...) {
+    shiny::conditionalPanel(
+      condition = "input.handoff_mode === 'data'",
+      ...,
+      ns = ns
+    )
+  }
+  metadata_only <- function(...) {
+    shiny::conditionalPanel(
+      condition = "input.handoff_mode === 'metadata'",
+      ...,
+      ns = ns
+    )
+  }
+  step <- function(value, ...) {
+    shiny::conditionalPanel(
+      condition = sprintf("input.handoff_tab === '%s'", value),
+      ...,
+      ns = ns
+    )
+  }
+
+  shiny::tags$aside(
+    class = "handoff-information-column",
+    `aria-label` = "Selection information",
+    shiny::uiOutput(ns("plan_status")),
+    step(
+      "package",
+      shiny::uiOutput(ns("package_source")),
+      shiny::tags$div(
+        class = "alert alert-info py-2 small",
+        role = "note",
+        paste0(
+          "Choose a lightweight package-and-metadata handoff or continue ",
+          "with a data import. Every export pins the validated revision."
+        )
+      )
+    ),
+    step(
+      "groups",
+      data_only(
+        shiny::uiOutput(ns("seed_notice")),
+        shiny::tags$div(
+          class = "alert alert-light border py-2 small",
+          role = "status",
+          shiny::textOutput(ns("file_group_filter_count"), inline = TRUE)
+        ),
+        shiny::tags$p(
+          class = "small text-body-secondary",
+          paste0(
+            "Exact group choices stay selected when a later participant, ",
+            "device, or variable filter temporarily excludes them."
+          )
+        )
+      )
+    ),
+    step(
+      "people",
+      data_only(
+        shiny::uiOutput(ns("participant_device_step_note")),
+        shiny::tags$div(
+          class = "alert alert-info py-2 small",
+          role = "note",
+          paste0(
+            "These filters narrow the active result without rewriting the ",
+            "dataset or exact file-group choices from Step 2. Resetting a ",
+            "filter restores the matching part of that selection."
+          )
+        )
+      )
+    ),
+    step(
+      "variables",
+      data_only(
+        shiny::uiOutput(ns("variable_step_note")),
+        shiny::tags$div(
+          class = "alert alert-info py-2 small",
+          role = "note",
+          paste0(
+            "Variable filters may temporarily exclude file groups, but the ",
+            "underlying Step 2 selection remains available when filters are ",
+            "cleared."
+          )
+        )
+      )
+    ),
+    step(
+      "summary",
+      shiny::tags$div(
+        class = "alert alert-info py-2 small",
+        role = "note",
+        paste0(
+          "Open the review sections beside this information column to inspect ",
+          "the resolved selection and included file groups."
+        )
+      )
+    ),
+    step(
+      "preview",
+      metadata_only(
+        shiny::tags$div(
+          class = "alert alert-info py-2",
+          role = "note",
+          shiny::icon("circle-info"),
+          paste0(
+            " A data preview is not needed for a package-and-metadata ",
+            "handoff. Continue directly to Export to R."
+          )
+        )
+      ),
+      data_only(
+        shiny::uiOutput(ns("transfer_note")),
+        shiny::uiOutput(ns("preview_status"))
+      )
+    ),
+    step(
+      "export",
+      shiny::uiOutput(ns("script_note"))
+    )
+  )
+}
+
 selection_handoff_ui <- function(id) {
   ns <- shiny::NS(id)
   multi_select <- function(input_id, label, placeholder) {
@@ -1259,206 +2586,611 @@ selection_handoff_ui <- function(id) {
       choices = character(),
       selected = character(),
       multiple = TRUE,
-      options = list(placeholder = placeholder)
+      options = list(
+        placeholder = placeholder,
+        searchField = c("text", "value")
+      )
+    )
+  }
+  data_only <- function(...) {
+    shiny::conditionalPanel(
+      condition = "input.handoff_mode === 'data'",
+      ...,
+      ns = ns
+    )
+  }
+  metadata_only <- function(...) {
+    shiny::conditionalPanel(
+      condition = "input.handoff_mode === 'metadata'",
+      ...,
+      ns = ns
+    )
+  }
+  control_block <- function(..., class = NULL) {
+    shiny::tags$div(
+      class = paste(c("handoff-control-block", class), collapse = " "),
+      ...
+    )
+  }
+  nav_button <- function(input_id, label, direction = c("forward", "back")) {
+    direction <- match.arg(direction)
+    shiny::actionButton(
+      ns(input_id),
+      label,
+      icon = shiny::icon(
+        if (identical(direction, "back")) {
+          "arrow-left"
+        } else {
+          "arrow-right"
+        }
+      ),
+      class = paste(
+        "handoff-nav-action",
+        if (identical(direction, "back")) {
+          "btn-outline-primary"
+        } else {
+          "btn-primary"
+        }
+      )
+    )
+  }
+  step_nav <- function(back = NULL, forward = NULL) {
+    shiny::tags$nav(
+      class = "handoff-step-nav",
+      `aria-label` = "Wizard step navigation",
+      shiny::tags$div(class = "handoff-step-nav-slot", back),
+      shiny::tags$div(class = "handoff-step-nav-slot", forward)
+    )
+  }
+  step_stack <- function(..., navigation) {
+    shiny::tags$div(
+      class = "handoff-step-stack",
+      shiny::tags$div(class = "handoff-step-content", ...),
+      navigation
     )
   }
 
-  bslib::layout_sidebar(
-    sidebar = bslib::sidebar(
-      id = ns("sidebar"),
-      title = "Build a selection",
-      width = 330,
-      bslib::accordion(
-        open = "Data selection",
-        multiple = TRUE,
-        bslib::accordion_panel(
-          "Participants",
-          shiny::uiOutput(ns("participant_age_filter")),
-          multi_select("participant_sex", "Sex", "Any sex"),
-          multi_select("participant_gender", "Gender", "Any gender"),
-          shiny::selectizeInput(
-            ns("characteristic_name"),
-            "Characteristic",
-            choices = c("No characteristic filter" = ""),
-            selected = "",
-            multiple = FALSE
-          ),
-          multi_select(
-            "characteristic_values",
-            "Characteristic values",
-            "Any value"
-          ),
-          multi_select(
-            "participant_ids",
-            "Participant IDs",
-            "All matching participants"
-          ),
-          shiny::helpText(
-            "Choices within a filter use OR; active filters combine with AND."
-          )
-        ),
-        bslib::accordion_panel(
-          "Devices",
-          multi_select(
-            "device_manufacturer",
-            "Manufacturer",
-            "Any manufacturer"
-          ),
-          multi_select("device_model", "Model", "Any model"),
-          multi_select(
-            "device_sensor_type",
-            "Sensor type",
-            "Any sensor type"
-          ),
-          multi_select(
-            "device_ids",
-            "Device IDs",
-            "All matching devices"
-          )
-        ),
-        bslib::accordion_panel(
-          "Data selection",
-          multi_select(
-            "dataset_ids",
-            "Datasets (required)",
-            "Choose one or more datasets"
-          ),
-          shiny::tags$div(
-            class = "d-flex flex-wrap gap-2 mb-3",
-            shiny::actionButton(
-              ns("dataset_select_all"),
-              "Select all eligible",
-              icon = shiny::icon("check-double"),
-              class = "btn-sm"
+  ui <- shiny::tags$div(
+    class = "handoff-wizard",
+    shiny::tags$div(
+      class = "handoff-wizard-layout",
+      shiny::tags$div(
+        class = "handoff-control-column",
+        bslib::navset_card_tab(
+          id = ns("handoff_tab"),
+          selected = "package",
+          bslib::nav_panel(
+            "1. Package & metadata",
+            shiny::tags$div(
+              class = "handoff-wizard-step handoff-wizard-step-form",
+              step_stack(
+                shiny::tags$div(
+                  class = "handoff-control-grid",
+                  control_block(
+                    shiny::radioButtons(
+                      ns("handoff_mode"),
+                      "What should the script load?",
+                      choices = c(
+                        "Package and metadata only" = "metadata",
+                        "Import matching data" = "data"
+                      ),
+                      selected = "metadata"
+                    )
+                  ),
+                  metadata_only(
+                    control_block(
+                      multi_select(
+                        "metadata_resources",
+                        "Metadata resources",
+                        "Choose metadata resources"
+                      ),
+                      shiny::helpText(
+                        paste0(
+                          "The default selects all core resources. No ",
+                          "measurement data are imported."
+                        )
+                      )
+                    )
+                  )
+                ),
+                navigation = shiny::tags$div(
+                  class = "handoff-step-nav-region",
+                  metadata_only(
+                    step_nav(
+                      forward = nav_button(
+                        "metadata_review",
+                        "Review metadata export"
+                      )
+                    )
+                  ),
+                  data_only(
+                    step_nav(
+                      forward = nav_button(
+                        "step_to_groups",
+                        "Choose file groups"
+                      )
+                    )
+                  )
+                )
+              )
             ),
-            shiny::actionButton(
-              ns("dataset_clear"),
-              "Clear",
-              icon = shiny::icon("xmark"),
-              class = "btn-sm"
-            )
+            value = "package"
           ),
-          multi_select(
-            "file_group_ids",
-            "File groups (optional)",
-            "All file groups"
-          ),
-          shiny::helpText(
-            paste0(
-              "Leave empty to include every file group in the selected ",
-              "datasets. Choose a subset when groups cannot be collected ",
-              "together."
-            )
-          ),
-          shiny::actionButton(
-            ns("file_groups_use_all"),
-            "Use all file groups",
-            icon = shiny::icon("layer-group"),
-            class = "btn-sm mb-3"
-          ),
-          multi_select(
-            "variables",
-            "Source variables (optional)",
-            "All source variables"
-          ),
-          shiny::helpText(
-            "Leave empty to import every variable from the included groups."
-          ),
-          shiny::tags$div(
-            class = "d-flex flex-wrap gap-2 mb-3",
-            shiny::actionButton(
-              ns("variables_recommended"),
-              "Recommended",
-              icon = shiny::icon("star"),
-              class = "btn-sm"
+          bslib::nav_panel(
+            "2. File groups",
+            shiny::tags$div(
+              class = "handoff-wizard-step handoff-wizard-step-form",
+              data_only(
+                step_stack(
+                  shiny::tags$div(
+                    class = "handoff-control-grid",
+                    control_block(
+                      shiny::tags$div(
+                        class = "handoff-bounded-selectize",
+                        multi_select(
+                          "dataset_ids",
+                          "Datasets (required)",
+                          "Choose one or more datasets"
+                        )
+                      ),
+                      shiny::tags$div(
+                        class = "d-flex flex-wrap gap-2 mb-3",
+                        shiny::actionButton(
+                          ns("dataset_select_all"),
+                          "Select all eligible",
+                          icon = shiny::icon("check-double"),
+                          class = "btn-sm"
+                        ),
+                        shiny::actionButton(
+                          ns("dataset_clear"),
+                          "Clear",
+                          icon = shiny::icon("xmark"),
+                          class = "btn-sm"
+                        )
+                      ),
+                      shiny::actionButton(
+                        ns("review_file_groups"),
+                        "Filter file groups in Package contents",
+                        icon = shiny::icon("table-list"),
+                        class = "btn-sm btn-outline-primary mb-3"
+                      )
+                    ),
+                    control_block(
+                      multi_select("group_device_id", "Device", "Any device"),
+                      multi_select(
+                        "group_device_location",
+                        "Wearing position",
+                        "Any wearing position"
+                      ),
+                      multi_select(
+                        "group_location_type",
+                        "Position type",
+                        "Any position type"
+                      )
+                    ),
+                    control_block(
+                      multi_select(
+                        "group_modality",
+                        "Modality",
+                        "Any modality"
+                      ),
+                      multi_select("group_role", "Role", "Any role"),
+                      multi_select("group_state", "Data state", "Any state")
+                    ),
+                    control_block(
+                      multi_select(
+                        "group_variable",
+                        "Contains variables",
+                        "Any variables"
+                      ),
+                      multi_select(
+                        "group_term",
+                        "Contains semantic terms",
+                        "Any terms"
+                      )
+                    ),
+                    control_block(
+                      class = "handoff-control-span",
+                      shiny::tags$div(
+                        class = "handoff-bounded-selectize",
+                        multi_select(
+                          "file_group_ids",
+                          "Exact file groups (advanced)",
+                          "Every matching file group"
+                        )
+                      ),
+                      shiny::tags$div(
+                        class = "d-flex flex-wrap gap-2",
+                        shiny::actionButton(
+                          ns("file_groups_use_all"),
+                          "Use every matching group",
+                          icon = shiny::icon("layer-group"),
+                          class = "btn-sm"
+                        ),
+                        shiny::actionButton(
+                          ns("file_group_filters_clear"),
+                          "Clear group filters",
+                          icon = shiny::icon("xmark"),
+                          class = "btn-sm"
+                        )
+                      )
+                    )
+                  ),
+                  shiny::helpText(
+                    paste0(
+                      "Choices within a field use OR and fields combine with ",
+                      "AND. Several variables or terms must all occur."
+                    )
+                  ),
+                  navigation = step_nav(
+                    back = nav_button(
+                      "groups_back",
+                      "Package & metadata",
+                      direction = "back"
+                    ),
+                    forward = nav_button(
+                      "step_to_people",
+                      "Narrow people & devices"
+                    )
+                  )
+                )
+              )
             ),
-            shiny::actionButton(
-              ns("variables_select_all"),
-              "Select all",
-              icon = shiny::icon("check-double"),
-              class = "btn-sm"
-            ),
-            shiny::actionButton(
-              ns("variables_clear"),
-              "Use all variables",
-              icon = shiny::icon("asterisk"),
-              class = "btn-sm"
-            )
+            value = "groups"
           ),
-          shiny::radioButtons(
-            ns("standardization"),
-            "Collection mode",
-            choices = c(
-              "LightLogR-compatible" = "lightlogr",
-              "Keep source columns" = "none"
+          bslib::nav_panel(
+            "3. Participants & devices",
+            shiny::tags$div(
+              class = "handoff-wizard-step handoff-wizard-step-form",
+              data_only(
+                step_stack(
+                  shiny::tags$div(
+                    class = "handoff-control-grid",
+                    control_block(
+                      shiny::tags$h6("Participants"),
+                      shiny::uiOutput(ns("participant_age_filter")),
+                      multi_select("participant_sex", "Sex", "Any sex"),
+                      multi_select(
+                        "participant_gender",
+                        "Gender",
+                        "Any gender"
+                      ),
+                      shiny::selectizeInput(
+                        ns("characteristic_name"),
+                        "Characteristic",
+                        choices = c("No characteristic filter" = ""),
+                        selected = "",
+                        multiple = FALSE
+                      ),
+                      shiny::uiOutput(ns("characteristic_value_filter")),
+                      multi_select(
+                        "participant_ids",
+                        "Participant IDs",
+                        "All matching participants"
+                      )
+                    ),
+                    control_block(
+                      shiny::tags$h6("Devices"),
+                      multi_select(
+                        "device_manufacturer",
+                        "Manufacturer",
+                        "Any manufacturer"
+                      ),
+                      multi_select("device_model", "Model", "Any model"),
+                      multi_select(
+                        "device_sensor_type",
+                        "Sensor type",
+                        "Any sensor type"
+                      ),
+                      multi_select(
+                        "device_ids",
+                        "Device IDs",
+                        "All matching devices"
+                      )
+                    )
+                  ),
+                  shiny::helpText(
+                    paste0(
+                      "Choices within a filter use OR; active filters combine ",
+                      "with AND."
+                    )
+                  ),
+                  navigation = step_nav(
+                    back = nav_button(
+                      "people_back",
+                      "File groups",
+                      direction = "back"
+                    ),
+                    forward = nav_button(
+                      "step_to_variables",
+                      "Narrow variables & rows"
+                    )
+                  )
+                )
+              )
             ),
-            selected = "lightlogr"
+            value = "people"
+          ),
+          bslib::nav_panel(
+            "4. Variables & rows",
+            shiny::tags$div(
+              class = "handoff-wizard-step handoff-wizard-step-form",
+              data_only(
+                step_stack(
+                  shiny::tags$div(
+                    class = "handoff-control-grid",
+                    control_block(
+                      multi_select(
+                        "variable_terms",
+                        "Semantic terms (optional)",
+                        "All semantic terms"
+                      ),
+                      multi_select(
+                        "variables",
+                        "Source variables (optional)",
+                        "All source variables"
+                      ),
+                      shiny::helpText(
+                        paste0(
+                          "Leave both empty to import every source variable. ",
+                          "Names or terms exclude incompatible groups."
+                        )
+                      ),
+                      shiny::tags$div(
+                        class = "d-flex flex-wrap gap-2 mb-3",
+                        shiny::actionButton(
+                          ns("variables_primary"),
+                          "Primary",
+                          icon = shiny::icon("star"),
+                          class = "btn-sm"
+                        ),
+                        shiny::actionButton(
+                          ns("variables_clear"),
+                          "Use all variables",
+                          icon = shiny::icon("asterisk"),
+                          class = "btn-sm"
+                        )
+                      ),
+                      shiny::helpText(
+                        paste0(
+                          "Primary uses declared primary variables, or all ",
+                          "variables when none are declared."
+                        )
+                      )
+                    ),
+                    control_block(
+                      shiny::radioButtons(
+                        ns("row_limit_mode"),
+                        "Rows to import",
+                        choices = c(
+                          "All rows" = "all",
+                          "Maximum rows per file" = "limit"
+                        ),
+                        selected = "all"
+                      ),
+                      shiny::conditionalPanel(
+                        condition = "input.row_limit_mode === 'limit'",
+                        shiny::numericInput(
+                          ns("max_rows_per_file"),
+                          "Maximum rows per file",
+                          value = 10000L,
+                          min = 1L,
+                          step = 1L,
+                          width = "100%"
+                        ),
+                        ns = ns
+                      ),
+                      shiny::radioButtons(
+                        ns("standardization"),
+                        "Collection mode",
+                        choices = c(
+                          "LightLogR-compatible" = "lightlogr",
+                          "Keep source columns" = "none"
+                        ),
+                        selected = "lightlogr"
+                      )
+                    )
+                  ),
+                  navigation = step_nav(
+                    back = nav_button(
+                      "variables_back",
+                      "Participants & devices",
+                      direction = "back"
+                    ),
+                    forward = nav_button(
+                      "step_to_review",
+                      "Review selection"
+                    )
+                  )
+                )
+              )
+            ),
+            value = "variables"
+          ),
+          bslib::nav_panel(
+            "5. Review",
+            shiny::tags$div(
+              class = "handoff-wizard-step handoff-wizard-step-form",
+              step_stack(
+                shiny::tags$p(
+                  class = "text-body-secondary",
+                  paste0(
+                    "Review the resolved selection below. Open only the ",
+                    "section you need."
+                  )
+                ),
+                bslib::accordion(
+                  id = ns("review_sections"),
+                  open = "selection",
+                  multiple = FALSE,
+                  class = "handoff-review-accordion",
+                  bslib::accordion_panel(
+                    "Selection summary",
+                    shiny::tags$div(
+                      class = "table-responsive",
+                      shiny::tableOutput(ns("selection_summary"))
+                    ),
+                    value = "selection",
+                    icon = shiny::icon("list-check")
+                  ),
+                  bslib::accordion_panel(
+                    "Included file groups",
+                    shiny::tags$div(
+                      class = paste(
+                        "d-flex flex-wrap align-items-center",
+                        "justify-content-between gap-2 mb-2"
+                      ),
+                      shiny::tags$p(
+                        class = "small text-body-secondary mb-0",
+                        shiny::textOutput(
+                          ns("group_summary_count"),
+                          inline = TRUE
+                        )
+                      ),
+                      shiny::uiOutput(ns("group_summary_pagination"))
+                    ),
+                    shiny::tags$div(
+                      class = "table-responsive",
+                      shiny::tableOutput(ns("group_summary"))
+                    ),
+                    value = "groups",
+                    icon = shiny::icon("layer-group")
+                  )
+                ),
+                data_only(shiny::uiOutput(ns("metadata_notice"))),
+                navigation = step_nav(
+                  back = nav_button(
+                    "summary_back",
+                    "Variables & rows",
+                    direction = "back"
+                  ),
+                  forward = shiny::uiOutput(ns("summary_continue_ui"))
+                )
+              )
+            ),
+            value = "summary"
+          ),
+          bslib::nav_panel(
+            "6. Preview",
+            shiny::tags$div(
+              class = "handoff-wizard-step handoff-wizard-step-form",
+              metadata_only(
+                step_stack(
+                  navigation = step_nav(
+                    back = nav_button(
+                      "preview_metadata_back",
+                      "Review",
+                      direction = "back"
+                    ),
+                    forward = nav_button(
+                      "metadata_preview_to_export",
+                      "Continue to Export to R"
+                    )
+                  )
+                )
+              ),
+              data_only(
+                step_stack(
+                  shiny::tags$div(
+                    class = "handoff-control-grid handoff-preview-controls",
+                    control_block(
+                      shiny::numericInput(
+                        ns("preview_files"),
+                        "Files to preview",
+                        value = 2L,
+                        min = 1L,
+                        max = 10000L,
+                        step = 1L,
+                        width = "100%"
+                      )
+                    ),
+                    control_block(
+                      shiny::numericInput(
+                        ns("preview_rows"),
+                        "Preview rows per file",
+                        value = 10L,
+                        min = 1L,
+                        max = 1000L,
+                        step = 1L,
+                        width = "100%"
+                      )
+                    ),
+                    control_block(
+                      class = "handoff-control-span handoff-preview-build",
+                      shiny::uiOutput(ns("preview_action"))
+                    )
+                  ),
+                  shiny::tags$div(
+                    class = "handoff-inline-result table-responsive mt-3",
+                    shiny::tableOutput(ns("preview_table"))
+                  ),
+                  navigation = step_nav(
+                    back = nav_button(
+                      "preview_data_back",
+                      "Review",
+                      direction = "back"
+                    ),
+                    forward = nav_button(
+                      "preview_continue",
+                      "Continue to Export to R"
+                    )
+                  )
+                )
+              )
+            ),
+            value = "preview"
+          ),
+          bslib::nav_panel(
+            "7. Export to R",
+            shiny::tags$div(
+              class = "handoff-wizard-step handoff-wizard-step-form",
+              step_stack(
+                shiny::tags$p(
+                  class = "text-body-secondary",
+                  paste0(
+                    "Download the reproducible script or inspect it below ",
+                    "before saving."
+                  )
+                ),
+                shiny::uiOutput(ns("script_download_ui")),
+                shiny::tags$div(
+                  class = "handoff-inline-result handoff-script-result",
+                  shiny::verbatimTextOutput(ns("script"), placeholder = TRUE)
+                ),
+                navigation = shiny::tags$div(
+                  class = "handoff-step-nav-region",
+                  metadata_only(
+                    step_nav(
+                      back = nav_button(
+                        "export_metadata_back",
+                        "Review",
+                        direction = "back"
+                      )
+                    )
+                  ),
+                  data_only(
+                    step_nav(
+                      back = nav_button(
+                        "export_data_back",
+                        "Preview",
+                        direction = "back"
+                      )
+                    )
+                  )
+                )
+              )
+            ),
+            value = "export"
           )
         )
-      )
-    ),
-    shiny::uiOutput(ns("status_message")),
-    shiny::uiOutput(ns("plan_status")),
-    bslib::navset_card_tab(
-      id = ns("handoff_tab"),
-      full_screen = TRUE,
-      bslib::nav_panel(
-        "Selection summary",
-        shiny::tableOutput(ns("selection_summary")),
-        shiny::tags$h5("Included file groups", class = "mt-3"),
-        shiny::tableOutput(ns("group_summary")),
-        shiny::uiOutput(ns("metadata_notice")),
-        shiny::tags$div(
-          class = "d-flex justify-content-end mt-3",
-          shiny::actionButton(
-            ns("summary_continue"),
-            "Continue to preview",
-            icon = shiny::icon("arrow-right"),
-            class = "btn-primary"
-          )
-        ),
-        value = "summary",
-        icon = shiny::icon("1")
       ),
-      bslib::nav_panel(
-        "Preview",
-        shiny::uiOutput(ns("transfer_note")),
-        shiny::tags$div(
-          class = "d-flex align-items-end flex-wrap gap-3",
-          shiny::numericInput(
-            ns("preview_rows"),
-            "Rows to read per file",
-            value = 10L,
-            min = 1L,
-            max = 1000L,
-            step = 1L,
-            width = "12rem"
-          ),
-          shiny::uiOutput(ns("preview_action"))
-        ),
-        shiny::uiOutput(ns("preview_status")),
-        shiny::tableOutput(ns("preview_table")),
-        shiny::tags$div(
-          class = "d-flex justify-content-end mt-3",
-          shiny::actionButton(
-            ns("preview_continue"),
-            "Continue to Export to R",
-            icon = shiny::icon("arrow-right"),
-            class = "btn-primary"
-          )
-        ),
-        value = "preview",
-        icon = shiny::icon("2")
-      ),
-      bslib::nav_panel(
-        "Export to R (R script)",
-        shiny::uiOutput(ns("script_note")),
-        shiny::uiOutput(ns("script_download_ui")),
-        shiny::verbatimTextOutput(ns("script"), placeholder = TRUE),
-        value = "export",
-        icon = shiny::icon("3")
-      )
+      glc_explorer_handoff_information_ui(ns)
     )
+  )
+  ui <- bslib::as_fill_carrier(ui)
+  bslib::as_fill_item(
+    ui,
+    css_selector = ".handoff-wizard-layout"
   )
 }
 
@@ -1466,6 +3198,8 @@ selection_handoff_server <- function(
   id,
   package,
   active,
+  preselection = NULL,
+  default_mode = "data",
   load_selection = glc_explorer_load_selection,
   preview_selection = glc_explorer_preview_selection,
   schedule_after_flush = glc_explorer_after_flush,
@@ -1478,8 +3212,15 @@ selection_handoff_server <- function(
   if (!shiny::is.reactive(active)) {
     glc_abort("{.arg active} must be a reactive expression.")
   }
+  if (!is.null(preselection) && !shiny::is.reactive(preselection)) {
+    glc_abort("{.arg preselection} must be a reactive expression or NULL.")
+  }
+  default_mode <- glc_explorer_handoff_mode(default_mode)
 
   shiny::moduleServer(id, function(input, output, session) {
+    if (is.null(preselection)) {
+      preselection <- shiny::reactive(NULL)
+    }
     selection <- shiny::reactiveVal(NULL)
     status <- shiny::reactiveVal(glc_explorer_status(
       "Open a package before building a selection.",
@@ -1491,8 +3232,17 @@ selection_handoff_server <- function(
       "ready"
     ))
     loaded_key <- NULL
+    observed_package_key <- NULL
     request_id <- 0L
     preview_request_id <- 0L
+    preview_file_preference <- 2L
+    preview_file_update <- NULL
+    group_summary_page_number <- shiny::reactiveVal(1L)
+    pending_preselection <- shiny::reactiveVal(NULL)
+    applied_preselection <- shiny::reactiveVal(NULL)
+    applied_preselection_id <- NULL
+    contents_request <- shiny::reactiveVal(NULL)
+    contents_request_id <- 0L
 
     age_slider_spec <- shiny::reactive({
       value <- selection()
@@ -1500,6 +3250,20 @@ selection_handoff_server <- function(
         return(NULL)
       }
       glc_explorer_age_slider_spec(value$participants$age)
+    })
+
+    characteristic_filter_spec <- shiny::reactive({
+      value <- selection()
+      if (is.null(value)) {
+        return(glc_explorer_characteristic_filter_spec(
+          tibble::tibble(),
+          character()
+        ))
+      }
+      glc_explorer_characteristic_filter_spec(
+        value$participant_characteristics,
+        input$characteristic_name
+      )
     })
 
     output$participant_age_filter <- shiny::renderUI({
@@ -1531,7 +3295,73 @@ selection_handoff_server <- function(
       )
     })
 
-    update_choices <- function(id, choices, selected = character()) {
+    output$characteristic_value_filter <- shiny::renderUI({
+      spec <- characteristic_filter_spec()
+      selected <- shiny::isolate(
+        input$characteristic_values %||% character()
+      )
+      if (identical(spec$type, "numeric") && !is.null(spec$slider)) {
+        selected_range <- glc_explorer_numeric_age_range(selected)
+        if (length(selected_range) == 0L) {
+          selected_range <- spec$slider$value
+        } else {
+          selected_range <- c(
+            max(spec$slider$min, selected_range[[1L]]),
+            min(spec$slider$max, selected_range[[2L]])
+          )
+          if (selected_range[[1L]] > selected_range[[2L]]) {
+            selected_range <- spec$slider$value
+          }
+        }
+        return(shiny::tagList(
+          shiny::sliderInput(
+            session$ns("characteristic_values"),
+            "Characteristic value range",
+            min = spec$slider$min,
+            max = spec$slider$max,
+            value = selected_range,
+            step = spec$slider$step,
+            width = "100%",
+            dragRange = TRUE
+          ),
+          shiny::helpText(
+            paste0(
+              "Move either handle to include participants whose ",
+              spec$name,
+              " value falls within that range."
+            )
+          )
+        ))
+      }
+      choices <- glc_explorer_choice_values(spec$values)
+      shiny::selectizeInput(
+        session$ns("characteristic_values"),
+        "Characteristic values",
+        choices = choices,
+        selected = intersect(
+          glc_explorer_nonempty_values(selected),
+          unname(choices)
+        ),
+        multiple = TRUE,
+        options = list(
+          placeholder = "Any value",
+          searchField = c("text", "value")
+        )
+      )
+    })
+
+    update_choices <- function(
+      id,
+      choices,
+      selected = character(),
+      universe = choices
+    ) {
+      choices <- glc_explorer_preserve_selected_choices(
+        choices,
+        selected,
+        universe
+      )
+      server_side <- length(unname(choices)) > 100L
       shiny::updateSelectizeInput(
         session,
         id,
@@ -1539,7 +3369,8 @@ selection_handoff_server <- function(
         selected = intersect(
           glc_explorer_nonempty_values(selected),
           unname(choices)
-        )
+        ),
+        server = server_side
       )
     }
     update_multi <- function(id, values, selected = character()) {
@@ -1554,14 +3385,22 @@ selection_handoff_server <- function(
       for (id in c(
         "participant_sex",
         "participant_gender",
-        "characteristic_values",
         "participant_ids",
         "device_manufacturer",
         "device_model",
         "device_sensor_type",
         "device_ids",
         "dataset_ids",
+        "group_device_id",
+        "group_device_location",
+        "group_location_type",
+        "group_modality",
+        "group_role",
+        "group_state",
+        "group_variable",
+        "group_term",
         "file_group_ids",
+        "variable_terms",
         "variables"
       )) {
         shiny::updateSelectizeInput(
@@ -1582,7 +3421,232 @@ selection_handoff_server <- function(
         "standardization",
         selected = "lightlogr"
       )
+      shiny::updateRadioButtons(
+        session,
+        "row_limit_mode",
+        selected = "all"
+      )
+      shiny::updateNumericInput(
+        session,
+        "max_rows_per_file",
+        value = 10000L
+      )
+      shiny::updateNumericInput(session, "preview_files", value = 2L)
+      shiny::updateNumericInput(session, "preview_rows", value = 10L)
     }
+
+    handoff_mode <- shiny::reactive({
+      glc_explorer_handoff_mode(input$handoff_mode %||% default_mode)
+    })
+
+    metadata_resource_inventory <- shiny::reactive({
+      value <- package()
+      if (is.null(value)) {
+        return(NULL)
+      }
+      glc_resources(value)
+    })
+
+    shiny::observeEvent(
+      metadata_resource_inventory(),
+      {
+        inventory <- metadata_resource_inventory()
+        if (is.null(inventory)) {
+          return()
+        }
+        choices <- stats::setNames(inventory$resource, inventory$resource)
+        selected <- unique(inventory$resource[inventory$core %in% TRUE])
+        update_choices("metadata_resources", choices, selected)
+      },
+      ignoreInit = FALSE,
+      ignoreNULL = TRUE
+    )
+
+    output$package_source <- shiny::renderUI({
+      value <- package()
+      if (is.null(value)) {
+        return(shiny::tags$p(
+          class = "small text-body-secondary",
+          "Open a package from the Registry first."
+        ))
+      }
+      info <- glc_explorer_package_selection_info(value)
+      shiny::tags$div(
+        class = "alert alert-light border py-2 small",
+        shiny::tags$div(
+          shiny::tags$strong("Repository: "),
+          shiny::tags$code(info$repository)
+        ),
+        shiny::tags$div(
+          shiny::tags$strong("Exact revision: "),
+          shiny::tags$code(substr(info$commit, 1L, 12L))
+        )
+      )
+    })
+
+    normalize_preselection <- function(value) {
+      required <- c(
+        "package_key",
+        "request_id",
+        "dataset_ids",
+        "file_group_ids"
+      )
+      if (!is.list(value) || !all(required %in% names(value))) {
+        return(NULL)
+      }
+      list(
+        package_key = as.character(value$package_key[[1L]]),
+        request_id = as.character(value$request_id[[1L]]),
+        dataset_ids = glc_explorer_nonempty_values(value$dataset_ids),
+        file_group_ids = glc_explorer_nonempty_values(value$file_group_ids)
+      )
+    }
+
+    apply_pending_preselection <- function() {
+      request <- shiny::isolate(pending_preselection())
+      value <- shiny::isolate(selection())
+      package_value <- shiny::isolate(package())
+      if (is.null(request) || is.null(value) || is.null(package_value)) {
+        return(invisible(FALSE))
+      }
+      if (
+        !identical(
+          request$package_key,
+          glc_explorer_package_key(package_value)
+        )
+      ) {
+        pending_preselection(NULL)
+        applied_preselection(NULL)
+        return(invisible(FALSE))
+      }
+      groups <- value$groups[
+        value$groups$file_group_id %in% request$file_group_ids,
+        ,
+        drop = FALSE
+      ]
+      file_group_ids <- unique(groups$file_group_id)
+      dataset_ids <- unique(groups$dataset_id)
+      if (length(file_group_ids) == 0L) {
+        pending_preselection(NULL)
+        applied_preselection(NULL)
+        status(glc_explorer_status(
+          "The transferred file-group selection is not available in this package.",
+          "error"
+        ))
+        return(invisible(FALSE))
+      }
+
+      for (id in c(
+        "participant_sex",
+        "participant_gender",
+        "participant_ids",
+        "device_manufacturer",
+        "device_model",
+        "device_sensor_type",
+        "device_ids",
+        "group_device_id",
+        "group_device_location",
+        "group_location_type",
+        "group_modality",
+        "group_role",
+        "group_state",
+        "group_variable",
+        "group_term",
+        "variable_terms",
+        "variables"
+      )) {
+        shiny::updateSelectizeInput(session, id, selected = character())
+      }
+      shiny::updateSelectizeInput(
+        session,
+        "characteristic_name",
+        selected = ""
+      )
+      update_multi(
+        "dataset_ids",
+        value$datasets$dataset_id,
+        dataset_ids
+      )
+      update_choices(
+        "file_group_ids",
+        glc_explorer_file_group_choices(groups),
+        file_group_ids
+      )
+      pending_preselection(NULL)
+      applied_preselection_id <<- request$request_id
+      applied_preselection(list(
+        request_id = request$request_id,
+        requested_group_count = length(request$file_group_ids),
+        file_group_ids = file_group_ids,
+        dataset_ids = dataset_ids
+      ))
+      status(glc_explorer_status(
+        sprintf(
+          "Transferred %d file group(s) across %d dataset(s) from Package contents.",
+          length(file_group_ids),
+          length(dataset_ids)
+        ),
+        "success"
+      ))
+      select_nav("handoff_tab", selected = "groups", session = session)
+      invisible(TRUE)
+    }
+
+    schedule_pending_preselection <- function() {
+      request <- shiny::isolate(pending_preselection())
+      if (is.null(request)) {
+        return(invisible(FALSE))
+      }
+      scheduling_error <- tryCatch(
+        {
+          schedule_after_flush(
+            apply_pending_preselection,
+            session = session
+          )
+          NULL
+        },
+        error = identity
+      )
+      if (inherits(scheduling_error, "error")) {
+        status(glc_explorer_status(
+          paste(
+            "Could not apply the transferred file-group selection:",
+            conditionMessage(scheduling_error)
+          ),
+          "error"
+        ))
+        return(invisible(FALSE))
+      }
+      invisible(TRUE)
+    }
+
+    shiny::observeEvent(
+      preselection(),
+      {
+        request <- normalize_preselection(preselection())
+        if (
+          is.null(request) ||
+            identical(request$request_id, applied_preselection_id)
+        ) {
+          return()
+        }
+        current_key <- glc_explorer_package_key(package())
+        if (
+          is.null(current_key) || !identical(request$package_key, current_key)
+        ) {
+          return()
+        }
+        pending_preselection(request)
+        shiny::updateRadioButtons(
+          session,
+          "handoff_mode",
+          selected = "data"
+        )
+        apply_pending_preselection()
+      },
+      ignoreInit = TRUE,
+      ignoreNULL = TRUE
+    )
 
     finish_load <- function(value, key, request) {
       if (!identical(request, request_id)) {
@@ -1639,36 +3703,87 @@ selection_handoff_server <- function(
         ),
         "success"
       ))
+      schedule_pending_preselection()
     }
 
     shiny::observe({
       value <- package()
       key <- glc_explorer_package_key(value)
+      mode <- handoff_mode()
       if (is.null(value)) {
         request_id <<- request_id + 1L
         selection(NULL)
         loaded_key <<- NULL
+        observed_package_key <<- NULL
+        pending_preselection(NULL)
+        applied_preselection(NULL)
+        applied_preselection_id <<- NULL
         clear_inputs()
+        shiny::updateRadioButtons(
+          session,
+          "handoff_mode",
+          selected = default_mode
+        )
         status(glc_explorer_status(
           "Open a package before building a selection.",
           "empty"
         ))
         return()
       }
-      if (!isTRUE(active())) {
-        if (!identical(key, loaded_key)) {
-          request_id <<- request_id + 1L
-          selection(NULL)
-          loaded_key <<- NULL
-          clear_inputs()
-          status(glc_explorer_status(
-            "Open Select & hand off to load selection metadata.",
-            "ready"
-          ))
+      if (!identical(key, observed_package_key)) {
+        request_id <<- request_id + 1L
+        selection(NULL)
+        loaded_key <<- NULL
+        observed_package_key <<- key
+        pending_preselection(NULL)
+        applied_preselection(NULL)
+        applied_preselection_id <<- NULL
+        clear_inputs()
+        shiny::updateRadioButtons(
+          session,
+          "handoff_mode",
+          selected = default_mode
+        )
+        status(glc_explorer_status(
+          if (isTRUE(active())) {
+            "Package and metadata are ready for an R handoff."
+          } else {
+            "Open Select & hand off to build a package or data handoff."
+          },
+          if (isTRUE(active())) "success" else "ready"
+        ))
+        if (identical(default_mode, "metadata")) {
+          return()
         }
+      }
+      if (!isTRUE(active())) {
+        status(glc_explorer_status(
+          "Open Select & hand off to build a package or data handoff.",
+          "ready"
+        ))
+        return()
+      }
+      if (identical(mode, "metadata")) {
+        status(glc_explorer_status(
+          "Package and metadata are ready for an R handoff.",
+          "success"
+        ))
         return()
       }
       if (identical(key, loaded_key)) {
+        status(glc_explorer_status(
+          sprintf(
+            paste0(
+              "Loaded %d participants, %d devices, %d datasets, ",
+              "and %d source variables."
+            ),
+            nrow(selection()$participants),
+            nrow(selection()$devices),
+            nrow(selection()$datasets),
+            nrow(selection()$variables)
+          ),
+          "success"
+        ))
         return()
       }
 
@@ -1676,7 +3791,13 @@ selection_handoff_server <- function(
       request <- request_id
       selection(NULL)
       clear_inputs()
-      status(glc_explorer_status("Loading selection metadata\u2026", "loading"))
+      status(glc_explorer_status(
+        paste(
+          "Loading selection data:",
+          "participants, devices, datasets, files, and variables\u2026"
+        ),
+        "loading"
+      ))
       scheduling_error <- tryCatch(
         {
           schedule_after_flush(
@@ -1707,6 +3828,11 @@ selection_handoff_server <- function(
         }
         update_multi("participant_sex", value$participants$sex)
         update_multi("participant_gender", value$participants$gender)
+        update_multi(
+          "dataset_ids",
+          value$datasets$dataset_id,
+          shiny::isolate(input$dataset_ids)
+        )
         characteristic_names <- glc_explorer_choice_values(
           value$participant_characteristics$characteristic_name
         )
@@ -1723,32 +3849,9 @@ selection_handoff_server <- function(
       ignoreNULL = TRUE
     )
 
-    shiny::observeEvent(
-      input$characteristic_name,
-      {
-        value <- selection()
-        if (is.null(value)) {
-          return()
-        }
-        name <- glc_explorer_nonempty_values(input$characteristic_name)
-        values <- if (length(name) == 0L) {
-          character()
-        } else {
-          value$participant_characteristics$characteristic_value[
-            value$participant_characteristics$characteristic_name %in% name
-          ]
-        }
-        update_multi(
-          "characteristic_values",
-          values,
-          shiny::isolate(input$characteristic_values)
-        )
-      },
-      ignoreInit = TRUE
-    )
-
     facets <- shiny::reactive({
       age_spec <- age_slider_spec()
+      characteristic_spec <- characteristic_filter_spec()
       list(
         participant = list(
           age = glc_explorer_age_filter_value(
@@ -1758,7 +3861,10 @@ selection_handoff_server <- function(
           sex = input$participant_sex %||% character(),
           gender = input$participant_gender %||% character(),
           characteristic_name = input$characteristic_name %||% character(),
-          characteristic_values = input$characteristic_values %||% character()
+          characteristic_values = glc_explorer_characteristic_filter_value(
+            input$characteristic_values,
+            characteristic_spec
+          )
         ),
         device = list(
           manufacturer = input$device_manufacturer %||% character(),
@@ -1790,10 +3896,16 @@ selection_handoff_server <- function(
     shiny::observeEvent(
       eligible_participants(),
       {
-        update_multi(
+        value <- selection()
+        if (is.null(value)) {
+          return()
+        }
+        selected <- shiny::isolate(input$participant_ids)
+        update_choices(
           "participant_ids",
-          eligible_participants(),
-          shiny::isolate(input$participant_ids)
+          glc_explorer_choice_values(eligible_participants()),
+          selected,
+          glc_explorer_choice_values(value$participants$participant_id)
         )
       },
       ignoreInit = TRUE
@@ -1801,10 +3913,16 @@ selection_handoff_server <- function(
     shiny::observeEvent(
       eligible_devices(),
       {
-        update_multi(
+        value <- selection()
+        if (is.null(value)) {
+          return()
+        }
+        selected <- shiny::isolate(input$device_ids)
+        update_choices(
           "device_ids",
-          eligible_devices(),
-          shiny::isolate(input$device_ids)
+          glc_explorer_choice_values(eligible_devices()),
+          selected,
+          glc_explorer_choice_values(value$devices$device_id)
         )
       },
       ignoreInit = TRUE
@@ -1823,22 +3941,6 @@ selection_handoff_server <- function(
       )
     })
 
-    shiny::observeEvent(
-      scope(),
-      {
-        value <- scope()
-        if (is.null(value)) {
-          return()
-        }
-        update_multi(
-          "dataset_ids",
-          value$dataset_ids,
-          shiny::isolate(input$dataset_ids)
-        )
-      },
-      ignoreInit = TRUE
-    )
-
     available_groups <- shiny::reactive({
       value <- selection()
       current_scope <- scope()
@@ -1852,17 +3954,112 @@ selection_handoff_server <- function(
       )
     })
 
+    dataset_groups <- shiny::reactive({
+      value <- selection()
+      if (is.null(value)) {
+        return(NULL)
+      }
+      dataset_ids <- glc_explorer_nonempty_values(input$dataset_ids)
+      value$groups[
+        value$groups$dataset_id %in% dataset_ids,
+        ,
+        drop = FALSE
+      ]
+    })
+
+    group_filters <- shiny::reactive({
+      glc_explorer_selection_group_filter_spec(
+        device_ids = input$group_device_id %||% character(),
+        device_locations = input$group_device_location %||% character(),
+        location_types = input$group_location_type %||% character(),
+        modalities = input$group_modality %||% character(),
+        roles = input$group_role %||% character(),
+        data_states = input$group_state %||% character(),
+        variable_names = input$group_variable %||% character(),
+        variable_terms = input$group_term %||% character()
+      )
+    })
+
     shiny::observeEvent(
-      available_groups(),
+      dataset_groups(),
       {
-        value <- available_groups()
+        value <- dataset_groups()
+        all_groups <- selection()$groups
+        if (is.null(value) || is.null(all_groups)) {
+          return()
+        }
+        choices <- glc_explorer_selection_group_field_choices(value)
+        all_choices <- glc_explorer_selection_group_field_choices(all_groups)
+        input_choices <- list(
+          group_device_id = choices$device_ids,
+          group_device_location = choices$device_locations,
+          group_location_type = choices$location_types,
+          group_modality = choices$modalities,
+          group_role = choices$roles,
+          group_state = choices$data_states,
+          group_variable = choices$variable_names,
+          group_term = choices$variable_terms
+        )
+        universe_choices <- list(
+          group_device_id = all_choices$device_ids,
+          group_device_location = all_choices$device_locations,
+          group_location_type = all_choices$location_types,
+          group_modality = all_choices$modalities,
+          group_role = all_choices$roles,
+          group_state = all_choices$data_states,
+          group_variable = all_choices$variable_names,
+          group_term = all_choices$variable_terms
+        )
+        for (id in names(input_choices)) {
+          selected <- shiny::isolate(input[[id]])
+          update_choices(
+            id,
+            input_choices[[id]],
+            selected,
+            universe_choices[[id]]
+          )
+        }
+      },
+      ignoreInit = TRUE
+    )
+
+    group_filter_result <- shiny::reactive({
+      value <- available_groups()
+      if (is.null(value)) {
+        return(NULL)
+      }
+      glc_explorer_selection_group_filter_result(value, group_filters())
+    })
+
+    matching_groups <- shiny::reactive({
+      value <- group_filter_result()
+      if (is.null(value)) {
+        return(NULL)
+      }
+      value$groups
+    })
+
+    effective_file_group_ids <- shiny::reactive({
+      value <- matching_groups()
+      requested <- glc_explorer_nonempty_values(input$file_group_ids)
+      if (is.null(value) || length(requested) == 0L) {
+        return(character())
+      }
+      intersect(requested, value$file_group_id)
+    })
+
+    shiny::observeEvent(
+      matching_groups(),
+      {
+        value <- matching_groups()
         if (is.null(value)) {
           return()
         }
         update_choices(
           "file_group_ids",
           glc_explorer_file_group_choices(value),
-          shiny::isolate(input$file_group_ids)
+          shiny::isolate(input$file_group_ids),
+          glc_explorer_file_group_choices(selection()$groups)
         )
       },
       ignoreInit = TRUE
@@ -1870,16 +4067,24 @@ selection_handoff_server <- function(
 
     available_variables <- shiny::reactive({
       value <- selection()
-      current_scope <- scope()
-      if (is.null(value) || is.null(current_scope)) {
+      groups <- matching_groups()
+      if (is.null(value) || is.null(groups)) {
         return(NULL)
       }
-      glc_explorer_available_variables(
-        value,
-        current_scope,
-        input$dataset_ids %||% character(),
-        input$file_group_ids %||% character()
-      )
+      requested_groups <- effective_file_group_ids()
+      selected_groups <- glc_explorer_nonempty_values(input$file_group_ids)
+      if (length(selected_groups) > 0L) {
+        groups <- groups[
+          groups$file_group_id %in% requested_groups,
+          ,
+          drop = FALSE
+        ]
+      }
+      value$variables[
+        value$variables$file_group_id %in% groups$file_group_id,
+        ,
+        drop = FALSE
+      ]
     })
 
     shiny::observeEvent(
@@ -1889,12 +4094,49 @@ selection_handoff_server <- function(
         if (is.null(value)) {
           return()
         }
-        choices <- unique(value$name)
-        selected <- intersect(
-          glc_explorer_nonempty_values(shiny::isolate(input$variables)),
-          choices
+        choices <- glc_explorer_variable_term_choices(value)
+        selected <- glc_explorer_nonempty_values(
+          shiny::isolate(input$variable_terms)
         )
-        update_multi("variables", choices, selected)
+        update_choices(
+          "variable_terms",
+          choices,
+          selected,
+          glc_explorer_variable_term_choices(selection()$variables)
+        )
+      },
+      ignoreInit = TRUE
+    )
+
+    selectable_variables <- shiny::reactive({
+      value <- available_variables()
+      if (is.null(value)) {
+        return(NULL)
+      }
+      terms <- glc_explorer_nonempty_values(input$variable_terms)
+      if (length(terms) > 0L && "term" %in% names(value)) {
+        value <- value[value$term %in% terms, , drop = FALSE]
+      }
+      value
+    })
+
+    shiny::observeEvent(
+      selectable_variables(),
+      {
+        value <- selectable_variables()
+        if (is.null(value)) {
+          return()
+        }
+        choices <- unique(value$name)
+        selected <- glc_explorer_nonempty_values(
+          shiny::isolate(input$variables)
+        )
+        update_choices(
+          "variables",
+          glc_explorer_choice_values(choices),
+          selected,
+          glc_explorer_choice_values(selection()$variables$name)
+        )
       },
       ignoreInit = TRUE
     )
@@ -1932,9 +4174,32 @@ selection_handoff_server <- function(
       ignoreInit = TRUE
     )
     shiny::observeEvent(
-      input$variables_recommended,
+      input$file_group_filters_clear,
       {
-        value <- available_variables()
+        for (id in c(
+          "group_device_id",
+          "group_device_location",
+          "group_location_type",
+          "group_modality",
+          "group_role",
+          "group_state",
+          "group_variable",
+          "group_term",
+          "file_group_ids"
+        )) {
+          shiny::updateSelectizeInput(
+            session,
+            id,
+            selected = character()
+          )
+        }
+      },
+      ignoreInit = TRUE
+    )
+    shiny::observeEvent(
+      input$variables_primary,
+      {
+        value <- selectable_variables()
         if (!is.null(value)) {
           update_multi(
             "variables",
@@ -1946,18 +4211,95 @@ selection_handoff_server <- function(
       ignoreInit = TRUE
     )
     shiny::observeEvent(
-      input$variables_select_all,
+      input$step_to_groups,
+      select_nav("handoff_tab", selected = "groups", session = session),
+      ignoreInit = TRUE
+    )
+    shiny::observeEvent(
+      input$step_to_people,
+      select_nav("handoff_tab", selected = "people", session = session),
+      ignoreInit = TRUE
+    )
+    shiny::observeEvent(
+      input$step_to_variables,
+      select_nav("handoff_tab", selected = "variables", session = session),
+      ignoreInit = TRUE
+    )
+    shiny::observeEvent(
+      input$step_to_review,
+      select_nav("handoff_tab", selected = "summary", session = session),
+      ignoreInit = TRUE
+    )
+    shiny::observeEvent(
+      input$groups_back,
+      select_nav("handoff_tab", selected = "package", session = session),
+      ignoreInit = TRUE
+    )
+    shiny::observeEvent(
+      input$people_back,
+      select_nav("handoff_tab", selected = "groups", session = session),
+      ignoreInit = TRUE
+    )
+    shiny::observeEvent(
+      input$variables_back,
+      select_nav("handoff_tab", selected = "people", session = session),
+      ignoreInit = TRUE
+    )
+    shiny::observeEvent(
+      input$summary_back,
+      select_nav("handoff_tab", selected = "variables", session = session),
+      ignoreInit = TRUE
+    )
+    shiny::observeEvent(
+      input$preview_metadata_back,
+      select_nav("handoff_tab", selected = "summary", session = session),
+      ignoreInit = TRUE
+    )
+    shiny::observeEvent(
+      input$preview_data_back,
+      select_nav("handoff_tab", selected = "summary", session = session),
+      ignoreInit = TRUE
+    )
+    shiny::observeEvent(
+      input$export_metadata_back,
+      select_nav("handoff_tab", selected = "summary", session = session),
+      ignoreInit = TRUE
+    )
+    shiny::observeEvent(
+      input$export_data_back,
+      select_nav("handoff_tab", selected = "preview", session = session),
+      ignoreInit = TRUE
+    )
+    shiny::observeEvent(
+      input$metadata_review,
+      select_nav("handoff_tab", selected = "export", session = session),
+      ignoreInit = TRUE
+    )
+    shiny::observeEvent(
+      input$metadata_preview_to_export,
+      select_nav("handoff_tab", selected = "export", session = session),
+      ignoreInit = TRUE
+    )
+    shiny::observeEvent(
+      input$review_file_groups,
       {
-        value <- available_variables()
-        if (!is.null(value)) {
-          update_multi("variables", unique(value$name), unique(value$name))
-        }
+        contents_request_id <<- contents_request_id + 1L
+        contents_request(list(
+          request_id = contents_request_id,
+          tab = "File groups",
+          dataset_ids = glc_explorer_nonempty_values(input$dataset_ids)
+        ))
       },
       ignoreInit = TRUE
     )
     shiny::observeEvent(
       input$variables_clear,
       {
+        shiny::updateSelectizeInput(
+          session,
+          "variable_terms",
+          selected = character()
+        )
         shiny::updateSelectizeInput(
           session,
           "variables",
@@ -1969,7 +4311,12 @@ selection_handoff_server <- function(
     shiny::observeEvent(
       input$summary_continue,
       {
-        select_nav("handoff_tab", selected = "preview", session = session)
+        selected <- if (identical(handoff_mode(), "metadata")) {
+          "export"
+        } else {
+          "preview"
+        }
+        select_nav("handoff_tab", selected = selected, session = session)
       },
       ignoreInit = TRUE
     )
@@ -1982,23 +4329,114 @@ selection_handoff_server <- function(
     )
 
     plan <- shiny::reactive({
-      value <- selection()
       package_value <- package()
-      if (is.null(value) || is.null(package_value)) {
+      mode <- handoff_mode()
+      if (is.null(package_value)) {
+        return(NULL)
+      }
+      if (identical(mode, "metadata")) {
+        return(glc_explorer_build_selection_plan(
+          package_value,
+          selection = NULL,
+          facets = list(participant = list(), device = list()),
+          mode = mode,
+          metadata_resources = input$metadata_resources %||% character()
+        ))
+      }
+      value <- selection()
+      current_scope <- scope()
+      current_group_discovery <- group_filter_result()
+      if (
+        is.null(value) ||
+          is.null(current_scope) ||
+          is.null(current_group_discovery)
+      ) {
         return(NULL)
       }
       glc_explorer_build_selection_plan(
         package_value,
         value,
         facets(),
+        mode = mode,
         participant_ids = input$participant_ids %||% character(),
         device_ids = input$device_ids %||% character(),
         dataset_ids = input$dataset_ids %||% character(),
+        group_filters = group_filters(),
         file_group_ids = input$file_group_ids %||% character(),
         variables = input$variables %||% character(),
-        standardize = input$standardization %||% "lightlogr"
+        terms = input$variable_terms %||% character(),
+        n_max = if (identical(input$row_limit_mode %||% "all", "limit")) {
+          input$max_rows_per_file %||% 10000L
+        } else {
+          Inf
+        },
+        standardize = input$standardization %||% "lightlogr",
+        resolved_scope = current_scope,
+        resolved_group_discovery = current_group_discovery
       )
     })
+
+    shiny::observeEvent(
+      plan()$preview_files,
+      {
+        available <- length(
+          glc_explorer_nonempty_values(plan()$preview_files)
+        )
+        if (available < 1L) {
+          return()
+        }
+        value <- min(preview_file_preference, available)
+        preview_file_update <<- value
+        shiny::updateNumericInput(
+          session,
+          "preview_files",
+          value = value,
+          min = 1L,
+          max = available
+        )
+      },
+      ignoreInit = FALSE,
+      ignoreNULL = TRUE
+    )
+
+    group_summary_page <- shiny::reactive({
+      value <- selection()
+      plan_value <- plan()
+      if (is.null(value) || is.null(plan_value)) {
+        return(NULL)
+      }
+      glc_explorer_inventory_page(
+        glc_explorer_selection_group_table(value, plan_value),
+        page = group_summary_page_number(),
+        page_size = 100L
+      )
+    })
+
+    shiny::observeEvent(
+      plan()$file_groups,
+      group_summary_page_number(1L),
+      ignoreInit = TRUE
+    )
+    shiny::observeEvent(
+      input$group_summary_previous,
+      {
+        page <- group_summary_page()
+        if (!is.null(page)) {
+          group_summary_page_number(max(1L, page$page - 1L))
+        }
+      },
+      ignoreInit = TRUE
+    )
+    shiny::observeEvent(
+      input$group_summary_next,
+      {
+        page <- group_summary_page()
+        if (!is.null(page)) {
+          group_summary_page_number(min(page$page_count, page$page + 1L))
+        }
+      },
+      ignoreInit = TRUE
+    )
 
     shiny::observeEvent(
       plan(),
@@ -2025,6 +4463,27 @@ selection_handoff_server <- function(
       },
       ignoreInit = TRUE
     )
+    shiny::observeEvent(
+      input$preview_files,
+      {
+        input_value <- suppressWarnings(as.integer(input$preview_files[[1L]]))
+        if (!is.na(input_value)) {
+          programmatic <- !is.null(preview_file_update) &&
+            identical(input_value, preview_file_update)
+          preview_file_update <<- NULL
+          if (!programmatic) {
+            preview_file_preference <<- max(1L, input_value)
+          }
+        }
+        preview_request_id <<- preview_request_id + 1L
+        preview(NULL)
+        preview_status(glc_explorer_status(
+          "Build a new preview with the selected file limit.",
+          "ready"
+        ))
+      },
+      ignoreInit = TRUE
+    )
 
     shiny::observeEvent(
       input$build_preview,
@@ -2044,8 +4503,15 @@ selection_handoff_server <- function(
         preview_request_id <<- preview_request_id + 1L
         request <- preview_request_id
         preview(NULL)
+        file_limit <- glc_explorer_preview_file_limit(
+          input$preview_files,
+          length(value$preview_files)
+        )
         preview_status(glc_explorer_status(
-          "Reading the first declared file from each included group\u2026",
+          sprintf(
+            "Reading %d preview file(s)\u2026",
+            file_limit
+          ),
           "loading"
         ))
         row_limit <- glc_explorer_preview_row_limit(input$preview_rows)
@@ -2054,7 +4520,12 @@ selection_handoff_server <- function(
             schedule_after_flush(
               function() {
                 result <- tryCatch(
-                  preview_selection(package_value, value, row_limit),
+                  preview_selection(
+                    package_value,
+                    value,
+                    row_limit,
+                    file_limit
+                  ),
                   error = identity
                 )
                 if (!identical(request, preview_request_id)) {
@@ -2076,10 +4547,11 @@ selection_handoff_server <- function(
                   sprintf(
                     paste0(
                       "Preview ready: showing %d collected row(s), with a ",
-                      "limit of %d row(s) per file."
+                      "limit of %d row(s) per file across %d preview file(s)."
                     ),
                     nrow(result),
-                    row_limit
+                    row_limit,
+                    file_limit
                   ),
                   "success"
                 ))
@@ -2103,6 +4575,67 @@ selection_handoff_server <- function(
       ignoreInit = TRUE
     )
 
+    output$file_group_filter_count <- shiny::renderText({
+      value <- group_filter_result()
+      if (is.null(value) || identical(value$candidate_count, 0L)) {
+        return("Select one or more datasets to discover their file groups.")
+      }
+      sprintf(
+        "%d of %d eligible file groups match across %d dataset(s).",
+        value$included_count,
+        value$candidate_count,
+        length(unique(value$groups$dataset_id))
+      )
+    })
+    output$seed_notice <- shiny::renderUI({
+      value <- applied_preselection()
+      if (is.null(value)) {
+        return(shiny::tags$div(
+          class = "alert alert-light border py-2 small",
+          role = "note",
+          paste0(
+            "No file-group preselection has been transferred. Choose ",
+            "datasets here or filter groups in Package contents."
+          )
+        ))
+      }
+      dropped <- value$requested_group_count - length(value$file_group_ids)
+      shiny::tags$div(
+        class = "alert alert-success py-2 small",
+        role = "status",
+        shiny::icon("circle-check"),
+        sprintf(
+          " Seeded from Package contents: %d file group(s) across %d dataset(s).",
+          length(value$file_group_ids),
+          length(value$dataset_ids)
+        ),
+        if (dropped > 0L) {
+          paste0(" ", dropped, " unavailable group(s) were omitted.")
+        }
+      )
+    })
+    output$participant_device_step_note <- shiny::renderUI({
+      dataset_ids <- glc_explorer_nonempty_values(input$dataset_ids)
+      if (length(dataset_ids) > 0L) {
+        return(NULL)
+      }
+      shiny::tags$div(
+        class = "alert alert-warning py-2 small",
+        role = "note",
+        "Choose datasets and file groups in Step 2 before narrowing people or devices."
+      )
+    })
+    output$variable_step_note <- shiny::renderUI({
+      groups <- matching_groups()
+      if (!is.null(groups) && nrow(groups) > 0L) {
+        return(NULL)
+      }
+      shiny::tags$div(
+        class = "alert alert-warning py-2 small",
+        role = "note",
+        "Choose matching file groups first; variable and semantic-term choices are scoped to them."
+      )
+    })
     output$status_message <- shiny::renderUI({
       glc_explorer_status_tag(status())
     })
@@ -2125,14 +4658,40 @@ selection_handoff_server <- function(
       bordered = FALSE,
       spacing = "m"
     )
+    output$summary_continue_ui <- shiny::renderUI({
+      value <- plan()
+      if (is.null(value) || !isTRUE(value$script_ready)) {
+        return(NULL)
+      }
+      metadata <- identical(value$mode %||% "data", "metadata")
+      shiny::actionButton(
+        session$ns("summary_continue"),
+        if (metadata) "Continue to Export to R" else "Continue to preview",
+        icon = shiny::icon("arrow-right"),
+        class = "btn-primary handoff-nav-action"
+      )
+    })
+    output$group_summary_count <- shiny::renderText({
+      glc_explorer_inventory_page_message(
+        group_summary_page(),
+        "included file groups"
+      )
+    })
+    output$group_summary_pagination <- shiny::renderUI({
+      glc_explorer_inventory_pagination_tag(
+        group_summary_page(),
+        input_prefix = "group_summary",
+        item = "included file groups",
+        ns = session$ns
+      )
+    })
     output$group_summary <- shiny::renderTable(
       {
-        value <- selection()
-        plan_value <- plan()
-        if (is.null(value) || is.null(plan_value)) {
+        page <- group_summary_page()
+        if (is.null(page)) {
           return(NULL)
         }
-        glc_explorer_selection_group_table(value, plan_value)
+        page$data
       },
       rownames = FALSE,
       bordered = FALSE,
@@ -2156,19 +4715,30 @@ selection_handoff_server <- function(
       if (is.null(value)) {
         return(NULL)
       }
+      preview_limit <- glc_explorer_preview_row_limit(input$preview_rows)
+      if (is.finite(value$n_max %||% Inf)) {
+        preview_limit <- min(preview_limit, value$n_max)
+      }
+      transfer <- glc_explorer_preview_transfer(
+        value,
+        input$preview_files
+      )
       shiny::tags$div(
         class = "alert alert-info py-2",
         role = "note",
         shiny::icon("circle-info"),
         paste0(
           " The preview reads at most ",
-          glc_explorer_preview_row_limit(input$preview_rows),
-          " rows from the first declared file in each included group. ",
-          "Remote files must still be materialized completely. Estimated ",
-          "whole-file transfer for this selection: ",
+          preview_limit,
+          " rows from ",
+          length(transfer$files),
+          " of ",
+          transfer$available,
+          " available preview file(s). Remote preview files must still be ",
+          "materialized completely. Estimated preview transfer: ",
           glc_explorer_format_bytes(
-            value$estimated_bytes,
-            value$unknown_file_sizes
+            transfer$estimated_bytes,
+            transfer$unknown_file_sizes
           ),
           "."
         )
@@ -2181,12 +4751,12 @@ selection_handoff_server <- function(
           session$ns("build_preview"),
           "Build preview",
           icon = shiny::icon("table"),
-          class = "btn-primary mb-3"
+          class = "btn-primary handoff-primary-action"
         ))
       }
       shiny::tags$button(
         type = "button",
-        class = "btn btn-primary mb-3",
+        class = "btn btn-primary handoff-primary-action",
         disabled = NA,
         shiny::icon("table"),
         " Build preview"
@@ -2197,7 +4767,7 @@ selection_handoff_server <- function(
     })
     output$preview_table <- shiny::renderTable(
       {
-        preview()
+        glc_explorer_format_preview(preview())
       },
       rownames = FALSE,
       bordered = FALSE,
@@ -2209,17 +4779,29 @@ selection_handoff_server <- function(
         return(NULL)
       }
       if (isTRUE(value$script_ready)) {
-        return(shiny::tags$div(
-          class = "alert alert-info py-2",
-          role = "note",
-          shiny::icon("circle-info"),
+        note <- if (identical(value$mode %||% "data", "metadata")) {
+          paste0(
+            " The script opens commit ",
+            substr(value$commit, 1L, 12L),
+            ", downloads only the selected metadata resources, and assigns ",
+            "the package handle to local_package and metadata to glc_metadata. ",
+            "Temporary handoff objects are removed."
+          )
+        } else {
           paste0(
             " The script opens commit ",
             substr(value$commit, 1L, 12L),
             ", reuses an existing manifest-backed directory, downloads ",
             "complete included files when needed, and assigns the collected ",
-            "result to glc_data."
+            "result to glc_data. Only glc_data and local_package remain from ",
+            "the handoff."
           )
+        }
+        return(shiny::tags$div(
+          class = "alert alert-info py-2",
+          role = "note",
+          shiny::icon("circle-info"),
+          note
         ))
       }
       shiny::tags$div(
@@ -2231,7 +4813,7 @@ selection_handoff_server <- function(
     output$script <- shiny::renderText({
       value <- plan()
       if (is.null(value)) {
-        return("# Open a package and choose data to generate an R script.")
+        return("# Open a package to generate an R handoff script.")
       }
       if (!isTRUE(value$script_ready)) {
         return(paste(
@@ -2253,7 +4835,7 @@ selection_handoff_server <- function(
         session$ns("script_download"),
         "Download R script",
         icon = shiny::icon("download"),
-        class = "btn-primary mb-3"
+        class = "btn-primary handoff-primary-action mb-3"
       )
     })
     output$script_download <- shiny::downloadHandler(
@@ -2270,7 +4852,10 @@ selection_handoff_server <- function(
           useBytes = TRUE
         )
         show_modal(
-          glc_explorer_download_complete_modal(filename),
+          glc_explorer_download_complete_modal(
+            filename,
+            mode = value$mode %||% "data"
+          ),
           session = session
         )
       }
@@ -2279,7 +4864,14 @@ selection_handoff_server <- function(
     list(
       selection = shiny::reactive(selection()),
       scope = scope,
+      group_filters = group_filters,
+      group_filter_result = group_filter_result,
+      effective_file_group_ids = effective_file_group_ids,
       plan = plan,
+      group_summary_page = group_summary_page,
+      handoff_mode = handoff_mode,
+      applied_preselection = shiny::reactive(applied_preselection()),
+      contents_request = shiny::reactive(contents_request()),
       preview = shiny::reactive(preview()),
       status = shiny::reactive(status()),
       preview_status = shiny::reactive(preview_status())

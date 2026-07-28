@@ -1,6 +1,20 @@
 glc_parse_lfs_pointer <- function(value) {
-  text <- if (is.raw(value)) rawToChar(value) else as.character(value)
-  text <- sub("\\x00.*$", "", text)
+  if (is.raw(value)) {
+    signature <- charToRaw("version https://git-lfs.github.com/spec/v1")
+    if (
+      length(value) < length(signature) ||
+        !identical(value[seq_along(signature)], signature)
+    ) {
+      return(NULL)
+    }
+    nul <- which(value == as.raw(0L))
+    if (length(nul) > 0L) {
+      value <- value[seq_len(nul[[1L]] - 1L)]
+    }
+    text <- rawToChar(value)
+  } else {
+    text <- sub("\\x00.*$", "", as.character(value))
+  }
   lines <- strsplit(gsub("\\r\\n?", "\n", text), "\n", fixed = TRUE)[[1L]]
   if (
     length(lines) == 0L ||
@@ -41,6 +55,72 @@ glc_manifest_entry <- function(x, path) {
   if (length(index) == 1L) entries[[index]] else NULL
 }
 
+glc_remote_file_info <- function(path, tree_row, pointer = NULL) {
+  list(
+    path = path,
+    storage = if (is.null(pointer)) "git" else "lfs",
+    expected_size = if (is.null(pointer)) {
+      tree_row$size[[1L]]
+    } else {
+      pointer$size
+    },
+    lfs_oid = if (is.null(pointer)) NA_character_ else pointer$oid,
+    blob_sha = tree_row$sha[[1L]],
+    available = TRUE,
+    local_pointer = FALSE
+  )
+}
+
+glc_prefetch_file_info_internal <- function(x, paths) {
+  if (x$source_type != "remote" || length(paths) == 0L) {
+    return(invisible(x))
+  }
+  resolved <- vapply(
+    paths,
+    function(path) {
+      tryCatch(
+        glc_resolve_path(x, path),
+        glcdp_missing_path = function(cnd) NA_character_
+      )
+    },
+    character(1)
+  )
+  resolved <- unique(resolved[!is.na(resolved)])
+  cached <- vapply(
+    resolved,
+    function(path) {
+      !is.null(x$transport$file_info[[path]])
+    },
+    logical(1)
+  )
+  paths <- resolved[!cached]
+  if (length(paths) == 0L) {
+    return(invisible(x))
+  }
+
+  tree <- glc_repo_tree(x)
+  tree_rows <- match(paths, tree$path)
+  small <- !is.na(tree$size[tree_rows]) & tree$size[tree_rows] <= 1024
+  ordinary_paths <- paths[!small]
+  for (path in ordinary_paths) {
+    row <- tree[tree_rows[paths == path], , drop = FALSE]
+    x$transport$file_info[[path]] <- glc_remote_file_info(path, row)
+  }
+
+  small_paths <- paths[small]
+  raw_values <- glc_fetch_remote_raw_many(x, small_paths)
+  for (path in small_paths) {
+    row <- tree[tree_rows[paths == path], , drop = FALSE]
+    pointer <- glc_parse_lfs_pointer(raw_values[[path]])
+    x$transport$file_info[[path]] <- glc_remote_file_info(
+      path,
+      row,
+      pointer
+    )
+  }
+  invisible(x)
+}
+
 glc_file_info_internal <- function(x, path) {
   path <- glc_resolve_path(x, path)
   if (x$source_type == "local") {
@@ -70,6 +150,10 @@ glc_file_info_internal <- function(x, path) {
     ))
   }
 
+  cached <- x$transport$file_info[[path]]
+  if (!is.null(cached)) {
+    return(cached)
+  }
   tree <- glc_repo_tree(x)
   row <- tree[tree$path == path & tree$type == "blob", , drop = FALSE]
   if (nrow(row) != 1L) {
@@ -79,15 +163,9 @@ glc_file_info_internal <- function(x, path) {
   if (!is.na(row$size[[1L]]) && row$size[[1L]] <= 1024) {
     pointer <- glc_parse_lfs_pointer(glc_fetch_remote_raw(x, path))
   }
-  list(
-    path = path,
-    storage = if (is.null(pointer)) "git" else "lfs",
-    expected_size = if (is.null(pointer)) row$size[[1L]] else pointer$size,
-    lfs_oid = if (is.null(pointer)) NA_character_ else pointer$oid,
-    blob_sha = row$sha[[1L]],
-    available = TRUE,
-    local_pointer = FALSE
-  )
+  info <- glc_remote_file_info(path, row, pointer)
+  x$transport$file_info[[path]] <- info
+  info
 }
 
 glc_check_external_lfs <- function(x) {

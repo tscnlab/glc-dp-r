@@ -8,4 +8,5 @@
 ^output$
 ^pkgdown$
 ^tmp$
+^data$
 (^|/)\.DS_Store$

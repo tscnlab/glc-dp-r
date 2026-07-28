@@ -18,18 +18,28 @@ Install the development version from GitHub:
 pak::pak("tscnlab/glc-dp-r")
 ```
 
-The development version supports stable GLC metadata schemas 1.0.0 and 2.0.0,
-experimental reading of the 3.0.0 development schema, immutable registry
-revisions, selective downloads, and GitHub-hosted Git LFS objects.
+The development version targets GLC schema 3.0.2 as its current default,
+including metadata-driven column types, factor levels in schema-declared
+order, and per-file encodings. Schemas 3.0.0 and 3.0.1 remain compatible
+stable predecessors;
+schemas 1.0.0 and 2.0.0 have barebones legacy support. The package also
+supports immutable registry revisions, selective downloads, and GitHub-hosted
+Git LFS objects.
 
 ```r
 packages <- glcdp::glc_packages()
-guidolin <- glcdp::glc_open("tscnlab/guidolin-glee-datasetv2")
+melidos <- glcdp::glc_open("tscnlab/melidos-iztech-glc-dataset")
 
-glcdp::glc_summary(guidolin)
-glcdp::glc_variables(guidolin, primary = TRUE)
+glcdp::glc_summary(melidos)
+datasets <- glcdp::glc_datasets(melidos)
+files <- glcdp::glc_files(melidos)
 
-collection <- glcdp::glc_read(guidolin, dataset_id = "DS001")
+first <- files[1, ]
+collection <- glcdp::glc_read(
+  melidos,
+  dataset_id = first$dataset_id,
+  file_group = first$file_group_id
+)
 light_data <- glcdp::glc_collect(collection)
 ```
 
@@ -47,7 +57,18 @@ glcdp::glc_explore()
 ```
 
 The app browses passing registry revisions, summarizes package contents, and
-filters participants, devices, datasets, file groups, and source variables.
+filters participants, devices, datasets, file groups, semantic terms, and
+source variables. The completed summary can start the larger contents load in
+place and reports its progress, completion, or retry action centrally.
+Repeated participant-specific file groups can be narrowed by
+device, wearing position, modality, role, state, contained variable, or
+semantic term. Numeric participant characteristics use range filters, and the
+metadata hierarchy loads complete records incrementally while the table view
+retains full paging. Repeated metadata fields are folded with their record
+counts, and large file-group, variable, and handoff inventories use paging and
+server-side search choices to keep browser interaction responsive. A page-level
+busy indicator remains visible while reactive filtering or rendering is in
+progress.
 It builds a small configurable preview before exporting an annotated R script
 that downloads and imports the exact selection. Package data remain on the
 machine running the app.
