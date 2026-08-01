@@ -43,6 +43,7 @@ reference:
 - title: Read and collect data
   desc: Import metadata-described files and combine compatible groups.
   contents:
+  - glc_collection_plan
   - glc_read
   - glc_collect
   - extract_metadata
