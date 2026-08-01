@@ -632,6 +632,58 @@ test_that("compatibility detects every blocking group difference", {
     fixed = TRUE
   )
 
+  modalities <- groups
+  modalities$modalities[[2L]] <- c("light", "accelerometry")
+  expect_match(
+    paste(
+      glcdp:::glc_explorer_selection_compatibility(
+        modalities,
+        c("timestamp", "lux")
+      )$issues
+    ),
+    "modalities",
+    fixed = TRUE
+  )
+
+  roles <- groups
+  roles$role[[2L]] <- "supporting"
+  expect_match(
+    paste(
+      glcdp:::glc_explorer_selection_compatibility(
+        roles,
+        c("timestamp", "lux")
+      )$issues
+    ),
+    "file roles",
+    fixed = TRUE
+  )
+
+  states <- groups
+  states$data_state[[2L]] <- "processed"
+  expect_match(
+    paste(
+      glcdp:::glc_explorer_selection_compatibility(
+        states,
+        c("timestamp", "lux")
+      )$issues
+    ),
+    "data states",
+    fixed = TRUE
+  )
+
+  datetime <- groups
+  datetime$datetime_format[[2L]] <- "DD/MM/YYYY HH:mm:ss"
+  expect_match(
+    paste(
+      glcdp:::glc_explorer_selection_compatibility(
+        datetime,
+        c("timestamp", "lux")
+      )$issues
+    ),
+    "datetime specifications",
+    fixed = TRUE
+  )
+
   multiple_devices <- groups
   multiple_devices$dataset_id[[2L]] <- "DS1"
   expect_match(
@@ -720,6 +772,143 @@ test_that("semantic terms filter variables and compatible file groups", {
     fixed = TRUE
   )
   expect_match(script, "terms = source_terms", fixed = TRUE)
+})
+
+test_that("terms discover groups independently of selected read variables", {
+  selection <- selection_data()
+  plan <- glcdp:::glc_explorer_build_selection_plan(
+    selection_package(),
+    selection,
+    selection_facets(),
+    dataset_ids = c("DS1", "DS2"),
+    variables = "timestamp",
+    terms = "photopic_illuminance"
+  )
+
+  expect_true(plan$script_ready)
+  expect_equal(plan$file_groups, c("DS1:1", "DS2:1"))
+  expect_equal(plan$variables, "timestamp")
+  expect_equal(plan$terms, "photopic_illuminance")
+  expect_equal(plan$variable_filter, "timestamp")
+  expect_null(plan$term_filter)
+  expect_true(plan$name_filter_active)
+  expect_true(plan$term_filter_active)
+
+  script <- glcdp:::glc_explorer_selection_script(plan)
+  expect_match(script, 'source_variables <- "timestamp"', fixed = TRUE)
+  expect_match(script, "source_terms <- NULL", fixed = TRUE)
+})
+
+test_that("selection narrowing maps to canonical planner restrictions", {
+  selection <- selection_data()
+  package <- selection_package()
+  requested_datasets <- c("DS2", "DS1")
+
+  dataset_only <- glcdp:::glc_explorer_build_selection_plan(
+    package,
+    selection,
+    selection_facets(),
+    dataset_ids = requested_datasets,
+    terms = "photopic_illuminance"
+  )
+  expect_identical(
+    dataset_only$planner_restrictions$dataset_id,
+    c("DS1", "DS2")
+  )
+  expect_identical(
+    dataset_only$planner_restrictions$file_group,
+    character()
+  )
+  expect_identical(
+    dataset_only$planner_restrictions$file_group_basis,
+    "omitted"
+  )
+
+  explicit_groups <- glcdp:::glc_explorer_build_selection_plan(
+    package,
+    selection,
+    selection_facets(),
+    dataset_ids = requested_datasets,
+    file_group_ids = c("DS2:1", "DS1:1"),
+    terms = "photopic_illuminance"
+  )
+  expect_identical(
+    explicit_groups$planner_restrictions$file_group,
+    c("DS1:1", "DS2:1")
+  )
+  expect_identical(
+    explicit_groups$planner_restrictions$file_group_basis,
+    "explicit_file_group"
+  )
+
+  participant <- glcdp:::glc_explorer_build_selection_plan(
+    package,
+    selection,
+    selection_facets(),
+    participant_ids = "P1",
+    dataset_ids = requested_datasets,
+    variables = "timestamp",
+    terms = "photopic_illuminance"
+  )
+  device <- glcdp:::glc_explorer_build_selection_plan(
+    package,
+    selection,
+    selection_facets(),
+    device_ids = "D1",
+    dataset_ids = requested_datasets,
+    variables = "timestamp",
+    terms = "photopic_illuminance"
+  )
+  field_selection <- selection
+  field_selection$groups$role[field_selection$groups$dataset_id == "DS2"] <-
+    "supporting"
+  group_field <- glcdp:::glc_explorer_build_selection_plan(
+    package,
+    field_selection,
+    selection_facets(),
+    dataset_ids = requested_datasets,
+    group_filters = list(roles = "primary"),
+    variables = "timestamp",
+    terms = "photopic_illuminance"
+  )
+
+  for (plan in list(participant, device, group_field)) {
+    expect_identical(plan$planner_restrictions$dataset_id, c("DS1", "DS2"))
+    expect_identical(plan$planner_restrictions$file_group, "DS1:1")
+    expect_identical(
+      plan$planner_restrictions$file_group_basis,
+      "translated_candidate_universe"
+    )
+    expect_identical(plan$read_restrictions$dataset_id, "DS1")
+    expect_identical(plan$read_restrictions$file_group, "DS1:1")
+    expect_identical(plan$file_groups, "DS1:1")
+  }
+
+  reordered_selection <- field_selection
+  reordered_selection$groups <- reordered_selection$groups[
+    rev(seq_len(nrow(reordered_selection$groups))),
+    ,
+    drop = FALSE
+  ]
+  reordered <- glcdp:::glc_explorer_build_selection_plan(
+    package,
+    reordered_selection,
+    selection_facets(),
+    dataset_ids = rev(requested_datasets),
+    group_filters = list(roles = "primary"),
+    variables = "timestamp",
+    terms = "photopic_illuminance"
+  )
+  expect_identical(
+    reordered$planner_restrictions,
+    group_field$planner_restrictions
+  )
+  expect_identical(reordered$file_groups, group_field$file_groups)
+
+  script <- glcdp:::glc_explorer_selection_script(group_field)
+  expect_match(script, 'file_groups <- "DS1:1"', fixed = TRUE)
+  expect_match(script, 'source_variables <- "timestamp"', fixed = TRUE)
+  expect_match(script, "source_terms <- NULL", fixed = TRUE)
 })
 
 test_that("automatic compatibility keeps at most one device per dataset", {

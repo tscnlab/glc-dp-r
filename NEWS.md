@@ -1,3 +1,8 @@
+# glcdp 1.0.0.9000
+
+* Added `glc_collection_plan()` to create deterministic, serializable, metadata-only plans for collectable file-group units from canonical terms and matched, all, or selected declared variables, with optional stable dataset and file-group restrictions. Plans report stable unit ids, exclusions, required read/output columns, declared byte availability, and exact package/schema/revision provenance without reading measurement contents; `glc_read()` and `glc_collect()` remain the runtime authorities.
+* `glc_explore()` now uses the same declaration-compatibility engine as `glc_collection_plan()`, keeping Explorer selection, exclusions, device-safe partitioning, unit ids, and preferred-unit choice in parity with the public planner.
+
 # glcdp 1.0.0
 
 * Promoted schema 3.0.2 to the current default and primary stable import

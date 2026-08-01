@@ -306,6 +306,7 @@ glc_explorer_group_inventory <- function(package) {
         datetime_format = group$datetime$date_format,
         datetime_time = group$datetime$time,
         datetime_time_format = group$datetime$time_format,
+        file_count = length(group$files),
         variable_names = list(glc_explorer_nonempty_values(variables$name)),
         variable_terms = list(glc_explorer_nonempty_values(variables$term)),
         variables = list(variables)
@@ -337,6 +338,7 @@ glc_explorer_group_inventory <- function(package) {
     datetime_format = character(),
     datetime_time = character(),
     datetime_time_format = character(),
+    file_count = integer(),
     variable_names = list(),
     variable_terms = list(),
     variables = list()
@@ -626,16 +628,6 @@ glc_explorer_selection_scope <- function(
   )
 }
 
-glc_explorer_datetime_signature <- function(groups) {
-  glc_datetime_compatibility_signature(
-    groups$datetime_source,
-    groups$datetime_date,
-    groups$datetime_format,
-    groups$datetime_time,
-    groups$datetime_time_format
-  )
-}
-
 glc_explorer_selected_variable_rows <- function(
   variables,
   variable_names = character(),
@@ -646,115 +638,387 @@ glc_explorer_selected_variable_rows <- function(
   if (!inherits(variables, "data.frame") || nrow(variables) == 0L) {
     return(variables)
   }
-  selected <- rep(TRUE, nrow(variables))
   if (length(variable_names) > 0L) {
-    selected <- selected & variables$name %in% variable_names
-  }
-  if (length(variable_terms) > 0L) {
+    selected <- variables$name %in% variable_names
+  } else if (length(variable_terms) > 0L) {
     terms <- if ("term" %in% names(variables)) {
       variables$term
     } else {
       rep(NA_character_, nrow(variables))
     }
-    selected <- selected & terms %in% variable_terms
+    selected <- terms %in% variable_terms
+  } else {
+    selected <- rep(TRUE, nrow(variables))
   }
   variables[selected, , drop = FALSE]
 }
 
-glc_explorer_group_provides_variable_filters <- function(
+glc_explorer_variable_value <- function(
   variables,
-  variable_names,
-  variable_terms
+  field,
+  index,
+  default = NA_character_
 ) {
-  variable_names <- glc_explorer_nonempty_values(variable_names)
-  variable_terms <- glc_explorer_nonempty_values(variable_terms)
-  if (length(variable_names) == 0L && length(variable_terms) == 0L) {
-    return(TRUE)
+  if (!field %in% names(variables)) {
+    return(default)
   }
-  selected <- glc_explorer_selected_variable_rows(
-    variables,
-    variable_names,
-    variable_terms
-  )
-  if (nrow(selected) == 0L) {
-    return(FALSE)
+  value <- variables[[field]][[index]]
+  if (length(value) == 0L) {
+    return(default)
   }
-  selected_terms <- if ("term" %in% names(selected)) {
-    selected$term
+  value[[1L]]
+}
+
+glc_explorer_factor_levels <- function(variables, index) {
+  factor_values <- if ("factor_values" %in% names(variables)) {
+    as.character(variables$factor_values[[index]])
   } else {
     character()
   }
-  (length(variable_names) == 0L ||
-    all(variable_names %in% selected$name)) &&
-    (length(variable_terms) == 0L ||
-      all(variable_terms %in% selected_terms))
-}
-
-glc_explorer_group_variable_signature <- function(
-  variables,
-  variable_names,
-  variable_terms
-) {
-  selected <- glc_explorer_selected_variable_rows(
-    variables,
-    variable_names,
-    variable_terms
-  )
-  factor_values <- if ("factor_values" %in% names(selected)) {
-    vapply(selected$factor_values, paste, character(1), collapse = "\035")
+  factor_labels <- if ("factor_labels" %in% names(variables)) {
+    as.character(variables$factor_labels[[index]])
   } else {
-    rep("", nrow(selected))
+    character()
   }
-  factor_labels <- if ("factor_labels" %in% names(selected)) {
-    vapply(selected$factor_labels, paste, character(1), collapse = "\035")
+  factor_descriptions <- if ("factor_descriptions" %in% names(variables)) {
+    as.character(variables$factor_descriptions[[index]])
   } else {
-    rep("", nrow(selected))
+    character()
   }
-  paste(
-    selected$name,
-    selected$type,
-    factor_values,
-    factor_labels,
-    sep = "=",
-    collapse = "\r"
+  count <- max(
+    length(factor_values),
+    length(factor_labels),
+    length(factor_descriptions)
   )
-}
-
-glc_explorer_one_device_per_dataset <- function(groups) {
-  if (nrow(groups) == 0L) {
-    return(groups)
+  if (count == 0L) {
+    return(list())
   }
-  keep <- rep(TRUE, nrow(groups))
-  dataset_keys <- ifelse(
-    is.na(groups$dataset_id),
-    "<missing>",
-    as.character(groups$dataset_id)
-  )
-  for (dataset_key in unique(dataset_keys)) {
-    rows <- which(dataset_keys == dataset_key)
-    devices <- as.character(groups$device_id[rows])
-    present <- devices[!is.na(devices) & nzchar(devices)]
-    candidates <- unique(present)
-    if (length(candidates) <= 1L) {
-      next
-    }
-    counts <- vapply(
-      candidates,
-      function(candidate) sum(present == candidate),
-      integer(1)
+  value_at <- function(values, position) {
+    if (length(values) < position) NA_character_ else values[[position]]
+  }
+  lapply(seq_len(count), function(position) {
+    list(
+      value = value_at(factor_values, position),
+      label = value_at(factor_labels, position),
+      description = value_at(factor_descriptions, position)
     )
-    selected_device <- candidates[[which.max(counts)]]
-    keep[rows] <- is.na(devices) |
-      !nzchar(devices) |
-      devices == selected_device
+  })
+}
+
+glc_explorer_declared_variables <- function(variables) {
+  if (!inherits(variables, "data.frame") || nrow(variables) == 0L) {
+    return(list())
   }
-  groups[keep, , drop = FALSE]
+  lapply(seq_len(nrow(variables)), function(index) {
+    list(
+      name = glc_scalar_character(
+        glc_explorer_variable_value(variables, "name", index)
+      ),
+      label = glc_scalar_character(
+        glc_explorer_variable_value(variables, "label", index)
+      ),
+      description = glc_scalar_character(
+        glc_explorer_variable_value(variables, "description", index)
+      ),
+      unit = glc_scalar_character(
+        glc_explorer_variable_value(variables, "unit", index)
+      ),
+      calibration = glc_scalar_character(
+        glc_explorer_variable_value(variables, "calibration", index)
+      ),
+      type = glc_scalar_character(
+        glc_explorer_variable_value(variables, "type", index)
+      ),
+      term = glc_scalar_character(
+        glc_explorer_variable_value(variables, "term", index)
+      ),
+      term_name = glc_scalar_character(
+        glc_explorer_variable_value(variables, "term_name", index)
+      ),
+      primary = glc_scalar_logical(
+        glc_explorer_variable_value(variables, "primary", index, FALSE),
+        FALSE
+      ),
+      factor_levels = glc_explorer_factor_levels(variables, index)
+    )
+  })
+}
+
+glc_explorer_group_scalar <- function(
+  groups,
+  field,
+  index,
+  default = NA_character_
+) {
+  if (!field %in% names(groups)) {
+    return(default)
+  }
+  value <- groups[[field]][[index]]
+  if (length(value) == 0L) {
+    return(default)
+  }
+  value[[1L]]
+}
+
+glc_explorer_declared_records <- function(groups) {
+  if (nrow(groups) == 0L) {
+    return(list())
+  }
+  records <- lapply(seq_len(nrow(groups)), function(index) {
+    file_count <- suppressWarnings(as.integer(glc_explorer_group_scalar(
+      groups,
+      "file_count",
+      index,
+      NA_integer_
+    )))
+    files_known <- length(file_count) == 1L && !is.na(file_count)
+    if (!files_known) {
+      file_count <- 1L
+    }
+    files <- lapply(seq_len(max(0L, file_count)), function(file_index) {
+      list(
+        declared_path = NA_character_,
+        encoding = NA_character_,
+        declared_bytes = NA_real_
+      )
+    })
+    variables <- glc_explorer_declared_variables(groups$variables[[index]])
+    list(
+      dataset_id = glc_scalar_character(
+        glc_explorer_group_scalar(groups, "dataset_id", index)
+      ),
+      dataset_schema_version = NA_character_,
+      study_id = NA_character_,
+      participant_id = NA_character_,
+      participant_associated = NA,
+      file_group = as.integer(glc_explorer_group_scalar(
+        groups,
+        "file_group",
+        index,
+        index
+      )),
+      file_group_id = glc_scalar_character(
+        glc_explorer_group_scalar(groups, "file_group_id", index)
+      ),
+      description = NA_character_,
+      device_id = glc_scalar_character(
+        glc_explorer_group_scalar(groups, "device_id", index)
+      ),
+      device_location = glc_scalar_character(
+        glc_explorer_group_scalar(groups, "device_location", index)
+      ),
+      device_location_type = glc_scalar_character(
+        glc_explorer_group_scalar(groups, "device_location_type", index)
+      ),
+      format = glc_scalar_character(
+        glc_explorer_group_scalar(groups, "format", index)
+      ),
+      timezone = glc_scalar_character(
+        glc_explorer_group_scalar(groups, "timezone", index)
+      ),
+      modalities = if ("modalities" %in% names(groups)) {
+        as.character(groups$modalities[[index]])
+      } else {
+        character()
+      },
+      modality_other = glc_scalar_character(
+        glc_explorer_group_scalar(groups, "modality_other", index)
+      ),
+      modality_other_type = glc_scalar_character(
+        glc_explorer_group_scalar(groups, "modality_other_type", index)
+      ),
+      role = glc_scalar_character(
+        glc_explorer_group_scalar(groups, "role", index)
+      ),
+      data_state = glc_scalar_character(
+        glc_explorer_group_scalar(groups, "data_state", index)
+      ),
+      temporal_type = glc_scalar_character(
+        glc_explorer_group_scalar(groups, "temporal_type", index)
+      ),
+      temporal_value = suppressWarnings(as.numeric(glc_explorer_group_scalar(
+        groups,
+        "temporal_value",
+        index,
+        NA_real_
+      ))),
+      temporal_unit = glc_scalar_character(
+        glc_explorer_group_scalar(groups, "temporal_unit", index)
+      ),
+      header_row = NA_integer_,
+      preprocessing = character(),
+      datetime = list(
+        source = glc_scalar_character(
+          glc_explorer_group_scalar(groups, "datetime_source", index)
+        ),
+        date = glc_scalar_character(
+          glc_explorer_group_scalar(groups, "datetime_date", index)
+        ),
+        date_format = glc_scalar_character(
+          glc_explorer_group_scalar(groups, "datetime_format", index)
+        ),
+        time = glc_scalar_character(
+          glc_explorer_group_scalar(groups, "datetime_time", index)
+        ),
+        time_format = glc_scalar_character(
+          glc_explorer_group_scalar(groups, "datetime_time_format", index)
+        )
+      ),
+      variables = variables,
+      files = files,
+      file_declarations_known = files_known,
+      extensions = list()
+    )
+  })
+  ids <- vapply(records, function(record) record$file_group_id, character(1))
+  records[order(glc_plan_utf8_key(ids), method = "radix")]
+}
+
+glc_explorer_planner_restrictions <- function(
+  requested_dataset_ids,
+  candidate_groups,
+  participant_restricted = FALSE,
+  device_restricted = FALSE,
+  group_filter_active = FALSE,
+  requested_file_group_ids = character()
+) {
+  dataset_id <- glc_plan_sort_utf8(
+    glc_explorer_nonempty_values(requested_dataset_ids)
+  )
+  requested_file_group_ids <- glc_plan_sort_utf8(
+    glc_explorer_nonempty_values(requested_file_group_ids)
+  )
+  translated_filter <- isTRUE(participant_restricted) ||
+    isTRUE(device_restricted) ||
+    isTRUE(group_filter_active)
+  if (translated_filter) {
+    file_group <- glc_plan_sort_utf8(
+      glc_explorer_nonempty_values(candidate_groups$file_group_id)
+    )
+    file_group_basis <- "translated_candidate_universe"
+  } else if (length(requested_file_group_ids) > 0L) {
+    file_group <- requested_file_group_ids
+    file_group_basis <- "explicit_file_group"
+  } else {
+    file_group <- character()
+    file_group_basis <- "omitted"
+  }
+  list(
+    dataset_id = dataset_id,
+    file_group = file_group,
+    dataset_id_explicit = length(dataset_id) > 0L,
+    file_group_basis = file_group_basis
+  )
+}
+
+glc_explorer_declared_request <- function(
+  variable_names = character(),
+  variable_terms = character(),
+  dataset_id = character(),
+  file_group = character(),
+  standardize = "lightlogr"
+) {
+  variable_names <- glc_explorer_nonempty_values(variable_names)
+  variable_terms <- glc_explorer_nonempty_values(variable_terms)
+  variable_scope <- if (length(variable_names) > 0L) {
+    "selected"
+  } else if (length(variable_terms) > 0L) {
+    "matched"
+  } else {
+    "all"
+  }
+  list(
+    terms = glc_plan_sort_utf8(variable_terms),
+    term_match = "all",
+    term_identifier = "canonical",
+    labels_used_for_matching = FALSE,
+    variable_scope = variable_scope,
+    requested_variables = glc_plan_sort_utf8(variable_names),
+    dataset_id = glc_plan_sort_utf8(
+      glc_explorer_nonempty_values(dataset_id)
+    ),
+    file_group = glc_plan_sort_utf8(
+      glc_explorer_nonempty_values(file_group)
+    ),
+    standardize = match.arg(standardize, c("lightlogr", "none"))
+  )
+}
+
+glc_explorer_declared_provenance <- function(package = NULL) {
+  package_id <- if (is.null(package)) NA_character_ else
+    glc_plan_package_id(package)
+  repository <- if (is.null(package)) {
+    NA_character_
+  } else {
+    glc_scalar_character(package$repo)
+  }
+  source_revision <- if (is.null(package)) {
+    NA_character_
+  } else {
+    glc_scalar_character(package$commit)
+  }
+  schema_version <- if (is.null(package)) {
+    NA_character_
+  } else {
+    glc_scalar_character(package$schema_version)
+  }
+  if (is.na(package_id) || !nzchar(package_id)) {
+    package_id <- "glc-explorer"
+  }
+  if (is.na(repository) || !nzchar(repository)) {
+    repository <- "glc-explorer"
+  }
+  if (
+    is.na(source_revision) ||
+      !grepl("^[0-9a-fA-F]{40}$", source_revision)
+  ) {
+    source_revision <- paste(rep("0", 40L), collapse = "")
+  }
+  if (is.na(schema_version) || !nzchar(schema_version)) {
+    schema_version <- "unknown"
+  }
+  list(
+    package_id = package_id,
+    repository = repository,
+    source_revision = tolower(source_revision),
+    package_schema_version = schema_version
+  )
+}
+
+glc_explorer_declared_engine <- function(
+  groups,
+  variable_names = character(),
+  variable_terms = character(),
+  package = NULL,
+  dataset_id = character(),
+  file_group = character(),
+  standardize = "lightlogr"
+) {
+  request <- glc_explorer_declared_request(
+    variable_names,
+    variable_terms,
+    dataset_id,
+    file_group,
+    standardize
+  )
+  engine <- glc_declared_collection_engine(
+    glc_explorer_declared_records(groups),
+    request,
+    glc_explorer_declared_provenance(package)
+  )
+  engine$request <- request
+  engine
 }
 
 glc_explorer_filter_compatible_groups <- function(
   groups,
   variable_names = character(),
-  variable_terms = character()
+  variable_terms = character(),
+  package = NULL,
+  standardize = "lightlogr",
+  declaration_groups = groups,
+  dataset_id = character(),
+  file_group = character()
 ) {
   variable_names <- glc_explorer_nonempty_values(variable_names)
   variable_terms <- glc_explorer_nonempty_values(variable_terms)
@@ -766,88 +1030,67 @@ glc_explorer_filter_compatible_groups <- function(
     matching_count = candidate_count,
     included_count = candidate_count,
     excluded_count = 0L,
+    planner_request = glc_explorer_declared_request(
+      variable_names,
+      variable_terms,
+      dataset_id,
+      file_group,
+      standardize
+    ),
     groups = groups
   )
   if (!active || candidate_count == 0L) {
     return(result)
   }
 
+  engine <- glc_explorer_declared_engine(
+    declaration_groups,
+    variable_names,
+    variable_terms,
+    package = package,
+    dataset_id = dataset_id,
+    file_group = file_group,
+    standardize = standardize
+  )
+  candidate_ids <- glc_explorer_nonempty_values(groups$file_group_id)
+  candidate_records <- engine$records[vapply(
+    engine$records,
+    function(record) record$file_group_id %in% candidate_ids,
+    logical(1)
+  )]
   matches <- vapply(
-    groups$variables,
-    glc_explorer_group_provides_variable_filters,
-    logical(1),
-    variable_names = variable_names,
-    variable_terms = variable_terms
-  )
-  matching <- groups[matches, , drop = FALSE]
-  result$matching_count <- nrow(matching)
-  if (nrow(matching) == 0L) {
-    result$included_count <- 0L
-    result$excluded_count <- candidate_count
-    result$groups <- matching
-    return(result)
-  }
-
-  valid_timezone <- !is.na(matching$timezone) &
-    matching$timezone %in% OlsonNames()
-  complete_datetime <- !is.na(matching$datetime_date) &
-    nzchar(matching$datetime_date) &
-    !is.na(matching$datetime_format) &
-    nzchar(matching$datetime_format) &
-    (is.na(matching$datetime_time) |
-      !nzchar(matching$datetime_time) |
-      (!is.na(matching$datetime_time_format) &
-        nzchar(matching$datetime_time_format)))
-  valid <- matching$format %in%
-    c("csv", "txt", "tsv") &
-    valid_timezone &
-    complete_datetime
-  matching <- matching[valid, , drop = FALSE]
-  if (nrow(matching) == 0L) {
-    result$included_count <- 0L
-    result$excluded_count <- candidate_count
-    result$groups <- matching
-    return(result)
-  }
-
-  column_signature <- vapply(
-    matching$variables,
-    glc_explorer_group_variable_signature,
-    character(1),
-    variable_names = variable_names,
-    variable_terms = variable_terms
-  )
-  modality_signature <- vapply(
-    matching$modalities,
-    paste,
-    character(1),
-    collapse = "|"
-  )
-  compatibility_key <- paste(
-    column_signature,
-    matching$timezone,
-    modality_signature,
-    matching$role,
-    matching$data_state,
-    glc_explorer_datetime_signature(matching),
-    sep = "\034"
-  )
-  keys <- unique(compatibility_key)
-  candidates <- lapply(keys, function(key) {
-    glc_explorer_one_device_per_dataset(
-      matching[compatibility_key == key, , drop = FALSE]
-    )
-  })
-  dataset_counts <- vapply(
-    candidates,
-    function(candidate) {
-      length(glc_explorer_nonempty_values(candidate$dataset_id))
+    candidate_records,
+    function(record) {
+      codes <- vapply(
+        record$reasons,
+        function(reason) reason$code,
+        character(1)
+      )
+      !any(c("term_missing", "variable_missing") %in% codes)
     },
-    integer(1)
+    logical(1)
   )
-  row_counts <- vapply(candidates, nrow, integer(1))
-  selected <- order(-dataset_counts, -row_counts, seq_along(candidates))[[1L]]
-  included <- candidates[[selected]]
+  result$matching_count <- sum(matches)
+  included_ids <- vapply(
+    engine$records,
+    function(record) {
+      if (
+        identical(record$status, "included") &&
+          identical(record$unit_id, engine$preferred_unit_id)
+      ) {
+        record$file_group_id
+      } else {
+        NA_character_
+      }
+    },
+    character(1)
+  )
+  included_ids <- included_ids[!is.na(included_ids)]
+  included <- groups[
+    groups$file_group_id %in% included_ids,
+    ,
+    drop = FALSE
+  ]
 
   result$included_count <- nrow(included)
   result$excluded_count <- candidate_count - nrow(included)
@@ -858,18 +1101,55 @@ glc_explorer_filter_compatible_groups <- function(
 glc_explorer_selection_compatibility <- function(
   groups,
   variable_names,
-  variable_terms = character()
+  variable_terms = character(),
+  package = NULL,
+  standardize = "lightlogr",
+  declaration_groups = groups,
+  dataset_id = character(),
+  file_group = character()
 ) {
-  issues <- character()
   variable_names <- glc_explorer_nonempty_values(variable_names)
   variable_terms <- glc_explorer_nonempty_values(variable_terms)
   if (nrow(groups) == 0L) {
     return(list(ok = FALSE, issues = "No file groups are included."))
   }
-  unsupported <- unique(groups$format[
-    !groups$format %in% c("csv", "txt", "tsv")
-  ])
-  unsupported <- glc_explorer_nonempty_values(unsupported)
+  engine <- glc_explorer_declared_engine(
+    declaration_groups,
+    variable_names,
+    variable_terms,
+    package = package,
+    dataset_id = dataset_id,
+    file_group = file_group,
+    standardize = standardize
+  )
+  records <- engine$records[vapply(
+    engine$records,
+    function(record) {
+      codes <- vapply(
+        record$reasons,
+        function(reason) reason$code,
+        character(1)
+      )
+      !any(c("scope_dataset", "scope_file_group") %in% codes)
+    },
+    logical(1)
+  )]
+  issues <- character()
+  reason_codes <- lapply(records, function(record) {
+    vapply(record$reasons, function(reason) reason$code, character(1))
+  })
+  unsupported <- vapply(
+    seq_along(records),
+    function(index) {
+      if ("unsupported_format" %in% reason_codes[[index]]) {
+        records[[index]]$format
+      } else {
+        NA_character_
+      }
+    },
+    character(1)
+  )
+  unsupported <- glc_plan_sort_utf8(glc_explorer_nonempty_values(unsupported))
   if (length(unsupported) > 0L) {
     issues <- c(
       issues,
@@ -880,118 +1160,85 @@ glc_explorer_selection_compatibility <- function(
       )
     )
   }
-
-  columns <- vector("list", nrow(groups))
-  types <- vector("list", nrow(groups))
-  for (index in seq_len(nrow(groups))) {
-    variables <- glc_explorer_selected_variable_rows(
-      groups$variables[[index]],
-      variable_names,
-      variable_terms
-    )
-    columns[[index]] <- variables$name
-    types[[index]] <- glc_explorer_group_variable_signature(
-      variables,
-      character(),
-      character()
-    )
-    if (length(columns[[index]]) == 0L) {
-      issues <- c(
-        issues,
-        paste0(
-          "File group ",
-          groups$file_group_id[[index]],
-          " does not provide any of the chosen source variables."
-        )
-      )
-    }
-  }
-  if (length(columns) > 1L) {
-    same_columns <- vapply(
-      columns[-1L],
-      identical,
-      logical(1),
-      columns[[1L]]
-    )
-    same_types <- vapply(
-      types[-1L],
-      identical,
-      logical(1),
-      types[[1L]]
-    )
-    if (!all(same_columns)) {
-      issues <- c(issues, "Included file groups use different source columns.")
-    } else if (!all(same_types)) {
-      issues <- c(
-        issues,
-        paste0(
-          "Included file groups use different source variable types or ",
-          "factor levels."
-        )
-      )
-    }
-  }
-
-  compare_values <- function(values, label) {
-    if (length(unique(values)) > 1L) {
-      issues <<- c(
-        issues,
-        paste0("Included file groups use different ", label, ".")
-      )
-    }
-  }
-  if (nrow(groups) > 0L) {
-    compare_values(as.character(groups$timezone), "time zones")
-    compare_values(
-      vapply(groups$modalities, paste, character(1), collapse = "|"),
-      "modalities"
-    )
-    compare_values(as.character(groups$role), "file roles")
-    compare_values(as.character(groups$data_state), "data states")
-    compare_values(
-      glc_explorer_datetime_signature(groups),
-      "datetime specifications"
-    )
-    dataset_ids <- glc_explorer_nonempty_values(groups$dataset_id)
-    multiple_device_datasets <- dataset_ids[vapply(
-      dataset_ids,
-      function(dataset_id) {
-        rows <- !is.na(groups$dataset_id) &
-          groups$dataset_id == dataset_id
-        devices <- glc_explorer_nonempty_values(groups$device_id[rows])
-        length(devices) > 1L
+  if (
+    any(vapply(
+      reason_codes,
+      function(codes) {
+        "invalid_timezone" %in% codes
       },
       logical(1)
-    )]
-    if (length(multiple_device_datasets) > 0L) {
-      issues <- c(
-        issues,
-        "Included file groups link one dataset to multiple devices."
-      )
-    }
-
-    invalid_timezone <- is.na(groups$timezone) |
-      !groups$timezone %in% OlsonNames()
-    if (any(invalid_timezone)) {
-      issues <- c(issues, "Included file groups contain invalid time zones.")
-    }
-    incomplete_datetime <- is.na(groups$datetime_date) |
-      !nzchar(groups$datetime_date) |
-      is.na(groups$datetime_format) |
-      !nzchar(groups$datetime_format) |
-      (!is.na(groups$datetime_time) &
-        nzchar(groups$datetime_time) &
-        (is.na(groups$datetime_time_format) |
-          !nzchar(groups$datetime_time_format)))
-    if (any(incomplete_datetime)) {
-      issues <- c(
-        issues,
-        "Included file groups contain incomplete datetime specifications."
-      )
+    ))
+  ) {
+    issues <- c(issues, "Included file groups contain invalid time zones.")
+  }
+  if (
+    any(vapply(
+      reason_codes,
+      function(codes) {
+        "incomplete_datetime" %in% codes
+      },
+      logical(1)
+    ))
+  ) {
+    issues <- c(
+      issues,
+      "Included file groups contain incomplete datetime specifications."
+    )
+  }
+  differences <- glc_declared_collection_record_differences(records)
+  aggregate_codes <- c(
+    "unsupported_format",
+    "invalid_timezone",
+    "incomplete_datetime",
+    "included"
+  )
+  if ("columns" %in% differences) {
+    aggregate_codes <- c(
+      aggregate_codes,
+      "term_missing",
+      "variable_missing"
+    )
+  }
+  for (record in records) {
+    for (reason in record$reasons) {
+      if (!reason$code %in% aggregate_codes) {
+        issues <- c(
+          issues,
+          paste0("File group ", record$file_group_id, ": ", reason$message)
+        )
+      }
     }
   }
+  difference_messages <- c(
+    columns = "Included file groups use different source columns.",
+    types_or_factor_levels = paste0(
+      "Included file groups use different source variable types or ",
+      "factor levels."
+    ),
+    timezone = "Included file groups use different time zones.",
+    modalities = "Included file groups use different modalities.",
+    role = "Included file groups use different file roles.",
+    data_state = "Included file groups use different data states.",
+    datetime = "Included file groups use different datetime specifications.",
+    device_relationship = paste0(
+      "Included file groups link one dataset to multiple devices."
+    )
+  )
+  if (length(differences) > 0L) {
+    issues <- c(issues, unname(difference_messages[differences]))
+  }
   issues <- unique(issues)
-  list(ok = length(issues) == 0L, issues = issues)
+  all_included <- all(vapply(
+    records,
+    function(record) {
+      identical(record$status, "included")
+    },
+    logical(1)
+  ))
+  list(
+    ok = all_included && length(engine$units) == 1L && length(issues) == 0L,
+    issues = issues
+  )
 }
 
 glc_explorer_package_selection_info <- function(package) {
@@ -1173,6 +1420,16 @@ glc_explorer_build_selection_plan <- function(
         variables = character(),
         terms = character()
       ),
+      planner_restrictions = list(
+        dataset_id = character(),
+        file_group = character(),
+        dataset_id_explicit = FALSE,
+        file_group_basis = "omitted"
+      ),
+      read_restrictions = list(
+        dataset_id = character(),
+        file_group = character()
+      ),
       participants = character(),
       devices = character(),
       datasets = character(),
@@ -1262,17 +1519,34 @@ glc_explorer_build_selection_plan <- function(
       drop = FALSE
     ]
   }
+  planner_restrictions <- glc_explorer_planner_restrictions(
+    requested_datasets,
+    candidate_groups,
+    participant_restricted = scope$participant_restricted,
+    device_restricted = scope$device_restricted,
+    group_filter_active = group_discovery$active,
+    requested_file_group_ids = requested_groups
+  )
   requested_variables <- glc_explorer_nonempty_values(variables)
   requested_terms <- glc_explorer_nonempty_values(terms)
   group_filter <- glc_explorer_filter_compatible_groups(
     candidate_groups,
     requested_variables,
-    requested_terms
+    requested_terms,
+    package = package,
+    standardize = standardize,
+    declaration_groups = selection$groups,
+    dataset_id = planner_restrictions$dataset_id,
+    file_group = planner_restrictions$file_group
   )
   groups <- group_filter$groups
   group_filter$groups <- NULL
   resolved_dataset_ids <- unique(groups$dataset_id)
   group_ids <- unique(groups$file_group_id)
+  read_restrictions <- list(
+    dataset_id = glc_plan_sort_utf8(resolved_dataset_ids),
+    file_group = glc_plan_sort_utf8(group_ids)
+  )
   available_variables <- selection$variables[
     selection$variables$file_group_id %in% group_ids,
     ,
@@ -1292,7 +1566,7 @@ glc_explorer_build_selection_plan <- function(
   } else {
     NULL
   }
-  term_filter <- if (term_filter_active) {
+  term_filter <- if (term_filter_active && !name_filter_active) {
     requested_terms
   } else {
     NULL
@@ -1340,7 +1614,12 @@ glc_explorer_build_selection_plan <- function(
     glc_explorer_selection_compatibility(
       groups,
       requested_variables,
-      requested_terms
+      requested_terms,
+      package = package,
+      standardize = standardize,
+      declaration_groups = selection$groups,
+      dataset_id = read_restrictions$dataset_id,
+      file_group = read_restrictions$file_group
     )
   } else {
     list(ok = FALSE, issues = character())
@@ -1391,6 +1670,8 @@ glc_explorer_build_selection_plan <- function(
       variables = requested_variables,
       terms = requested_terms
     ),
+    planner_restrictions = planner_restrictions,
+    read_restrictions = read_restrictions,
     participants = resolved_participants,
     devices = resolved_devices,
     datasets = resolved_dataset_ids,
