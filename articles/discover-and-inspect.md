@@ -34,7 +34,7 @@ packages[, c(
   "attestation_verified"
 )]
 #> <GLC registry>
-#> Generated: 2026-08-01T16:31:38.485487+00:00 
+#> Generated: 2026-08-07T06:35:23.852353+00:00 
 #> # A tibble: 3 × 5
 #>   id              repository current_status has_latest_pass attestation_verified
 #>   <chr>           <chr>      <chr>          <lgl>           <lgl>               
@@ -57,9 +57,9 @@ Searches are fixed and case-insensitive by default:
 
 glc_search_packages("iztech", packages)
 #> <GLC registry>
-#> Generated: 2026-08-01T16:31:38.485487+00:00 
+#> Generated: 2026-08-07T06:35:23.852353+00:00 
 #> <GLC registry>
-#> Generated: 2026-08-01T16:31:38.485487+00:00 
+#> Generated: 2026-08-07T06:35:23.852353+00:00 
 #> # A tibble: 1 × 17
 #>   id           repository branch repository_status current_status current_commit
 #>   <chr>        <chr>      <chr>  <chr>             <chr>          <chr>         
@@ -71,9 +71,9 @@ glc_search_packages("iztech", packages)
 #> #   registry_generated_at <chr>
 glc_search_packages(packages = packages, status = c("pass", "fail"))
 #> <GLC registry>
-#> Generated: 2026-08-01T16:31:38.485487+00:00 
+#> Generated: 2026-08-07T06:35:23.852353+00:00 
 #> <GLC registry>
-#> Generated: 2026-08-01T16:31:38.485487+00:00 
+#> Generated: 2026-08-07T06:35:23.852353+00:00 
 #> # A tibble: 3 × 17
 #>   id           repository branch repository_status current_status current_commit
 #>   <chr>        <chr>      <chr>  <chr>             <chr>          <chr>         
@@ -87,9 +87,9 @@ glc_search_packages(packages = packages, status = c("pass", "fail"))
 #> #   registry_generated_at <chr>
 glc_search_packages(packages = packages, has_pass = FALSE)
 #> <GLC registry>
-#> Generated: 2026-08-01T16:31:38.485487+00:00 
+#> Generated: 2026-08-07T06:35:23.852353+00:00 
 #> <GLC registry>
-#> Generated: 2026-08-01T16:31:38.485487+00:00 
+#> Generated: 2026-08-07T06:35:23.852353+00:00 
 #> # A tibble: 0 × 17
 #> # ℹ 17 variables: id <chr>, repository <chr>, branch <chr>,
 #> #   repository_status <chr>, current_status <chr>, current_commit <chr>,
