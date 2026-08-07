@@ -1,5 +1,26 @@
 # Changelog
 
+## glcdp 1.0.0.9000
+
+- Added
+  [`glc_collection_plan()`](https://tscnlab.github.io/glc-dp-r/reference/glc_collection_plan.md)
+  to create deterministic, serializable, metadata-only plans for
+  collectable file-group units from canonical terms and matched, all, or
+  selected declared variables, with optional stable dataset and
+  file-group restrictions. Plans report stable unit ids, exclusions,
+  required read/output columns, declared byte availability, and exact
+  package/schema/revision provenance without reading measurement
+  contents;
+  [`glc_read()`](https://tscnlab.github.io/glc-dp-r/reference/glc_read.md)
+  and
+  [`glc_collect()`](https://tscnlab.github.io/glc-dp-r/reference/glc_collect.md)
+  remain the runtime authorities.
+- [`glc_explore()`](https://tscnlab.github.io/glc-dp-r/reference/glc_explore.md)
+  now uses the same declaration-compatibility engine as
+  [`glc_collection_plan()`](https://tscnlab.github.io/glc-dp-r/reference/glc_collection_plan.md),
+  keeping Explorer selection, exclusions, device-safe partitioning, unit
+  ids, and preferred-unit choice in parity with the public planner.
+
 ## glcdp 1.0.0
 
 CRAN release: 2026-08-06

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">glcdp</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -35,9 +35,15 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/tscnlab/glc-dp-r/blob/v1.0.0/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/tscnlab/glc-dp-r/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.0.0.9000" id="glcdp-1009000">glcdp 1.0.0.9000<a class="anchor" aria-label="anchor" href="#glcdp-1009000"></a></h2>
+<ul><li>Added <code><a href="../reference/glc_collection_plan.html">glc_collection_plan()</a></code> to create deterministic, serializable, metadata-only plans for collectable file-group units from canonical terms and matched, all, or selected declared variables, with optional stable dataset and file-group restrictions. Plans report stable unit ids, exclusions, required read/output columns, declared byte availability, and exact package/schema/revision provenance without reading measurement contents; <code><a href="../reference/glc_read.html">glc_read()</a></code> and <code><a href="../reference/glc_collect.html">glc_collect()</a></code> remain the runtime authorities.</li>
+<li>
+<code><a href="../reference/glc_explore.html">glc_explore()</a></code> now uses the same declaration-compatibility engine as <code><a href="../reference/glc_collection_plan.html">glc_collection_plan()</a></code>, keeping Explorer selection, exclusions, device-safe partitioning, unit ids, and preferred-unit choice in parity with the public planner.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.0.0" id="glcdp-100">glcdp 1.0.0<a class="anchor" aria-label="anchor" href="#glcdp-100"></a></h2><p class="text-muted">CRAN release: 2026-08-06</p>
 <ul><li>Promoted schema 3.0.2 to the current default and primary stable import contract, while retaining 3.0.0 and 3.0.1 as compatible stable predecessors. Schema 3.0.2 is a corrective patch that requires <code>datasheet_channel</code> to contain at least one entry when present; its metadata-driven data import contract is unchanged. Schema 1.0.0 and 2.0.0 remain available as barebones legacy compatibility paths.</li>
