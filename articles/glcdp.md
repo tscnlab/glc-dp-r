@@ -55,11 +55,11 @@ silently hiding packages with problems.
 packages <- glc_packages()
 packages
 #> <GLC registry>
-#> Generated: 2026-08-07T06:35:23.852353+00:00 
+#> Generated: 2026-08-13T15:06:24.832902+00:00 
 #> # A tibble: 3 × 17
 #>   id           repository branch repository_status current_status current_commit
 #>   <chr>        <chr>      <chr>  <chr>             <chr>          <chr>         
-#> 1 guidolin-gl… tscnlab/g… main   active            pass           8ec9034a3d967…
+#> 1 guidolin-gl… tscnlab/g… main   active            missing_artif… 8ec9034a3d967…
 #> 2 melidos-izt… tscnlab/m… main   active            pass           9353a0c4287d4…
 #> 3 melidos-knu… tscnlab/m… main   active            pass           a7e4d17a7ea7f…
 #> # ℹ 11 more variables: current_validator <chr>, current_validated_at <chr>,
@@ -70,9 +70,9 @@ packages
 
 glc_search_packages("iztech", packages)
 #> <GLC registry>
-#> Generated: 2026-08-07T06:35:23.852353+00:00 
+#> Generated: 2026-08-13T15:06:24.832902+00:00 
 #> <GLC registry>
-#> Generated: 2026-08-07T06:35:23.852353+00:00 
+#> Generated: 2026-08-13T15:06:24.832902+00:00 
 #> # A tibble: 1 × 17
 #>   id           repository branch repository_status current_status current_commit
 #>   <chr>        <chr>      <chr>  <chr>             <chr>          <chr>         
@@ -91,15 +91,14 @@ recorded passing revision:
 
 glc_search_packages(packages = packages, status = "pass")
 #> <GLC registry>
-#> Generated: 2026-08-07T06:35:23.852353+00:00 
+#> Generated: 2026-08-13T15:06:24.832902+00:00 
 #> <GLC registry>
-#> Generated: 2026-08-07T06:35:23.852353+00:00 
-#> # A tibble: 3 × 17
+#> Generated: 2026-08-13T15:06:24.832902+00:00 
+#> # A tibble: 2 × 17
 #>   id           repository branch repository_status current_status current_commit
 #>   <chr>        <chr>      <chr>  <chr>             <chr>          <chr>         
-#> 1 guidolin-gl… tscnlab/g… main   active            pass           8ec9034a3d967…
-#> 2 melidos-izt… tscnlab/m… main   active            pass           9353a0c4287d4…
-#> 3 melidos-knu… tscnlab/m… main   active            pass           a7e4d17a7ea7f…
+#> 1 melidos-izt… tscnlab/m… main   active            pass           9353a0c4287d4…
+#> 2 melidos-knu… tscnlab/m… main   active            pass           a7e4d17a7ea7f…
 #> # ℹ 11 more variables: current_validator <chr>, current_validated_at <chr>,
 #> #   current_errors <int>, current_warnings <int>, latest_pass_commit <chr>,
 #> #   latest_pass_validator <chr>, latest_pass_validated_at <chr>,
@@ -107,15 +106,14 @@ glc_search_packages(packages = packages, status = "pass")
 #> #   registry_generated_at <chr>
 glc_search_packages(packages = packages, has_pass = TRUE)
 #> <GLC registry>
-#> Generated: 2026-08-07T06:35:23.852353+00:00 
+#> Generated: 2026-08-13T15:06:24.832902+00:00 
 #> <GLC registry>
-#> Generated: 2026-08-07T06:35:23.852353+00:00 
-#> # A tibble: 3 × 17
+#> Generated: 2026-08-13T15:06:24.832902+00:00 
+#> # A tibble: 2 × 17
 #>   id           repository branch repository_status current_status current_commit
 #>   <chr>        <chr>      <chr>  <chr>             <chr>          <chr>         
-#> 1 guidolin-gl… tscnlab/g… main   active            pass           8ec9034a3d967…
-#> 2 melidos-izt… tscnlab/m… main   active            pass           9353a0c4287d4…
-#> 3 melidos-knu… tscnlab/m… main   active            pass           a7e4d17a7ea7f…
+#> 1 melidos-izt… tscnlab/m… main   active            pass           9353a0c4287d4…
+#> 2 melidos-knu… tscnlab/m… main   active            pass           a7e4d17a7ea7f…
 #> # ℹ 11 more variables: current_validator <chr>, current_validated_at <chr>,
 #> #   current_errors <int>, current_warnings <int>, latest_pass_commit <chr>,
 #> #   latest_pass_validator <chr>, latest_pass_validated_at <chr>,

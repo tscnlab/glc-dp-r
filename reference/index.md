@@ -40,6 +40,8 @@ Import metadata-described files and combine compatible groups.
 
 - [`glc_collection_plan()`](https://tscnlab.github.io/glc-dp-r/reference/glc_collection_plan.md)
   : Plan declaration-compatible collection units
+- [`glc_collection_refine()`](https://tscnlab.github.io/glc-dp-r/reference/glc_collection_refine.md)
+  : Refine a collection plan from stable file-group identifiers
 - [`glc_read()`](https://tscnlab.github.io/glc-dp-r/reference/glc_read.md)
   : Read metadata-described dataset files
 - [`glc_collect()`](https://tscnlab.github.io/glc-dp-r/reference/glc_collect.md)

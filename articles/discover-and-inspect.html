@@ -106,11 +106,11 @@ attestation was verified.</li>
 <span>  <span class="st">"attestation_verified"</span></span>
 <span><span class="op">)</span><span class="op">]</span></span>
 <span><span class="co">#&gt; &lt;GLC registry&gt;</span></span>
-<span><span class="co">#&gt; Generated: 2026-08-07T06:35:23.852353+00:00 </span></span>
+<span><span class="co">#&gt; Generated: 2026-08-13T15:06:24.832902+00:00 </span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 3 × 5</span></span></span>
 <span><span class="co">#&gt;   id              repository current_status has_latest_pass attestation_verified</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>               </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> guidolin-glee-… tscnlab/g… pass           TRUE            TRUE                </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> guidolin-glee-… tscnlab/g… missing_artif… FALSE           FALSE               </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> melidos-iztech… tscnlab/m… pass           TRUE            TRUE                </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> melidos-knust-… tscnlab/m… pass           TRUE            TRUE</span></span></code></pre></div>
 <p>Registry results are cached for the R session. Set
@@ -122,9 +122,9 @@ again.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/glc_search_packages.html">glc_search_packages</a></span><span class="op">(</span><span class="st">"iztech"</span>, <span class="va">packages</span><span class="op">)</span></span>
 <span><span class="co">#&gt; &lt;GLC registry&gt;</span></span>
-<span><span class="co">#&gt; Generated: 2026-08-07T06:35:23.852353+00:00 </span></span>
+<span><span class="co">#&gt; Generated: 2026-08-13T15:06:24.832902+00:00 </span></span>
 <span><span class="co">#&gt; &lt;GLC registry&gt;</span></span>
-<span><span class="co">#&gt; Generated: 2026-08-07T06:35:23.852353+00:00 </span></span>
+<span><span class="co">#&gt; Generated: 2026-08-13T15:06:24.832902+00:00 </span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 17</span></span></span>
 <span><span class="co">#&gt;   id           repository branch repository_status current_status current_commit</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         </span></span>
@@ -136,15 +136,14 @@ again.</p>
 <span><span class="co">#&gt; <span style="color: #949494;">#   registry_generated_at &lt;chr&gt;</span></span></span>
 <span><span class="fu"><a href="../reference/glc_search_packages.html">glc_search_packages</a></span><span class="op">(</span>packages <span class="op">=</span> <span class="va">packages</span>, status <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pass"</span>, <span class="st">"fail"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; &lt;GLC registry&gt;</span></span>
-<span><span class="co">#&gt; Generated: 2026-08-07T06:35:23.852353+00:00 </span></span>
+<span><span class="co">#&gt; Generated: 2026-08-13T15:06:24.832902+00:00 </span></span>
 <span><span class="co">#&gt; &lt;GLC registry&gt;</span></span>
-<span><span class="co">#&gt; Generated: 2026-08-07T06:35:23.852353+00:00 </span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 3 × 17</span></span></span>
+<span><span class="co">#&gt; Generated: 2026-08-13T15:06:24.832902+00:00 </span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 2 × 17</span></span></span>
 <span><span class="co">#&gt;   id           repository branch repository_status current_status current_commit</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> guidolin-gl… tscnlab/g… main   active            pass           8ec9034a3d967…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> melidos-izt… tscnlab/m… main   active            pass           9353a0c4287d4…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> melidos-knu… tscnlab/m… main   active            pass           a7e4d17a7ea7f…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> melidos-izt… tscnlab/m… main   active            pass           9353a0c4287d4…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> melidos-knu… tscnlab/m… main   active            pass           a7e4d17a7ea7f…</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 11 more variables: current_validator &lt;chr&gt;, current_validated_at &lt;chr&gt;,</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;">#   current_errors &lt;int&gt;, current_warnings &lt;int&gt;, latest_pass_commit &lt;chr&gt;,</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;">#   latest_pass_validator &lt;chr&gt;, latest_pass_validated_at &lt;chr&gt;,</span></span></span>
@@ -152,14 +151,15 @@ again.</p>
 <span><span class="co">#&gt; <span style="color: #949494;">#   registry_generated_at &lt;chr&gt;</span></span></span>
 <span><span class="fu"><a href="../reference/glc_search_packages.html">glc_search_packages</a></span><span class="op">(</span>packages <span class="op">=</span> <span class="va">packages</span>, has_pass <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co">#&gt; &lt;GLC registry&gt;</span></span>
-<span><span class="co">#&gt; Generated: 2026-08-07T06:35:23.852353+00:00 </span></span>
+<span><span class="co">#&gt; Generated: 2026-08-13T15:06:24.832902+00:00 </span></span>
 <span><span class="co">#&gt; &lt;GLC registry&gt;</span></span>
-<span><span class="co">#&gt; Generated: 2026-08-07T06:35:23.852353+00:00 </span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 0 × 17</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 17 variables: id &lt;chr&gt;, repository &lt;chr&gt;, branch &lt;chr&gt;,</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;">#   repository_status &lt;chr&gt;, current_status &lt;chr&gt;, current_commit &lt;chr&gt;,</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;">#   current_validator &lt;chr&gt;, current_validated_at &lt;chr&gt;, current_errors &lt;int&gt;,</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;">#   current_warnings &lt;int&gt;, latest_pass_commit &lt;chr&gt;,</span></span></span>
+<span><span class="co">#&gt; Generated: 2026-08-13T15:06:24.832902+00:00 </span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 17</span></span></span>
+<span><span class="co">#&gt;   id           repository branch repository_status current_status current_commit</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> guidolin-gl… tscnlab/g… main   active            missing_artif… 8ec9034a3d967…</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 11 more variables: current_validator &lt;chr&gt;, current_validated_at &lt;chr&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   current_errors &lt;int&gt;, current_warnings &lt;int&gt;, latest_pass_commit &lt;chr&gt;,</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;">#   latest_pass_validator &lt;chr&gt;, latest_pass_validated_at &lt;chr&gt;,</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;">#   has_latest_pass &lt;lgl&gt;, is_current_pass &lt;lgl&gt;, attestation_verified &lt;lgl&gt;,</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;">#   registry_generated_at &lt;chr&gt;</span></span></span></code></pre></div>

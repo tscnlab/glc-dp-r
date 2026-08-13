@@ -4,22 +4,44 @@
 
 - Added
   [`glc_collection_plan()`](https://tscnlab.github.io/glc-dp-r/reference/glc_collection_plan.md)
-  to create deterministic, serializable, metadata-only plans for
-  collectable file-group units from canonical terms and matched, all, or
-  selected declared variables, with optional stable dataset and
-  file-group restrictions. Plans report stable unit ids, exclusions,
-  required read/output columns, declared byte availability, and exact
-  package/schema/revision provenance without reading measurement
-  contents;
+  with plan schema 1.1.0 to create deterministic, serializable plans
+  from validated declarations. Plans expose restriction-stable
+  structural compatibility sets while preserving request-sensitive final
+  `unit_id` semantics, device-safe relationship allocation, exclusion
+  reasons, required read and output columns, byte summaries, and exact
+  package, schema, and revision provenance. Structural sets that map to
+  multiple final units report the unresolved constraint and require
+  further selection.
+- Collection plans now include a complete, typed, serializable snapshot
+  of descriptor-declared core metadata for studies, contributors,
+  datasets, participants and their characteristics, devices and
+  datasheets, instruments, and all declared file-group variables and
+  factor levels. Source types and missing values are preserved,
+  relationship status is explicit, and unknown extension fields remain
+  available separately.
+- Added
+  [`glc_collection_refine()`](https://tscnlab.github.io/glc-dp-r/reference/glc_collection_refine.md)
+  to refine stable file-group identifiers from one structural
+  compatibility set using a validated plan already in memory. Refinement
+  performs no HTTP request, package reopen, availability probe, metadata
+  reload, or measurement access, and returns final units with the same
+  identifiers and membership as a fresh restricted plan.
+- One explicit
+  [`glc_collection_plan()`](https://tscnlab.github.io/glc-dp-r/reference/glc_collection_plan.md)
+  call may load only descriptor-declared core metadata at the package’s
+  exact verified revision. It never accesses measurement paths or probes
+  their availability. Applications can build one plan, filter its public
+  metadata tables in memory, and refine the selected file-group
+  identifiers without repeatedly rebuilding the full plan.
+- [`glc_explore()`](https://tscnlab.github.io/glc-dp-r/reference/glc_explore.md)
+  uses the same declaration-compatibility engine as
+  [`glc_collection_plan()`](https://tscnlab.github.io/glc-dp-r/reference/glc_collection_plan.md).
   [`glc_read()`](https://tscnlab.github.io/glc-dp-r/reference/glc_read.md)
   and
   [`glc_collect()`](https://tscnlab.github.io/glc-dp-r/reference/glc_collect.md)
-  remain the runtime authorities.
-- [`glc_explore()`](https://tscnlab.github.io/glc-dp-r/reference/glc_explore.md)
-  now uses the same declaration-compatibility engine as
-  [`glc_collection_plan()`](https://tscnlab.github.io/glc-dp-r/reference/glc_collection_plan.md),
-  keeping Explorer selection, exclusions, device-safe partitioning, unit
-  ids, and preferred-unit choice in parity with the public planner.
+  remain the runtime authorities for downloaded columns, parsed types,
+  factor values, datetime values, output collisions, standardization,
+  and final collection compatibility.
 
 ## glcdp 1.0.0
 

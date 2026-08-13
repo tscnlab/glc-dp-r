@@ -1,9 +1,9 @@
 # Plan declaration-compatible collection units
 
-Build a deterministic, metadata-only plan that partitions matching file
-groups into units whose validated declarations are compatible for
-collection. No measurement file is read or inspected while the plan is
-built.
+Build a deterministic plan from validated declarations and normalized
+core metadata. The plan separates structural compatibility sets from
+final collectable units, and it never reads or inspects measurement
+contents.
 
 ## Usage
 
@@ -72,7 +72,9 @@ glc_collection_plan(
 
 ## Value
 
-A `glc_collection_plan` object described in **Return tables**.
+A serializable `glc_collection_plan` object using plan schema
+`"glc-collection-plan"` version `"1.1.0"`, as described in **Return
+tables**.
 
 ## Details
 
@@ -91,36 +93,63 @@ restriction and explicitly supplying every possible identifier select
 the same groups, but deliberately remain different requests and
 therefore may produce different unit identifiers.
 
-Included groups are partitioned by the exact selected variable names and
-order, declared types, factor values and labels, time zone, ordered
-modalities, role, data state, datetime contract, and the package's
-validated relationship rules. At most one non-missing device per dataset
-is permitted within a unit. Collection-based datetime values are
-record-specific and are ignored when comparing otherwise identical
-collection-based datetime contracts.
+## Structural compatibility and final units
 
-A unit identifier is `"glcu_"` followed by a SHA-256 digest of canonical
-UTF-8 text. The material includes the planner schema and version,
-package id, repository, exact source revision and package schema, the
-normalized request (including restrictions and `standardize`), the
-compatibility contract, and sorted stable file-group identifiers. It
-never uses R serialized-object bytes. Unit identifiers and table
-ordering are therefore reproducible across input row ordering and
-supported R versions. They are request- and revision-specific and may
-change when the planner schema changes.
+Included groups are first partitioned by selected source names and
+declaration order, declared types, factor values and labels in
+declaration order, time zone, ordered modalities, role, data state, and
+datetime contract. Collection-based datetime values are record-specific
+and are ignored when comparing otherwise identical collection-based
+contracts.
+
+Each structural set has a `compatibility_id` beginning with `"glcc_"`.
+It is a SHA-256 digest of length-prefixed canonical UTF-8 text
+containing the exact package identity, repository, source revision,
+package schema, and structural contract. It does not contain current
+membership, `dataset_id` or `file_group` restrictions, metadata facets,
+`standardize`, or device-slot allocation. The identifier therefore stays
+the same when an unchanged contract is narrowed at the same package
+revision. Wearing position, device location or type, participant
+characteristics, file description, site context, and other descriptive
+metadata do not split structural sets.
+
+A structural set is not itself declared finally collectable.
+Relationship allocation is applied next. Final units enforce consistent
+dataset and file-group links and permit at most one non-missing device
+per dataset. A structural set can therefore map to multiple final units.
+In that case, `final_selection_required` is `TRUE` and
+`constraint_codes` contains `"device_slot_allocation"`.
+
+Existing final unit identifiers retain their version 1.0 canonical
+identity. A `unit_id` begins with `"glcu_"` and hashes the package and
+revision, the normalized request including restrictions and
+`standardize`, the structural contract, and sorted member file-group
+identifiers. Final unit ids are thus request- and membership-sensitive,
+while structural ids are restriction stable. Both use canonical UTF-8
+text rather than R serialized-object bytes, and both their values and
+table order are stable under input row reordering.
 
 ## Declaration-only assurance
 
-The planner uses validated descriptor and core metadata associated with
-`x`. It does not call
+The planner uses the validated descriptor and core metadata associated
+with `x`. One explicit planning call may load descriptor-declared
+resources named `study`, `participants`, `participant_characteristics`,
+`datasets`, `devices`, `device_datasheets`, and optional `contributors`
+at the exact source revision. For a remote package, loading an uncached
+core resource can make an HTTP request. The allowlist is exactly the
+value returned internally by `glc_core_resource_names()`.
+
+The planner does not call
 [`glc_read()`](https://tscnlab.github.io/glc-dp-r/reference/glc_read.md),
 [`glc_collect()`](https://tscnlab.github.io/glc-dp-r/reference/glc_collect.md),
 [`glc_files()`](https://tscnlab.github.io/glc-dp-r/reference/glc_files.md),
-or
 [`glc_summary()`](https://tscnlab.github.io/glc-dp-r/reference/glc_summary.md),
-request measurement contents, or inspect source rows. Known
-declaration-level constraints, including reserved source names that
-begin with `.glc_`, are applied before units are formed.
+or
+[`glc_download()`](https://tscnlab.github.io/glc-dp-r/reference/glc_download.md).
+It never requests a measurement path, probes measurement availability,
+or inspects source rows. Known declaration-level constraints, including
+reserved source names that begin with `.glc_`, are applied before units
+are formed.
 
 File sizes come only from an explicit supported byte declaration or an
 entry already present in the local manifest. The planner never downloads
@@ -137,6 +166,34 @@ remains authoritative for source-file validation, and
 [`glc_collect()`](https://tscnlab.github.io/glc-dp-r/reference/glc_collect.md)
 remains authoritative for final collection compatibility and
 standardization.
+
+## Missing values and relationship links
+
+Source missingness is retained. Missing scalar metadata stays as a typed
+`NA`, and absent repeated metadata stays an empty vector or list.
+Literal source values such as `"not applicable"` remain literal values.
+The planner does not synthesize a description, instrument, contributor
+id, or site id.
+
+Relationship status columns use `"linked"`, `"not_applicable"`,
+`"unresolved"`, or `"metadata_unavailable"`. `"not_applicable"` means
+that no link applies, such as a dataset not associated with a
+participant or a group without a device id. `"unresolved"` means that an
+applicable id is missing or does not resolve in loaded metadata.
+`"metadata_unavailable"` means that an id is present but its optional
+core resource was not declared.
+
+## Recommended interactive workflow
+
+Build one plan as an explicit planning task. Present one reader-oriented
+option per row of `compatibility_sets`, then filter `groups` and the
+normalized `metadata` tables in memory by stable ids. Do not rebuild the
+plan for each participant, device, position, characteristic, or site
+filter. Finally pass the narrowed file-group ids to
+[`glc_collection_refine()`](https://tscnlab.github.io/glc-dp-r/reference/glc_collection_refine.md).
+A caller should proceed to reading only when the refinement reports one
+final unit and `final_selection_required = FALSE`. Keep the parent plan
+because the lightweight refinement does not copy its metadata tables.
 
 ## Return tables
 
@@ -160,31 +217,34 @@ The result is a plain, serializable list with class
   groups.
 
 - `assurance`: `basis`, `actual_data_status`, `final_validation`,
-  `measurement_contents_transferred`, `measurement_contents_inspected`,
-  and `byte_policy`.
+  measurement transfer and inspection flags, `core_metadata_transport`,
+  interactive-filter and refinement network flags, and `byte_policy`.
 
 - `preferred_unit_id`: the preferred unit, or `NA_character_` when no
   unit is collectable. Preference is deterministic: most datasets, then
   most file groups, then the lexically smallest unit id.
 
-- `units`: one row per collectable unit. Columns are `unit_id`,
-  `preferred`, `dataset_count`, `file_group_count`, `variable_count`,
-  `file_count`, `declared_bytes`, `known_file_count`,
-  `unknown_file_count`, `declared_bytes_complete`, and the list-column
+- `units`: one row per final unit. Columns are `unit_id`,
+  `compatibility_id`, `preferred`, `dataset_count`, `file_group_count`,
+  `variable_count`, `file_count`, `declared_bytes`, `known_file_count`,
+  `unknown_file_count`, `declared_bytes_complete`, and list-column
   `file_group_ids`.
 
 - `groups`: one row per declared file group. Columns are `status`,
-  `unit_id`, `dataset_id`, integer declaration index `file_group`,
-  stable `file_group_id`, `study_id`, `participant_id`,
-  `participant_associated`, `device_id`, `device_location`,
-  `device_location_type`, `description`, `format`, `timezone`,
-  list-column `modalities`, `modality_other`, `modality_other_type`,
-  `role`, `data_state`, `temporal_type`, `temporal_value`,
-  `temporal_unit`, `header_row`, list-column `preprocessing`,
-  `datetime_source`, `datetime_date`, `datetime_format`,
-  `datetime_time`, `datetime_time_format`, and list-columns
-  `selected_variables`, `reason_codes`, and `messages`. Excluded groups
-  have a missing `unit_id`.
+  `unit_id`, `compatibility_id`, `dataset_id`, integer declaration index
+  `file_group`, stable `file_group_id`, `study_id`, `participant_id`,
+  `participant_associated`, `study_link_status`,
+  `participant_link_status`, `device_id`, `device_link_status`,
+  `datasheet_id`, `device_location`, `device_location_type`,
+  `description`, `instructions`, `instrument_declared`,
+  `dataset_timezone`, `dataset_latitude`, `dataset_longitude`, `format`,
+  `timezone`, list-column `modalities`, `modality_other`,
+  `modality_other_type`, `role`, `data_state`, `temporal_type`,
+  `temporal_value`, `temporal_unit`, `header_row`, list-column
+  `preprocessing`, `datetime_source`, `datetime_date`,
+  `datetime_format`, `datetime_time`, `datetime_time_format`, and
+  list-columns `selected_variables`, `reason_codes`, and `messages`.
+  Excluded groups have missing `unit_id` and `compatibility_id` values.
 
 - `variables`: one row per selected variable in an included group.
   Columns are `unit_id`, `dataset_id`, `file_group_id`, `position`,
@@ -225,11 +285,115 @@ The result is a plain, serializable list with class
   `file_group_id`, and preserved, forward-compatible unknown declaration
   fields in the plain list-column `metadata`.
 
+- `compatibility_sets`: one row per structural set. Columns are
+  `compatibility_id`, dataset, file-group, variable, and file counts;
+  byte summaries; `final_unit_count`; `final_selection_required`;
+  list-columns `constraint_codes`, `constraint_messages`,
+  `file_group_ids`, and `final_unit_ids`; the selected-name,
+  declared-type, factor, timezone, modality, role, data-state, and
+  datetime contract columns also present in `compatibility`;
+  `relationship_rule`; `device_rule`; and the fixed
+  `standardize_affects_structure = FALSE` assurance.
+
+- `metadata`: a normalized typed core-metadata snapshot described below.
+
+- `refinement_input`: a compact, serializable input used and validated
+  by
+  [`glc_collection_refine()`](https://tscnlab.github.io/glc-dp-r/reference/glc_collection_refine.md).
+  It contains `schema`, `version`, `canonicalization`,
+  `digest_algorithm`, compact `provenance` and `request` lists, a
+  `membership` table, plain-list structural `contracts` and relationship
+  `groups`, and a SHA-256 `fingerprint`. Consumers should not modify or
+  reconstruct it.
+
 All tables are tibbles with stable columns, including when they have no
 rows. List-columns contain only plain serializable vectors and lists.
 [`print()`](https://rdrr.io/r/base/print.html) shows a compact package,
 request, unit, byte, preferred-unit, and assurance summary and returns
 the plan invisibly.
+
+## Normalized metadata tables
+
+`metadata` has schema `"glc-package-metadata"`, version `"1.0.0"`, and
+the following stable tables. All identifier joins are explicit; there is
+no `sites` table because the supported source schema has no stable site
+id.
+
+- `resource_status`: `resource`, `declared`, `status`, and
+  `record_count`. Status is `"not_declared"`, `"loaded_empty"`, or
+  `"loaded"`.
+
+- `studies`: `study_id`, `schema_version`, `title`, `short_description`,
+  `preregistration`, `registration`, `ethics`, `sample`, `intervention`,
+  `setting`, `geographical_location`, `study_type`, and list-columns
+  `funding_sources`, `keywords`, and `dataset_ids`.
+
+- `study_groups`: `study_id`, `position`, `name`, `description`, `size`,
+  and list-columns `inclusion`, `exclusion`, and `dataset_ids`.
+
+- `study_contributors`: `study_id`, `position`, `full_name`, list-column
+  `roles`, `email`, `orcid`, `institution_name`, `institution_city`, and
+  `institution_country`.
+
+- `contributors`: `contributor_id`, deterministic row key `position`,
+  `full_name`, list-column `roles`, `email`, `orcid`,
+  `institution_name`, `institution_city`, and `institution_country`. A
+  missing source id remains typed `NA`; no id is synthesized.
+
+- `datasets`: `dataset_id`, `schema_version`, `study_id`,
+  `study_link_status`, `participant_id`, `participant_associated`,
+  `participant_link_status`, `timezone`, numeric `latitude` and
+  `longitude`, `file_group_count`, `file_count`, and list-columns
+  `modalities`, `device_ids`, and `primary_variables`.
+
+- `dataset_terms`: `dataset_id`, `position`, canonical `term`, and
+  `label`.
+
+- `participants`: `participant_id`, numeric `age`, `sex`, and `gender`.
+
+- `participant_characteristics`: `participant_id`,
+  `participant_link_status`, `characteristic_position`,
+  `value_position`, `name`, typed scalar list-column `value`,
+  `value_type`, `unit`, and `description`.
+
+- `devices`: `device_id`, `schema_version`, `manufacturer`, `model`,
+  `serial_number`, `calibration_date`, `firmware_version`,
+  `datasheet_id`, and `datasheet_link_status`.
+
+- `device_sensors`: `device_id`, `position`, `sensor_type`,
+  `datasheet_id`, and `datasheet_link_status`.
+
+- `datasheets`: `datasheet_id`, `schema_version`, `datasheet_version`,
+  `manufacturer`, `type`, list-column `modalities`, `modality_other`,
+  `model`, `calibration_interval`, `calibration_method`,
+  `calibration_accuracy`, `calibration_range`, `calibration_notes`,
+  typed list-column `calibration_spectral_sensitivity`,
+  `calibration_linearity`, and `calibration_directional_response`.
+
+- `datasheet_parameters`: `datasheet_id`, `position`, `name`, typed
+  scalar list-column `value`, `value_type`, `unit`, and `description`.
+
+- `datasheet_channels`: `datasheet_id`, `position`, integer
+  `channel_number`, `name`, `description`, and `unit`.
+
+- `instruments`: `dataset_id`, `file_group_id`, `instrument_type`,
+  `instrument_name`, `collection_method`, `recorded_by`, and
+  `software_name`.
+
+- `file_group_variables`: all declared variables for every included
+  group, independent of `variable_scope`. Columns are `dataset_id`,
+  `file_group_id`, `declaration_position`, `selected_by_request`,
+  `selected_for_output`, `selection_origin`, `name`, `label`,
+  `description`, `unit`, `calibration`, `type`, canonical `term`,
+  `term_name`, `primary`, and `factor_level_count`.
+
+- `file_group_factor_levels`: `dataset_id`, `file_group_id`,
+  `variable_position`, `variable_name`, `level_position`, `value`,
+  `label`, and `description`.
+
+- `extensions`: `resource`, `entity_type`, `entity_id`, `parent_id`,
+  `position`, and plain list-column `metadata` for forward-compatible
+  unknown fields. Standard fields never require parsing this column.
 
 ## Exclusions and errors
 
@@ -253,6 +417,8 @@ rather than matched ambiguously.
 
 ## See also
 
+[`glc_collection_refine()`](https://tscnlab.github.io/glc-dp-r/reference/glc_collection_refine.md)
+for fast in-memory narrowing,
 [`glc_variables()`](https://tscnlab.github.io/glc-dp-r/reference/glc_variables.md)
 for declared selectors,
 [`glc_read()`](https://tscnlab.github.io/glc-dp-r/reference/glc_read.md)
@@ -264,7 +430,7 @@ for authoritative final collection.
 
 ``` r
 if (FALSE) { # \dontrun{
-# Use an existing local, manifest-backed directory created by glc_download().
+# Use an existing local, manifest-backed package directory.
 # This pattern performs no network request and does not read measurements.
 pkg <- glc_open("path/to/manifest-backed-package", quiet = TRUE)
 plan <- glc_collection_plan(
@@ -272,8 +438,15 @@ plan <- glc_collection_plan(
   terms = "photopic illuminance",
   variable_scope = "matched"
 )
-plan
-plan$units
-plan$groups[, c("file_group_id", "status", "reason_codes")]
+plan$compatibility_sets[, c(
+  "compatibility_id", "file_group_count", "final_unit_count",
+  "final_selection_required"
+)]
+
+# Filter plan$groups and plan$metadata in memory, then refine exact ids.
+set_id <- plan$compatibility_sets$compatibility_id[[1L]]
+selected_ids <- plan$compatibility_sets$file_group_ids[[1L]]
+refined <- glc_collection_refine(plan, selected_ids, set_id)
+refined
 } # }
 ```
