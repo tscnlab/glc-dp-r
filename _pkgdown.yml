@@ -44,6 +44,7 @@ reference:
   desc: Import metadata-described files and combine compatible groups.
   contents:
   - glc_collection_plan
+  - glc_collection_refine
   - glc_read
   - glc_collect
   - extract_metadata

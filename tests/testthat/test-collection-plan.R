@@ -27,6 +27,7 @@ plan_remote_package <- function(
   latest_pass_commit = package$commit
 ) {
   glcdp:::glc_model(package)
+  glcdp:::glc_plan_metadata_load_resources(package)
   package$source_type <- "remote"
   package$root <- NULL
   package$manifest <- NULL
@@ -225,13 +226,17 @@ test_that("a metadata-only plan has the approved structure and print contract", 
       "output_columns",
       "files",
       "compatibility",
-      "extensions"
+      "extensions",
+      "compatibility_sets",
+      "metadata",
+      "refinement_input"
     )
   )
   expect_identical(
     names(plan$units),
     c(
       "unit_id",
+      "compatibility_id",
       "preferred",
       "dataset_count",
       "file_group_count",
@@ -249,16 +254,26 @@ test_that("a metadata-only plan has the approved structure and print contract", 
     c(
       "status",
       "unit_id",
+      "compatibility_id",
       "dataset_id",
       "file_group",
       "file_group_id",
       "study_id",
       "participant_id",
       "participant_associated",
+      "study_link_status",
+      "participant_link_status",
       "device_id",
+      "device_link_status",
+      "datasheet_id",
       "device_location",
       "device_location_type",
       "description",
+      "instructions",
+      "instrument_declared",
+      "dataset_timezone",
+      "dataset_latitude",
+      "dataset_longitude",
       "format",
       "timezone",
       "modalities",
@@ -374,11 +389,49 @@ test_that("a metadata-only plan has the approved structure and print contract", 
     )
   )
   expect_identical(
+    names(plan$compatibility_sets),
+    c(
+      "compatibility_id",
+      "dataset_count",
+      "file_group_count",
+      "variable_count",
+      "file_count",
+      "declared_bytes",
+      "known_file_count",
+      "unknown_file_count",
+      "declared_bytes_complete",
+      "final_unit_count",
+      "final_selection_required",
+      "constraint_codes",
+      "constraint_messages",
+      "file_group_ids",
+      "final_unit_ids",
+      "selected_names",
+      "declared_types",
+      "factor_values",
+      "factor_labels",
+      "timezone",
+      "modalities",
+      "role",
+      "data_state",
+      "datetime_source",
+      "datetime_signature",
+      "datetime_date",
+      "datetime_format",
+      "datetime_time",
+      "datetime_time_format",
+      "collection_values_ignored",
+      "relationship_rule",
+      "device_rule",
+      "standardize_affects_structure"
+    )
+  )
+  expect_identical(
     names(plan$extensions),
     c("dataset_id", "file_group_id", "metadata")
   )
   expect_identical(plan$plan_schema, "glc-collection-plan")
-  expect_identical(plan$plan_version, "1.0.0")
+  expect_identical(plan$plan_version, "1.1.0")
   expect_identical(plan$provenance$source_revision, strrep("a", 40L))
   expect_identical(plan$provenance$package_schema_version, "3.0.2")
   expect_identical(
@@ -408,6 +461,20 @@ test_that("a metadata-only plan has the approved structure and print contract", 
     "glcu_51a6381346c57fbd59f9ab342c40bb445528d96135bc5e01f756f746e9b5ee82"
   )
   expect_true(plan$units$preferred)
+  expect_match(plan$units$compatibility_id, "^glcc_[0-9a-f]{64}$")
+  expect_identical(
+    plan$units$compatibility_id,
+    plan$compatibility_sets$compatibility_id
+  )
+  expect_identical(
+    plan$groups$compatibility_id,
+    plan$compatibility_sets$compatibility_id
+  )
+  expect_identical(
+    plan$compatibility_sets$final_unit_ids[[1L]],
+    plan$units$unit_id
+  )
+  expect_false(plan$compatibility_sets$final_selection_required)
   expect_equal(plan$units$declared_bytes, 321)
   expect_equal(plan$units$unknown_file_count, 0L)
   expect_identical(plan$groups$reason_codes[[1L]], "included")
@@ -426,11 +493,45 @@ test_that("a metadata-only plan has the approved structure and print contract", 
     )
   )
   expect_equal(plan$files$declared_bytes, 321)
+  expect_identical(plan$metadata$schema, "glc-package-metadata")
+  expect_identical(plan$metadata$version, "1.0.0")
+  expect_identical(
+    plan$metadata$resource_status$resource,
+    glcdp:::glc_core_resource_names()
+  )
+  expect_identical(
+    plan$refinement_input$schema,
+    "glc-collection-refinement-input"
+  )
+  expect_identical(
+    names(plan$refinement_input),
+    c(
+      "schema",
+      "version",
+      "canonicalization",
+      "digest_algorithm",
+      "provenance",
+      "request",
+      "membership",
+      "contracts",
+      "groups",
+      "fingerprint"
+    )
+  )
+  expect_identical(
+    names(plan$refinement_input$membership),
+    c("file_group_id", "status", "compatibility_id")
+  )
+  expect_match(plan$refinement_input$fingerprint, "^[0-9a-f]{64}$")
 
   printed <- capture_output(print(plan))
   expect_match(printed, "<GLC collection plan>", fixed = TRUE)
   expect_match(printed, "validated declarations only", fixed = TRUE)
-  expect_match(printed, "1 unit(s); 1 included, 0 excluded", fixed = TRUE)
+  expect_match(
+    printed,
+    "1 final unit(s) in 1 structural set(s); 1 included, 0 excluded",
+    fixed = TRUE
+  )
   expect_false(grepl(root, printed, fixed = TRUE))
   expect_false(plan_has_live_value(plan))
   roundtrip <- unserialize(serialize(plan, NULL, version = 2L))
@@ -543,6 +644,10 @@ test_that("explicit-all groups retain distinct canonical request identity", {
 
   expect_equal(nrow(explicit$units), 2L)
   expect_false(identical(omitted$units$unit_id, explicit$units$unit_id))
+  expect_identical(
+    omitted$compatibility_sets$compatibility_id,
+    explicit$compatibility_sets$compatibility_id
+  )
   expect_false(identical(
     omitted_engine$preferred_unit_id,
     explicit_engine$preferred_unit_id
@@ -571,6 +676,45 @@ test_that("explicit-all groups retain distinct canonical request identity", {
     filtered$planner_request$file_group,
     glcdp:::glc_plan_sort_utf8(file_group)
   )
+})
+
+test_that("structural ids describe contracts rather than restricted membership", {
+  root <- make_plan_matrix_fixture(list(identity, identity, identity))
+  package <- plan_validated_package(root)
+  parent <- glc_collection_plan(
+    package,
+    terms = "photopic illuminance"
+  )
+  selected_ids <- c("DS3:1", "DS1:1")
+  narrowed <- glc_collection_plan(
+    package,
+    terms = "photopic illuminance",
+    file_group = selected_ids
+  )
+  reordered <- glc_collection_plan(
+    package,
+    terms = "photopic illuminance",
+    file_group = rev(selected_ids)
+  )
+
+  expect_equal(nrow(parent$compatibility_sets), 1L)
+  expect_identical(
+    narrowed$compatibility_sets$compatibility_id,
+    parent$compatibility_sets$compatibility_id
+  )
+  expect_identical(
+    reordered$compatibility_sets,
+    narrowed$compatibility_sets
+  )
+  expect_identical(
+    narrowed$compatibility_sets$file_group_ids[[1L]],
+    c("DS1:1", "DS3:1")
+  )
+  expect_false(identical(parent$units$unit_id, narrowed$units$unit_id))
+  expect_true(all(
+    narrowed$groups$compatibility_id[narrowed$groups$status == "included"] ==
+      parent$compatibility_sets$compatibility_id
+  ))
 })
 
 test_that("narrower Explorer filters translate to stable group restrictions", {
@@ -833,6 +977,7 @@ test_that("declared compatibility dimensions partition units", {
   plan <- glc_collection_plan(package, variable_scope = "all")
 
   expect_equal(nrow(plan$units), 9L)
+  expect_equal(nrow(plan$compatibility_sets), 9L)
   expect_equal(length(unique(plan$groups$unit_id)), 9L)
   expect_setequal(
     plan$compatibility$timezone,
@@ -847,6 +992,17 @@ test_that("declared compatibility dimensions partition units", {
     },
     logical(1)
   )))
+  expect_setequal(
+    plan$compatibility_sets$timezone,
+    c("Europe/Berlin", "UTC")
+  )
+  expect_true(any(plan$compatibility_sets$role == "supporting"))
+  expect_true(any(plan$compatibility_sets$data_state == "processed"))
+  expect_true(any(vapply(
+    plan$compatibility_sets$declared_types,
+    function(types) "integer" %in% types,
+    logical(1)
+  )))
   engine <- expect_explorer_plan_parity(package, plan)
   expect_setequal(
     glcdp:::glc_declared_collection_record_differences(engine$records),
@@ -859,6 +1015,39 @@ test_that("declared compatibility dimensions partition units", {
       "datetime"
     )
   )
+})
+
+test_that("descriptive facets do not partition structural compatibility", {
+  root <- make_plan_matrix_fixture(list(
+    identity,
+    function(dataset) {
+      group <- dataset$dataset_file[[1L]]
+      group$dataset_file_description <- "Different description"
+      group$dataset_file_device_location <- "chest"
+      group$dataset_file_device_location_type <- "body_worn"
+      group$dataset_file_instructions <- "Different instructions"
+      group$dataset_file_instrument <- list(
+        instrument_type = "sensor",
+        instrument_name = "Different instrument"
+      )
+      dataset$dataset_location <- list(1, 2)
+      dataset$dataset_file[[1L]] <- group
+      dataset
+    }
+  ))
+  plan <- glc_collection_plan(
+    plan_validated_package(root),
+    variable_scope = "all"
+  )
+
+  expect_equal(nrow(plan$compatibility_sets), 1L)
+  expect_equal(nrow(plan$units), 1L)
+  expect_identical(
+    unique(plan$groups$compatibility_id),
+    plan$compatibility_sets$compatibility_id
+  )
+  expect_setequal(plan$groups$description, c(NA, "Different description"))
+  expect_setequal(plan$groups$device_location, c("non-dominant wrist", "chest"))
 })
 
 test_that("collection datetime values are masked in compatibility", {
@@ -913,6 +1102,20 @@ test_that("device relationships produce the minimum safe partition", {
   )
 
   expect_equal(nrow(plan$units), 2L)
+  expect_equal(nrow(plan$compatibility_sets), 1L)
+  expect_equal(plan$compatibility_sets$final_unit_count, 2L)
+  expect_true(plan$compatibility_sets$final_selection_required)
+  expect_identical(
+    plan$compatibility_sets$constraint_codes[[1L]],
+    "device_slot_allocation"
+  )
+  expect_setequal(
+    plan$compatibility_sets$final_unit_ids[[1L]],
+    plan$units$unit_id
+  )
+  expect_true(all(
+    plan$groups$compatibility_id == plan$compatibility_sets$compatibility_id
+  ))
   first_device_unit <- plan$groups$unit_id[
     plan$groups$file_group_id == "DS1:2"
   ]
@@ -1076,6 +1279,10 @@ test_that("standardization changes expected output but not partitioning", {
 
   expect_equal(nrow(lightlogr$units), nrow(none$units))
   expect_false(identical(lightlogr$units$unit_id, none$units$unit_id))
+  expect_identical(
+    lightlogr$compatibility_sets$compatibility_id,
+    none$compatibility_sets$compatibility_id
+  )
   expect_true(all(
     c(
       "Id",
@@ -1174,6 +1381,7 @@ test_that("measurement transport and content functions are never called", {
   root <- make_glc_fixture("3.0.2")
   package <- plan_validated_package(root)
   glcdp:::glc_model(package)
+  glcdp:::glc_plan_metadata_load_resources(package)
   package$transport$file_inventory <- tibble::tibble(
     declared_path = "data/files/light.csv",
     expected_bytes = 999999
@@ -1204,6 +1412,10 @@ test_that("measurement transport and content functions are never called", {
   )
   expect_false(plan$files$bytes_known)
   expect_true(is.na(plan$files$declared_bytes))
+  expect_equal(plan$compatibility_sets$known_file_count, 0L)
+  expect_equal(plan$compatibility_sets$unknown_file_count, 1L)
+  expect_equal(plan$compatibility_sets$declared_bytes, 0)
+  expect_false(plan$compatibility_sets$declared_bytes_complete)
 })
 
 test_that("planner boundary validation is exact and actionable", {

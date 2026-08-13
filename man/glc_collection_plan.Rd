@@ -49,12 +49,14 @@ expected output columns and unit identifiers, but not the declaration
 compatibility partition.}
 }
 \value{
-A \code{glc_collection_plan} object described in \strong{Return tables}.
+A serializable \code{glc_collection_plan} object using plan schema
+\code{"glc-collection-plan"} version \code{"1.1.0"}, as described in \strong{Return
+tables}.
 }
 \description{
-Build a deterministic, metadata-only plan that partitions matching file
-groups into units whose validated declarations are compatible for collection.
-No measurement file is read or inspected while the plan is built.
+Build a deterministic plan from validated declarations and normalized core
+metadata. The plan separates structural compatibility sets from final
+collectable units, and it never reads or inspects measurement contents.
 }
 \details{
 \code{terms} always acts as the file-group discovery predicate. A candidate group
@@ -70,31 +72,56 @@ affect the result; selected variables retain declaration order.
 restriction and explicitly supplying every possible identifier select the
 same groups, but deliberately remain different requests and therefore may
 produce different unit identifiers.
-
-Included groups are partitioned by the exact selected variable names and
-order, declared types, factor values and labels, time zone, ordered
-modalities, role, data state, datetime contract, and the package's validated
-relationship rules. At most one non-missing device per dataset is permitted
-within a unit. Collection-based datetime values are record-specific and are
-ignored when comparing otherwise identical collection-based datetime
-contracts.
-
-A unit identifier is \code{"glcu_"} followed by a SHA-256 digest of canonical
-UTF-8 text. The material includes the planner schema and version, package id,
-repository, exact source revision and package schema, the normalized request
-(including restrictions and \code{standardize}), the compatibility contract, and
-sorted stable file-group identifiers. It never uses R serialized-object
-bytes. Unit identifiers and table ordering are therefore reproducible across
-input row ordering and supported R versions. They are request- and
-revision-specific and may change when the planner schema changes.
 }
+\section{Structural compatibility and final units}{
+
+Included groups are first partitioned by selected source names and declaration
+order, declared types, factor values and labels in declaration order, time
+zone, ordered modalities, role, data state, and datetime contract.
+Collection-based datetime values are record-specific and are ignored when
+comparing otherwise identical collection-based contracts.
+
+Each structural set has a \code{compatibility_id} beginning with \code{"glcc_"}. It is
+a SHA-256 digest of length-prefixed canonical UTF-8 text containing the exact
+package identity, repository, source revision, package schema, and structural
+contract. It does not contain current membership, \code{dataset_id} or
+\code{file_group} restrictions, metadata facets, \code{standardize}, or device-slot
+allocation. The identifier therefore stays the same when an unchanged
+contract is narrowed at the same package revision. Wearing position, device
+location or type, participant characteristics, file description, site
+context, and other descriptive metadata do not split structural sets.
+
+A structural set is not itself declared finally collectable. Relationship
+allocation is applied next. Final units enforce consistent dataset and
+file-group links and permit at most one non-missing device per dataset. A
+structural set can therefore map to multiple final units. In that case,
+\code{final_selection_required} is \code{TRUE} and \code{constraint_codes} contains
+\code{"device_slot_allocation"}.
+
+Existing final unit identifiers retain their version 1.0 canonical identity.
+A \code{unit_id} begins with \code{"glcu_"} and hashes the package and revision, the
+normalized request including restrictions and \code{standardize}, the structural
+contract, and sorted member file-group identifiers. Final unit ids are thus
+request- and membership-sensitive, while structural ids are restriction
+stable. Both use canonical UTF-8 text rather than R serialized-object bytes,
+and both their values and table order are stable under input row reordering.
+}
+
 \section{Declaration-only assurance}{
 
-The planner uses validated descriptor and core metadata associated with
-\code{x}. It does not call \code{\link[=glc_read]{glc_read()}}, \code{\link[=glc_collect]{glc_collect()}}, \code{\link[=glc_files]{glc_files()}}, or
-\code{\link[=glc_summary]{glc_summary()}}, request measurement contents, or inspect source rows.
-Known declaration-level constraints, including reserved source names that
-begin with \code{.glc_}, are applied before units are formed.
+The planner uses the validated descriptor and core metadata associated with
+\code{x}. One explicit planning call may load descriptor-declared resources named
+\code{study}, \code{participants}, \code{participant_characteristics}, \code{datasets},
+\code{devices}, \code{device_datasheets}, and optional \code{contributors} at the exact
+source revision. For a remote package, loading an uncached core resource can
+make an HTTP request. The allowlist is exactly the value returned internally
+by \code{glc_core_resource_names()}.
+
+The planner does not call \code{\link[=glc_read]{glc_read()}}, \code{\link[=glc_collect]{glc_collect()}}, \code{\link[=glc_files]{glc_files()}},
+\code{\link[=glc_summary]{glc_summary()}}, or \code{\link[=glc_download]{glc_download()}}. It never requests a measurement path,
+probes measurement availability, or inspects source rows. Known
+declaration-level constraints, including reserved source names that begin
+with \code{.glc_}, are applied before units are formed.
 
 File sizes come only from an explicit supported byte declaration or an entry
 already present in the local manifest. The planner never downloads a file or
@@ -107,6 +134,33 @@ values. Actual columns, parsed classes, factor values, datetime values, and
 output-column collisions can only be checked after reading. \code{\link[=glc_read]{glc_read()}}
 remains authoritative for source-file validation, and \code{\link[=glc_collect]{glc_collect()}} remains
 authoritative for final collection compatibility and standardization.
+}
+
+\section{Missing values and relationship links}{
+
+Source missingness is retained. Missing scalar metadata stays as a typed
+\code{NA}, and absent repeated metadata stays an empty vector or list. Literal
+source values such as \code{"not applicable"} remain literal values. The planner
+does not synthesize a description, instrument, contributor id, or site id.
+
+Relationship status columns use \code{"linked"}, \code{"not_applicable"},
+\code{"unresolved"}, or \code{"metadata_unavailable"}. \code{"not_applicable"} means that
+no link applies, such as a dataset not associated with a participant or a
+group without a device id. \code{"unresolved"} means that an applicable id is
+missing or does not resolve in loaded metadata. \code{"metadata_unavailable"}
+means that an id is present but its optional core resource was not declared.
+}
+
+\section{Recommended interactive workflow}{
+
+Build one plan as an explicit planning task. Present one reader-oriented
+option per row of \code{compatibility_sets}, then filter \code{groups} and the
+normalized \code{metadata} tables in memory by stable ids. Do not rebuild the plan
+for each participant, device, position, characteristic, or site filter.
+Finally pass the narrowed file-group ids to \code{\link[=glc_collection_refine]{glc_collection_refine()}}. A
+caller should proceed to reading only when the refinement reports one final
+unit and \code{final_selection_required = FALSE}. Keep the parent plan because the
+lightweight refinement does not copy its metadata tables.
 }
 
 \section{Return tables}{
@@ -128,26 +182,30 @@ temporary path.
 \code{standardize}, and the sorted union \code{resolved_variables} from included
 groups.
 \item \code{assurance}: \code{basis}, \code{actual_data_status}, \code{final_validation},
-\code{measurement_contents_transferred}, \code{measurement_contents_inspected}, and
-\code{byte_policy}.
+measurement transfer and inspection flags, \code{core_metadata_transport},
+interactive-filter and refinement network flags, and \code{byte_policy}.
 \item \code{preferred_unit_id}: the preferred unit, or \code{NA_character_} when no unit is
 collectable. Preference is deterministic: most datasets, then most file
 groups, then the lexically smallest unit id.
-\item \code{units}: one row per collectable unit. Columns are \code{unit_id}, \code{preferred},
-\code{dataset_count}, \code{file_group_count}, \code{variable_count}, \code{file_count},
-\code{declared_bytes}, \code{known_file_count}, \code{unknown_file_count},
-\code{declared_bytes_complete}, and the list-column \code{file_group_ids}.
+\item \code{units}: one row per final unit. Columns are \code{unit_id},
+\code{compatibility_id}, \code{preferred}, \code{dataset_count}, \code{file_group_count},
+\code{variable_count}, \code{file_count}, \code{declared_bytes}, \code{known_file_count},
+\code{unknown_file_count}, \code{declared_bytes_complete}, and list-column
+\code{file_group_ids}.
 \item \code{groups}: one row per declared file group. Columns are \code{status}, \code{unit_id},
-\code{dataset_id}, integer declaration index \code{file_group}, stable
-\code{file_group_id}, \code{study_id}, \code{participant_id}, \code{participant_associated},
-\code{device_id}, \code{device_location}, \code{device_location_type}, \code{description},
-\code{format}, \code{timezone}, list-column \code{modalities}, \code{modality_other},
-\code{modality_other_type}, \code{role}, \code{data_state}, \code{temporal_type},
-\code{temporal_value}, \code{temporal_unit}, \code{header_row}, list-column
-\code{preprocessing}, \code{datetime_source}, \code{datetime_date}, \code{datetime_format},
-\code{datetime_time}, \code{datetime_time_format}, and list-columns
+\code{compatibility_id}, \code{dataset_id}, integer declaration index \code{file_group},
+stable \code{file_group_id}, \code{study_id}, \code{participant_id},
+\code{participant_associated}, \code{study_link_status}, \code{participant_link_status},
+\code{device_id}, \code{device_link_status}, \code{datasheet_id}, \code{device_location},
+\code{device_location_type}, \code{description}, \code{instructions},
+\code{instrument_declared}, \code{dataset_timezone}, \code{dataset_latitude},
+\code{dataset_longitude}, \code{format}, \code{timezone}, list-column \code{modalities},
+\code{modality_other}, \code{modality_other_type}, \code{role}, \code{data_state},
+\code{temporal_type}, \code{temporal_value}, \code{temporal_unit}, \code{header_row},
+list-column \code{preprocessing}, \code{datetime_source}, \code{datetime_date},
+\code{datetime_format}, \code{datetime_time}, \code{datetime_time_format}, and list-columns
 \code{selected_variables}, \code{reason_codes}, and \code{messages}. Excluded groups have
-a missing \code{unit_id}.
+missing \code{unit_id} and \code{compatibility_id} values.
 \item \code{variables}: one row per selected variable in an included group. Columns
 are \code{unit_id}, \code{dataset_id}, \code{file_group_id}, \code{position}, \code{name}, \code{label},
 \code{description}, \code{unit}, \code{calibration}, \code{type}, canonical \code{term},
@@ -177,12 +235,90 @@ assurance.
 \item \code{extensions}: one row per group. Columns are \code{dataset_id},
 \code{file_group_id}, and preserved, forward-compatible unknown declaration
 fields in the plain list-column \code{metadata}.
+\item \code{compatibility_sets}: one row per structural set. Columns are
+\code{compatibility_id}, dataset, file-group, variable, and file counts; byte
+summaries; \code{final_unit_count}; \code{final_selection_required}; list-columns
+\code{constraint_codes}, \code{constraint_messages}, \code{file_group_ids}, and
+\code{final_unit_ids}; the selected-name, declared-type, factor, timezone,
+modality, role, data-state, and datetime contract columns also present in
+\code{compatibility}; \code{relationship_rule}; \code{device_rule}; and the fixed
+\code{standardize_affects_structure = FALSE} assurance.
+\item \code{metadata}: a normalized typed core-metadata snapshot described below.
+\item \code{refinement_input}: a compact, serializable input used and validated by
+\code{\link[=glc_collection_refine]{glc_collection_refine()}}. It contains \code{schema}, \code{version},
+\code{canonicalization}, \code{digest_algorithm}, compact \code{provenance} and \code{request}
+lists, a \code{membership} table, plain-list structural \code{contracts} and
+relationship \code{groups}, and a SHA-256 \code{fingerprint}. Consumers should not
+modify or reconstruct it.
 }
 
 All tables are tibbles with stable columns, including when they have no rows.
 List-columns contain only plain serializable vectors and lists. \code{print()}
 shows a compact package, request, unit, byte, preferred-unit, and assurance
 summary and returns the plan invisibly.
+}
+
+\section{Normalized metadata tables}{
+
+\code{metadata} has schema \code{"glc-package-metadata"}, version \code{"1.0.0"}, and the
+following stable tables. All identifier joins are explicit; there is no
+\code{sites} table because the supported source schema has no stable site id.
+\itemize{
+\item \code{resource_status}: \code{resource}, \code{declared}, \code{status}, and \code{record_count}.
+Status is \code{"not_declared"}, \code{"loaded_empty"}, or \code{"loaded"}.
+\item \code{studies}: \code{study_id}, \code{schema_version}, \code{title}, \code{short_description},
+\code{preregistration}, \code{registration}, \code{ethics}, \code{sample}, \code{intervention},
+\code{setting}, \code{geographical_location}, \code{study_type}, and list-columns
+\code{funding_sources}, \code{keywords}, and \code{dataset_ids}.
+\item \code{study_groups}: \code{study_id}, \code{position}, \code{name}, \code{description}, \code{size}, and
+list-columns \code{inclusion}, \code{exclusion}, and \code{dataset_ids}.
+\item \code{study_contributors}: \code{study_id}, \code{position}, \code{full_name}, list-column
+\code{roles}, \code{email}, \code{orcid}, \code{institution_name}, \code{institution_city}, and
+\code{institution_country}.
+\item \code{contributors}: \code{contributor_id}, deterministic row key \code{position},
+\code{full_name}, list-column \code{roles}, \code{email}, \code{orcid}, \code{institution_name},
+\code{institution_city}, and \code{institution_country}. A missing source id remains
+typed \code{NA}; no id is synthesized.
+\item \code{datasets}: \code{dataset_id}, \code{schema_version}, \code{study_id},
+\code{study_link_status}, \code{participant_id}, \code{participant_associated},
+\code{participant_link_status}, \code{timezone}, numeric \code{latitude} and \code{longitude},
+\code{file_group_count}, \code{file_count}, and list-columns \code{modalities},
+\code{device_ids}, and \code{primary_variables}.
+\item \code{dataset_terms}: \code{dataset_id}, \code{position}, canonical \code{term}, and \code{label}.
+\item \code{participants}: \code{participant_id}, numeric \code{age}, \code{sex}, and \code{gender}.
+\item \code{participant_characteristics}: \code{participant_id},
+\code{participant_link_status}, \code{characteristic_position}, \code{value_position},
+\code{name}, typed scalar list-column \code{value}, \code{value_type}, \code{unit}, and
+\code{description}.
+\item \code{devices}: \code{device_id}, \code{schema_version}, \code{manufacturer}, \code{model},
+\code{serial_number}, \code{calibration_date}, \code{firmware_version}, \code{datasheet_id}, and
+\code{datasheet_link_status}.
+\item \code{device_sensors}: \code{device_id}, \code{position}, \code{sensor_type}, \code{datasheet_id},
+and \code{datasheet_link_status}.
+\item \code{datasheets}: \code{datasheet_id}, \code{schema_version}, \code{datasheet_version},
+\code{manufacturer}, \code{type}, list-column \code{modalities}, \code{modality_other}, \code{model},
+\code{calibration_interval}, \code{calibration_method}, \code{calibration_accuracy},
+\code{calibration_range}, \code{calibration_notes}, typed list-column
+\code{calibration_spectral_sensitivity}, \code{calibration_linearity}, and
+\code{calibration_directional_response}.
+\item \code{datasheet_parameters}: \code{datasheet_id}, \code{position}, \code{name}, typed scalar
+list-column \code{value}, \code{value_type}, \code{unit}, and \code{description}.
+\item \code{datasheet_channels}: \code{datasheet_id}, \code{position}, integer \code{channel_number},
+\code{name}, \code{description}, and \code{unit}.
+\item \code{instruments}: \code{dataset_id}, \code{file_group_id}, \code{instrument_type},
+\code{instrument_name}, \code{collection_method}, \code{recorded_by}, and \code{software_name}.
+\item \code{file_group_variables}: all declared variables for every included group,
+independent of \code{variable_scope}. Columns are \code{dataset_id}, \code{file_group_id},
+\code{declaration_position}, \code{selected_by_request}, \code{selected_for_output},
+\code{selection_origin}, \code{name}, \code{label}, \code{description}, \code{unit}, \code{calibration},
+\code{type}, canonical \code{term}, \code{term_name}, \code{primary}, and \code{factor_level_count}.
+\item \code{file_group_factor_levels}: \code{dataset_id}, \code{file_group_id},
+\code{variable_position}, \code{variable_name}, \code{level_position}, \code{value}, \code{label},
+and \code{description}.
+\item \code{extensions}: \code{resource}, \code{entity_type}, \code{entity_id}, \code{parent_id},
+\code{position}, and plain list-column \code{metadata} for forward-compatible unknown
+fields. Standard fields never require parsing this column.
+}
 }
 
 \section{Exclusions and errors}{
@@ -206,7 +342,7 @@ reported as unknown terms rather than matched ambiguously.
 
 \examples{
 \dontrun{
-# Use an existing local, manifest-backed directory created by glc_download().
+# Use an existing local, manifest-backed package directory.
 # This pattern performs no network request and does not read measurements.
 pkg <- glc_open("path/to/manifest-backed-package", quiet = TRUE)
 plan <- glc_collection_plan(
@@ -214,12 +350,20 @@ plan <- glc_collection_plan(
   terms = "photopic illuminance",
   variable_scope = "matched"
 )
-plan
-plan$units
-plan$groups[, c("file_group_id", "status", "reason_codes")]
+plan$compatibility_sets[, c(
+  "compatibility_id", "file_group_count", "final_unit_count",
+  "final_selection_required"
+)]
+
+# Filter plan$groups and plan$metadata in memory, then refine exact ids.
+set_id <- plan$compatibility_sets$compatibility_id[[1L]]
+selected_ids <- plan$compatibility_sets$file_group_ids[[1L]]
+refined <- glc_collection_refine(plan, selected_ids, set_id)
+refined
 }
 }
 \seealso{
-\code{\link[=glc_variables]{glc_variables()}} for declared selectors, \code{\link[=glc_read]{glc_read()}} for runtime
-import validation, and \code{\link[=glc_collect]{glc_collect()}} for authoritative final collection.
+\code{\link[=glc_collection_refine]{glc_collection_refine()}} for fast in-memory narrowing,
+\code{\link[=glc_variables]{glc_variables()}} for declared selectors, \code{\link[=glc_read]{glc_read()}} for runtime import
+validation, and \code{\link[=glc_collect]{glc_collect()}} for authoritative final collection.
 }

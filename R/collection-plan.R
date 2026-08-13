@@ -3,6 +3,22 @@ glc_collection_plan_schema <- function() {
 }
 
 glc_collection_plan_version <- function() {
+  "1.1.0"
+}
+
+glc_collection_unit_id_schema <- function() {
+  "glc-collection-plan"
+}
+
+glc_collection_unit_id_version <- function() {
+  "1.0.0"
+}
+
+glc_collection_compatibility_id_schema <- function() {
+  "glc-collection-compatibility"
+}
+
+glc_collection_compatibility_id_version <- function() {
   "1.0.0"
 }
 
@@ -465,7 +481,8 @@ glc_plan_group_extension <- function(dataset, group) {
     "dataset_file_auxiliary",
     "dataset_file_data_state",
     "dataset_file_header_row",
-    "dataset_file_preprocessing"
+    "dataset_file_preprocessing",
+    "dataset_file_instrument"
   )
   glc_plan_safe_metadata(list(
     dataset = glc_plan_unknown_fields(raw_dataset, known_dataset),
@@ -513,9 +530,14 @@ glc_plan_group_records <- function(x) {
         study_id = dataset$study_id,
         participant_id = dataset$participant_id,
         participant_associated = dataset$participant_associated,
+        dataset_timezone = dataset$timezone,
+        dataset_latitude = dataset$latitude,
+        dataset_longitude = dataset$longitude,
         file_group = group$index,
         file_group_id = group$id,
         description = group$description,
+        instructions = group$instructions,
+        instrument = glc_plan_safe_metadata(group$instrument),
         device_id = group$device_id,
         device_location = group$device_location,
         device_location_type = group$device_location_type,
@@ -535,6 +557,10 @@ glc_plan_group_records <- function(x) {
         variables = group$variables,
         files = files,
         file_declarations_known = TRUE,
+        study_link_status = NA_character_,
+        participant_link_status = NA_character_,
+        device_link_status = NA_character_,
+        datasheet_id = NA_character_,
         extensions = glc_plan_group_extension(dataset, group)
       )
     }
@@ -823,6 +849,7 @@ glc_plan_evaluate_group <- function(record, request) {
     record$reasons <- reasons
   }
   record$unit_id <- NA_character_
+  record$compatibility_id <- NA_character_
   record
 }
 
@@ -870,8 +897,8 @@ glc_plan_unit_id <- function(
   provenance
 ) {
   material <- list(
-    plan_schema = glc_collection_plan_schema(),
-    plan_version = glc_collection_plan_version(),
+    plan_schema = glc_collection_unit_id_schema(),
+    plan_version = glc_collection_unit_id_version(),
     package = list(
       package_id = provenance$package_id,
       repository = provenance$repository,
@@ -893,6 +920,21 @@ glc_plan_unit_id <- function(
     file_group_ids = glc_plan_sort_utf8(file_group_ids)
   )
   paste0("glcu_", glc_plan_digest(material))
+}
+
+glc_plan_compatibility_id <- function(compatibility, provenance) {
+  material <- list(
+    id_schema = glc_collection_compatibility_id_schema(),
+    id_version = glc_collection_compatibility_id_version(),
+    package = list(
+      package_id = provenance$package_id,
+      repository = provenance$repository,
+      source_revision = provenance$source_revision,
+      package_schema_version = provenance$package_schema_version
+    ),
+    contract = compatibility
+  )
+  paste0("glcc_", glc_plan_digest(material))
 }
 
 glc_plan_unit_byte_summary <- function(records) {
@@ -920,12 +962,7 @@ glc_plan_unit_byte_summary <- function(records) {
   )
 }
 
-glc_declared_collection_engine <- function(records, request, provenance) {
-  records <- lapply(
-    records,
-    glc_plan_evaluate_group,
-    request = request
-  )
+glc_declared_collection_partition <- function(records, request, provenance) {
   included <- which(vapply(
     records,
     function(record) {
@@ -934,11 +971,15 @@ glc_declared_collection_engine <- function(records, request, provenance) {
     logical(1)
   ))
   units <- list()
+  compatibility_sets <- list()
 
   if (length(included) > 0L) {
     compatibility <- lapply(
       records[included],
-      glc_plan_declared_compatibility
+      function(record) {
+        record$declared_compatibility %||%
+          glc_plan_declared_compatibility(record)
+      }
     )
     compatibility_text <- vapply(
       compatibility,
@@ -949,6 +990,11 @@ glc_declared_collection_engine <- function(records, request, provenance) {
     for (bucket_value in bucket_values) {
       bucket_positions <- which(compatibility_text == bucket_value)
       bucket_indexes <- included[bucket_positions]
+      contract <- compatibility[[bucket_positions[[1L]]]]
+      compatibility_id <- glc_plan_compatibility_id(contract, provenance)
+      for (bucket_index in bucket_indexes) {
+        records[[bucket_index]]$compatibility_id <- compatibility_id
+      }
       slots <- glc_plan_device_slots(records, bucket_indexes)
       for (slot in sort(unique(slots))) {
         member_indexes <- bucket_indexes[slots == slot]
@@ -960,9 +1006,6 @@ glc_declared_collection_engine <- function(records, request, provenance) {
           character(1)
         )
         member_ids <- glc_plan_sort_utf8(member_ids)
-        contract <- glc_plan_declared_compatibility(
-          records[[member_indexes[[1L]]]]
-        )
         unit_id <- glc_plan_unit_id(
           contract,
           member_ids,
@@ -977,6 +1020,7 @@ glc_declared_collection_engine <- function(records, request, provenance) {
         units[[length(units) + 1L]] <- c(
           list(
             unit_id = unit_id,
+            compatibility_id = compatibility_id,
             file_group_ids = member_ids,
             compatibility = contract,
             dataset_count = length(unique(vapply(
@@ -990,6 +1034,27 @@ glc_declared_collection_engine <- function(records, request, provenance) {
           byte_summary
         )
       }
+      set_records <- records[bucket_indexes]
+      set_member_ids <- glc_plan_sort_utf8(vapply(
+        set_records,
+        function(record) record$file_group_id,
+        character(1)
+      ))
+      compatibility_sets[[length(compatibility_sets) + 1L]] <- c(
+        list(
+          compatibility_id = compatibility_id,
+          file_group_ids = set_member_ids,
+          compatibility = contract,
+          dataset_count = length(unique(vapply(
+            set_records,
+            function(record) record$dataset_id,
+            character(1)
+          ))),
+          file_group_count = length(set_records),
+          variable_count = length(contract$variables)
+        ),
+        glc_plan_unit_byte_summary(set_records)
+      )
     }
   }
 
@@ -1021,11 +1086,69 @@ glc_declared_collection_engine <- function(records, request, provenance) {
     preferred_unit_id <- NA_character_
   }
 
+  if (length(compatibility_sets) > 0L) {
+    compatibility_ids <- vapply(
+      compatibility_sets,
+      function(set) set$compatibility_id,
+      character(1)
+    )
+    if (anyDuplicated(compatibility_ids)) {
+      glc_abort(
+        "Collection planning produced duplicate compatibility identifiers.",
+        class = "glcdp_collection_plan_id"
+      )
+    }
+    compatibility_sets <- compatibility_sets[order(
+      glc_plan_utf8_key(compatibility_ids),
+      method = "radix"
+    )]
+    compatibility_sets <- lapply(compatibility_sets, function(set) {
+      final_unit_ids <- glc_plan_sort_utf8(vapply(
+        units[vapply(
+          units,
+          function(unit)
+            identical(
+              unit$compatibility_id,
+              set$compatibility_id
+            ),
+          logical(1)
+        )],
+        function(unit) unit$unit_id,
+        character(1)
+      ))
+      set$final_unit_ids <- final_unit_ids
+      set$final_unit_count <- length(final_unit_ids)
+      set$final_selection_required <- length(final_unit_ids) > 1L
+      if (set$final_selection_required) {
+        set$constraint_codes <- "device_slot_allocation"
+        set$constraint_messages <- paste0(
+          "This structural set spans multiple final units because at least ",
+          "one dataset links groups to more than one non-missing device. ",
+          "Narrow stable file-group identifiers and refine before reading."
+        )
+      } else {
+        set$constraint_codes <- character()
+        set$constraint_messages <- character()
+      }
+      set
+    })
+  }
+
   list(
     records = records,
     units = units,
+    compatibility_sets = compatibility_sets,
     preferred_unit_id = preferred_unit_id
   )
+}
+
+glc_declared_collection_engine <- function(records, request, provenance) {
+  records <- lapply(
+    records,
+    glc_plan_evaluate_group,
+    request = request
+  )
+  glc_declared_collection_partition(records, request, provenance)
 }
 
 glc_declared_collection_contract_differences <- function(contracts) {
@@ -1159,8 +1282,14 @@ glc_plan_declaration_snapshot <- function(record) {
     study_id = record$study_id,
     participant_id = record$participant_id,
     participant_associated = record$participant_associated,
+    dataset_timezone = record$dataset_timezone,
+    dataset_latitude = record$dataset_latitude,
+    dataset_longitude = record$dataset_longitude,
     file_group = record$file_group,
     file_group_id = record$file_group_id,
+    description = record$description,
+    instructions = record$instructions,
+    instrument = record$instrument,
     device_id = record$device_id,
     device_location = record$device_location,
     device_location_type = record$device_location_type,
@@ -1186,6 +1315,7 @@ glc_plan_declaration_snapshot <- function(record) {
 glc_plan_empty_units <- function() {
   tibble::tibble(
     unit_id = character(),
+    compatibility_id = character(),
     preferred = logical(),
     dataset_count = integer(),
     file_group_count = integer(),
@@ -1206,6 +1336,7 @@ glc_plan_units_table <- function(units) {
   dplyr::bind_rows(lapply(units, function(unit) {
     tibble::tibble(
       unit_id = unit$unit_id,
+      compatibility_id = unit$compatibility_id,
       preferred = unit$preferred,
       dataset_count = unit$dataset_count,
       file_group_count = unit$file_group_count,
@@ -1224,16 +1355,26 @@ glc_plan_empty_groups <- function() {
   tibble::tibble(
     status = character(),
     unit_id = character(),
+    compatibility_id = character(),
     dataset_id = character(),
     file_group = integer(),
     file_group_id = character(),
     study_id = character(),
     participant_id = character(),
     participant_associated = logical(),
+    study_link_status = character(),
+    participant_link_status = character(),
     device_id = character(),
+    device_link_status = character(),
+    datasheet_id = character(),
     device_location = character(),
     device_location_type = character(),
     description = character(),
+    instructions = character(),
+    instrument_declared = logical(),
+    dataset_timezone = character(),
+    dataset_latitude = numeric(),
+    dataset_longitude = numeric(),
     format = character(),
     timezone = character(),
     modalities = list(),
@@ -1270,16 +1411,26 @@ glc_plan_groups_table <- function(records) {
     tibble::tibble(
       status = record$status,
       unit_id = record$unit_id,
+      compatibility_id = record$compatibility_id,
       dataset_id = record$dataset_id,
       file_group = record$file_group,
       file_group_id = record$file_group_id,
       study_id = record$study_id,
       participant_id = record$participant_id,
       participant_associated = record$participant_associated,
+      study_link_status = record$study_link_status,
+      participant_link_status = record$participant_link_status,
       device_id = record$device_id,
+      device_link_status = record$device_link_status,
+      datasheet_id = record$datasheet_id,
       device_location = record$device_location,
       device_location_type = record$device_location_type,
       description = record$description,
+      instructions = record$instructions,
+      instrument_declared = length(record$instrument) > 0L,
+      dataset_timezone = record$dataset_timezone,
+      dataset_latitude = record$dataset_latitude,
+      dataset_longitude = record$dataset_longitude,
       format = record$format,
       timezone = record$timezone,
       modalities = list(record$modalities),
@@ -1335,50 +1486,79 @@ glc_plan_empty_variables <- function() {
 }
 
 glc_plan_variables_table <- function(records, variable_scope) {
-  rows <- list()
-  for (record in records) {
-    if (!identical(record$status, "included")) {
-      next
-    }
-    for (position in seq_along(record$selected_variables)) {
-      variable <- record$selected_variables[[position]]
-      rows[[length(rows) + 1L]] <- tibble::tibble(
-        unit_id = record$unit_id,
-        dataset_id = record$dataset_id,
-        file_group_id = record$file_group_id,
-        position = position,
-        name = variable$name,
-        label = variable$label,
-        description = variable$description,
-        unit = variable$unit,
-        calibration = variable$calibration,
-        type = variable$type,
-        term = variable$term,
-        term_name = variable$term_name,
-        primary = variable$primary,
-        factor_values = list(vapply(
-          variable$factor_levels,
-          function(level) level$value,
-          character(1)
-        )),
-        factor_labels = list(vapply(
-          variable$factor_levels,
-          function(level) level$label,
-          character(1)
-        )),
-        factor_descriptions = list(vapply(
-          variable$factor_levels,
-          function(level) level$description,
-          character(1)
-        )),
-        selection_origin = variable_scope
-      )
-    }
-  }
+  rows <- unlist(
+    lapply(records, function(record) {
+      if (!identical(record$status, "included")) {
+        return(list())
+      }
+      lapply(seq_along(record$selected_variables), function(position) {
+        list(
+          unit_id = record$unit_id,
+          dataset_id = record$dataset_id,
+          file_group_id = record$file_group_id,
+          position = as.integer(position),
+          variable = record$selected_variables[[position]]
+        )
+      })
+    }),
+    recursive = FALSE
+  )
   if (length(rows) == 0L) {
     return(glc_plan_empty_variables())
   }
-  dplyr::bind_rows(rows)
+  tibble::tibble(
+    unit_id = vapply(rows, function(row) row$unit_id, character(1)),
+    dataset_id = vapply(rows, function(row) row$dataset_id, character(1)),
+    file_group_id = vapply(
+      rows,
+      function(row) row$file_group_id,
+      character(1)
+    ),
+    position = vapply(rows, function(row) row$position, integer(1)),
+    name = vapply(rows, function(row) row$variable$name, character(1)),
+    label = vapply(rows, function(row) row$variable$label, character(1)),
+    description = vapply(
+      rows,
+      function(row) row$variable$description,
+      character(1)
+    ),
+    unit = vapply(rows, function(row) row$variable$unit, character(1)),
+    calibration = vapply(
+      rows,
+      function(row) row$variable$calibration,
+      character(1)
+    ),
+    type = vapply(rows, function(row) row$variable$type, character(1)),
+    term = vapply(rows, function(row) row$variable$term, character(1)),
+    term_name = vapply(
+      rows,
+      function(row) row$variable$term_name,
+      character(1)
+    ),
+    primary = vapply(rows, function(row) row$variable$primary, logical(1)),
+    factor_values = lapply(rows, function(row) {
+      vapply(
+        row$variable$factor_levels,
+        function(level) level$value,
+        character(1)
+      )
+    }),
+    factor_labels = lapply(rows, function(row) {
+      vapply(
+        row$variable$factor_levels,
+        function(level) level$label,
+        character(1)
+      )
+    }),
+    factor_descriptions = lapply(rows, function(row) {
+      vapply(
+        row$variable$factor_levels,
+        function(level) level$description,
+        character(1)
+      )
+    }),
+    selection_origin = rep(variable_scope, length(rows))
+  )
 }
 
 glc_plan_empty_read_columns <- function() {
@@ -1397,79 +1577,107 @@ glc_plan_empty_read_columns <- function() {
 }
 
 glc_plan_read_columns_table <- function(records, variable_scope) {
-  rows <- list()
   origin <- switch(
     variable_scope,
     matched = "matched_term",
     all = "all_declared",
     selected = "selected_name"
   )
-  for (record in records) {
-    if (!identical(record$status, "included")) {
-      next
-    }
-    position <- 0L
-    selected_names <- vapply(
-      record$selected_variables,
-      function(variable) variable$name,
-      character(1)
-    )
-    for (variable in record$selected_variables) {
-      position <- position + 1L
-      rows[[length(rows) + 1L]] <- tibble::tibble(
-        unit_id = record$unit_id,
-        dataset_id = record$dataset_id,
-        file_group_id = record$file_group_id,
-        position = position,
-        name = variable$name,
-        declared_type = variable$type,
-        origin = origin,
-        selected_for_output = TRUE,
-        automatic = FALSE,
-        message = "Selected declared source column."
-      )
-    }
-    datetime_columns <- character()
-    if (identical(record$datetime$source, "column")) {
-      datetime_columns <- c(datetime_columns, record$datetime$date)
-      if (
-        !is.na(record$datetime$time) &&
-          nzchar(record$datetime$time)
-      ) {
-        datetime_columns <- c(datetime_columns, record$datetime$time)
+  rows <- unlist(
+    lapply(records, function(record) {
+      if (!identical(record$status, "included")) {
+        return(list())
       }
-    }
-    datetime_columns <- unique(datetime_columns)
-    datetime_columns <- setdiff(datetime_columns, selected_names)
-    declared_names <- vapply(
-      record$variables,
-      function(variable) variable$name,
-      character(1)
-    )
-    for (name in datetime_columns) {
-      variable <- record$variables[[match(name, declared_names)]]
-      position <- position + 1L
-      rows[[length(rows) + 1L]] <- tibble::tibble(
-        unit_id = record$unit_id,
-        dataset_id = record$dataset_id,
-        file_group_id = record$file_group_id,
-        position = position,
-        name = name,
-        declared_type = variable$type,
-        origin = "datetime_required",
-        selected_for_output = FALSE,
-        automatic = TRUE,
-        message = paste0(
-          "Required to construct the declared datetime; not retained as a ",
-          "source output column."
-        )
+      selected_names <- vapply(
+        record$selected_variables,
+        function(variable) variable$name,
+        character(1)
       )
-    }
-  }
+      selected_rows <- lapply(
+        seq_along(record$selected_variables),
+        function(position) {
+          variable <- record$selected_variables[[position]]
+          list(
+            unit_id = record$unit_id,
+            dataset_id = record$dataset_id,
+            file_group_id = record$file_group_id,
+            position = as.integer(position),
+            name = variable$name,
+            declared_type = variable$type,
+            origin = origin,
+            selected_for_output = TRUE,
+            automatic = FALSE,
+            message = "Selected declared source column."
+          )
+        }
+      )
+      datetime_columns <- character()
+      if (identical(record$datetime$source, "column")) {
+        datetime_columns <- c(datetime_columns, record$datetime$date)
+        if (
+          !is.na(record$datetime$time) &&
+            nzchar(record$datetime$time)
+        ) {
+          datetime_columns <- c(datetime_columns, record$datetime$time)
+        }
+      }
+      datetime_columns <- unique(datetime_columns)
+      datetime_columns <- setdiff(datetime_columns, selected_names)
+      declared_names <- vapply(
+        record$variables,
+        function(variable) variable$name,
+        character(1)
+      )
+      automatic_rows <- lapply(seq_along(datetime_columns), function(index) {
+        name <- datetime_columns[[index]]
+        variable <- record$variables[[match(name, declared_names)]]
+        list(
+          unit_id = record$unit_id,
+          dataset_id = record$dataset_id,
+          file_group_id = record$file_group_id,
+          position = as.integer(length(selected_rows) + index),
+          name = name,
+          declared_type = variable$type,
+          origin = "datetime_required",
+          selected_for_output = FALSE,
+          automatic = TRUE,
+          message = paste0(
+            "Required to construct the declared datetime; not retained as a ",
+            "source output column."
+          )
+        )
+      })
+      c(selected_rows, automatic_rows)
+    }),
+    recursive = FALSE
+  )
   if (length(rows) == 0L) {
     return(glc_plan_empty_read_columns())
   }
-  dplyr::bind_rows(rows)
+  tibble::tibble(
+    unit_id = vapply(rows, function(row) row$unit_id, character(1)),
+    dataset_id = vapply(rows, function(row) row$dataset_id, character(1)),
+    file_group_id = vapply(
+      rows,
+      function(row) row$file_group_id,
+      character(1)
+    ),
+    position = vapply(rows, function(row) row$position, integer(1)),
+    name = vapply(rows, function(row) row$name, character(1)),
+    declared_type = vapply(
+      rows,
+      function(row) row$declared_type,
+      character(1)
+    ),
+    origin = vapply(rows, function(row) row$origin, character(1)),
+    selected_for_output = vapply(
+      rows,
+      function(row) row$selected_for_output,
+      logical(1)
+    ),
+    automatic = vapply(rows, function(row) row$automatic, logical(1)),
+    message = vapply(rows, function(row) row$message, character(1))
+  )
 }
 
 glc_plan_output_columns_for_unit <- function(unit, standardize) {
@@ -1694,6 +1902,105 @@ glc_plan_compatibility_table <- function(units, standardize) {
   }))
 }
 
+glc_plan_empty_compatibility_sets <- function() {
+  tibble::tibble(
+    compatibility_id = character(),
+    dataset_count = integer(),
+    file_group_count = integer(),
+    variable_count = integer(),
+    file_count = integer(),
+    declared_bytes = numeric(),
+    known_file_count = integer(),
+    unknown_file_count = integer(),
+    declared_bytes_complete = logical(),
+    final_unit_count = integer(),
+    final_selection_required = logical(),
+    constraint_codes = list(),
+    constraint_messages = list(),
+    file_group_ids = list(),
+    final_unit_ids = list(),
+    selected_names = list(),
+    declared_types = list(),
+    factor_values = list(),
+    factor_labels = list(),
+    timezone = character(),
+    modalities = list(),
+    role = character(),
+    data_state = character(),
+    datetime_source = character(),
+    datetime_signature = character(),
+    datetime_date = character(),
+    datetime_format = character(),
+    datetime_time = character(),
+    datetime_time_format = character(),
+    collection_values_ignored = logical(),
+    relationship_rule = character(),
+    device_rule = character(),
+    standardize_affects_structure = logical()
+  )
+}
+
+glc_plan_compatibility_sets_table <- function(compatibility_sets) {
+  if (length(compatibility_sets) == 0L) {
+    return(glc_plan_empty_compatibility_sets())
+  }
+  dplyr::bind_rows(lapply(compatibility_sets, function(set) {
+    contract <- set$compatibility
+    tibble::tibble(
+      compatibility_id = set$compatibility_id,
+      dataset_count = set$dataset_count,
+      file_group_count = set$file_group_count,
+      variable_count = set$variable_count,
+      file_count = set$file_count,
+      declared_bytes = set$declared_bytes,
+      known_file_count = set$known_file_count,
+      unknown_file_count = set$unknown_file_count,
+      declared_bytes_complete = set$declared_bytes_complete,
+      final_unit_count = set$final_unit_count,
+      final_selection_required = set$final_selection_required,
+      constraint_codes = list(set$constraint_codes),
+      constraint_messages = list(set$constraint_messages),
+      file_group_ids = list(set$file_group_ids),
+      final_unit_ids = list(set$final_unit_ids),
+      selected_names = list(vapply(
+        contract$variables,
+        function(variable) variable$name,
+        character(1)
+      )),
+      declared_types = list(vapply(
+        contract$variables,
+        function(variable) variable$type,
+        character(1)
+      )),
+      factor_values = list(lapply(
+        contract$variables,
+        function(variable) variable$factor_values
+      )),
+      factor_labels = list(lapply(
+        contract$variables,
+        function(variable) variable$factor_labels
+      )),
+      timezone = contract$timezone,
+      modalities = list(contract$modalities),
+      role = contract$role,
+      data_state = contract$data_state,
+      datetime_source = contract$datetime$source,
+      datetime_signature = contract$datetime$signature,
+      datetime_date = contract$datetime$date,
+      datetime_format = contract$datetime$date_format,
+      datetime_time = contract$datetime$time,
+      datetime_time_format = contract$datetime$time_format,
+      collection_values_ignored = identical(
+        contract$datetime$source,
+        "collection"
+      ),
+      relationship_rule = contract$relationship_rule,
+      device_rule = contract$device_rule,
+      standardize_affects_structure = FALSE
+    )
+  }))
+}
+
 glc_plan_extensions_table <- function(records) {
   if (length(records) == 0L) {
     return(tibble::tibble(
@@ -1785,9 +2092,9 @@ glc_plan_validate_restrictions <- function(records, request) {
 
 #' Plan declaration-compatible collection units
 #'
-#' Build a deterministic, metadata-only plan that partitions matching file
-#' groups into units whose validated declarations are compatible for collection.
-#' No measurement file is read or inspected while the plan is built.
+#' Build a deterministic plan from validated declarations and normalized core
+#' metadata. The plan separates structural compatibility sets from final
+#' collectable units, and it never reads or inspects measurement contents.
 #'
 #' @param x A `glc_package` opened with [glc_open()] at an exact, verified
 #'   revision. A remote package must be at the registry's latest passing
@@ -1830,29 +2137,52 @@ glc_plan_validate_restrictions <- function(records, request) {
 #' same groups, but deliberately remain different requests and therefore may
 #' produce different unit identifiers.
 #'
-#' Included groups are partitioned by the exact selected variable names and
-#' order, declared types, factor values and labels, time zone, ordered
-#' modalities, role, data state, datetime contract, and the package's validated
-#' relationship rules. At most one non-missing device per dataset is permitted
-#' within a unit. Collection-based datetime values are record-specific and are
-#' ignored when comparing otherwise identical collection-based datetime
-#' contracts.
+#' @section Structural compatibility and final units:
+#' Included groups are first partitioned by selected source names and declaration
+#' order, declared types, factor values and labels in declaration order, time
+#' zone, ordered modalities, role, data state, and datetime contract.
+#' Collection-based datetime values are record-specific and are ignored when
+#' comparing otherwise identical collection-based contracts.
 #'
-#' A unit identifier is `"glcu_"` followed by a SHA-256 digest of canonical
-#' UTF-8 text. The material includes the planner schema and version, package id,
-#' repository, exact source revision and package schema, the normalized request
-#' (including restrictions and `standardize`), the compatibility contract, and
-#' sorted stable file-group identifiers. It never uses R serialized-object
-#' bytes. Unit identifiers and table ordering are therefore reproducible across
-#' input row ordering and supported R versions. They are request- and
-#' revision-specific and may change when the planner schema changes.
+#' Each structural set has a `compatibility_id` beginning with `"glcc_"`. It is
+#' a SHA-256 digest of length-prefixed canonical UTF-8 text containing the exact
+#' package identity, repository, source revision, package schema, and structural
+#' contract. It does not contain current membership, `dataset_id` or
+#' `file_group` restrictions, metadata facets, `standardize`, or device-slot
+#' allocation. The identifier therefore stays the same when an unchanged
+#' contract is narrowed at the same package revision. Wearing position, device
+#' location or type, participant characteristics, file description, site
+#' context, and other descriptive metadata do not split structural sets.
+#'
+#' A structural set is not itself declared finally collectable. Relationship
+#' allocation is applied next. Final units enforce consistent dataset and
+#' file-group links and permit at most one non-missing device per dataset. A
+#' structural set can therefore map to multiple final units. In that case,
+#' `final_selection_required` is `TRUE` and `constraint_codes` contains
+#' `"device_slot_allocation"`.
+#'
+#' Existing final unit identifiers retain their version 1.0 canonical identity.
+#' A `unit_id` begins with `"glcu_"` and hashes the package and revision, the
+#' normalized request including restrictions and `standardize`, the structural
+#' contract, and sorted member file-group identifiers. Final unit ids are thus
+#' request- and membership-sensitive, while structural ids are restriction
+#' stable. Both use canonical UTF-8 text rather than R serialized-object bytes,
+#' and both their values and table order are stable under input row reordering.
 #'
 #' @section Declaration-only assurance:
-#' The planner uses validated descriptor and core metadata associated with
-#' `x`. It does not call [glc_read()], [glc_collect()], [glc_files()], or
-#' [glc_summary()], request measurement contents, or inspect source rows.
-#' Known declaration-level constraints, including reserved source names that
-#' begin with `.glc_`, are applied before units are formed.
+#' The planner uses the validated descriptor and core metadata associated with
+#' `x`. One explicit planning call may load descriptor-declared resources named
+#' `study`, `participants`, `participant_characteristics`, `datasets`,
+#' `devices`, `device_datasheets`, and optional `contributors` at the exact
+#' source revision. For a remote package, loading an uncached core resource can
+#' make an HTTP request. The allowlist is exactly the value returned internally
+#' by `glc_core_resource_names()`.
+#'
+#' The planner does not call [glc_read()], [glc_collect()], [glc_files()],
+#' [glc_summary()], or [glc_download()]. It never requests a measurement path,
+#' probes measurement availability, or inspects source rows. Known
+#' declaration-level constraints, including reserved source names that begin
+#' with `.glc_`, are applied before units are formed.
 #'
 #' File sizes come only from an explicit supported byte declaration or an entry
 #' already present in the local manifest. The planner never downloads a file or
@@ -1865,6 +2195,29 @@ glc_plan_validate_restrictions <- function(records, request) {
 #' output-column collisions can only be checked after reading. [glc_read()]
 #' remains authoritative for source-file validation, and [glc_collect()] remains
 #' authoritative for final collection compatibility and standardization.
+#'
+#' @section Missing values and relationship links:
+#' Source missingness is retained. Missing scalar metadata stays as a typed
+#' `NA`, and absent repeated metadata stays an empty vector or list. Literal
+#' source values such as `"not applicable"` remain literal values. The planner
+#' does not synthesize a description, instrument, contributor id, or site id.
+#'
+#' Relationship status columns use `"linked"`, `"not_applicable"`,
+#' `"unresolved"`, or `"metadata_unavailable"`. `"not_applicable"` means that
+#' no link applies, such as a dataset not associated with a participant or a
+#' group without a device id. `"unresolved"` means that an applicable id is
+#' missing or does not resolve in loaded metadata. `"metadata_unavailable"`
+#' means that an id is present but its optional core resource was not declared.
+#'
+#' @section Recommended interactive workflow:
+#' Build one plan as an explicit planning task. Present one reader-oriented
+#' option per row of `compatibility_sets`, then filter `groups` and the
+#' normalized `metadata` tables in memory by stable ids. Do not rebuild the plan
+#' for each participant, device, position, characteristic, or site filter.
+#' Finally pass the narrowed file-group ids to [glc_collection_refine()]. A
+#' caller should proceed to reading only when the refinement reports one final
+#' unit and `final_selection_required = FALSE`. Keep the parent plan because the
+#' lightweight refinement does not copy its metadata tables.
 #'
 #' @section Return tables:
 #' The result is a plain, serializable list with class `glc_collection_plan` and
@@ -1884,26 +2237,30 @@ glc_plan_validate_restrictions <- function(records, request) {
 #'   `standardize`, and the sorted union `resolved_variables` from included
 #'   groups.
 #' * `assurance`: `basis`, `actual_data_status`, `final_validation`,
-#'   `measurement_contents_transferred`, `measurement_contents_inspected`, and
-#'   `byte_policy`.
+#'   measurement transfer and inspection flags, `core_metadata_transport`,
+#'   interactive-filter and refinement network flags, and `byte_policy`.
 #' * `preferred_unit_id`: the preferred unit, or `NA_character_` when no unit is
 #'   collectable. Preference is deterministic: most datasets, then most file
 #'   groups, then the lexically smallest unit id.
-#' * `units`: one row per collectable unit. Columns are `unit_id`, `preferred`,
-#'   `dataset_count`, `file_group_count`, `variable_count`, `file_count`,
-#'   `declared_bytes`, `known_file_count`, `unknown_file_count`,
-#'   `declared_bytes_complete`, and the list-column `file_group_ids`.
+#' * `units`: one row per final unit. Columns are `unit_id`,
+#'   `compatibility_id`, `preferred`, `dataset_count`, `file_group_count`,
+#'   `variable_count`, `file_count`, `declared_bytes`, `known_file_count`,
+#'   `unknown_file_count`, `declared_bytes_complete`, and list-column
+#'   `file_group_ids`.
 #' * `groups`: one row per declared file group. Columns are `status`, `unit_id`,
-#'   `dataset_id`, integer declaration index `file_group`, stable
-#'   `file_group_id`, `study_id`, `participant_id`, `participant_associated`,
-#'   `device_id`, `device_location`, `device_location_type`, `description`,
-#'   `format`, `timezone`, list-column `modalities`, `modality_other`,
-#'   `modality_other_type`, `role`, `data_state`, `temporal_type`,
-#'   `temporal_value`, `temporal_unit`, `header_row`, list-column
-#'   `preprocessing`, `datetime_source`, `datetime_date`, `datetime_format`,
-#'   `datetime_time`, `datetime_time_format`, and list-columns
+#'   `compatibility_id`, `dataset_id`, integer declaration index `file_group`,
+#'   stable `file_group_id`, `study_id`, `participant_id`,
+#'   `participant_associated`, `study_link_status`, `participant_link_status`,
+#'   `device_id`, `device_link_status`, `datasheet_id`, `device_location`,
+#'   `device_location_type`, `description`, `instructions`,
+#'   `instrument_declared`, `dataset_timezone`, `dataset_latitude`,
+#'   `dataset_longitude`, `format`, `timezone`, list-column `modalities`,
+#'   `modality_other`, `modality_other_type`, `role`, `data_state`,
+#'   `temporal_type`, `temporal_value`, `temporal_unit`, `header_row`,
+#'   list-column `preprocessing`, `datetime_source`, `datetime_date`,
+#'   `datetime_format`, `datetime_time`, `datetime_time_format`, and list-columns
 #'   `selected_variables`, `reason_codes`, and `messages`. Excluded groups have
-#'   a missing `unit_id`.
+#'   missing `unit_id` and `compatibility_id` values.
 #' * `variables`: one row per selected variable in an included group. Columns
 #'   are `unit_id`, `dataset_id`, `file_group_id`, `position`, `name`, `label`,
 #'   `description`, `unit`, `calibration`, `type`, canonical `term`,
@@ -1933,11 +2290,86 @@ glc_plan_validate_restrictions <- function(records, request) {
 #' * `extensions`: one row per group. Columns are `dataset_id`,
 #'   `file_group_id`, and preserved, forward-compatible unknown declaration
 #'   fields in the plain list-column `metadata`.
+#' * `compatibility_sets`: one row per structural set. Columns are
+#'   `compatibility_id`, dataset, file-group, variable, and file counts; byte
+#'   summaries; `final_unit_count`; `final_selection_required`; list-columns
+#'   `constraint_codes`, `constraint_messages`, `file_group_ids`, and
+#'   `final_unit_ids`; the selected-name, declared-type, factor, timezone,
+#'   modality, role, data-state, and datetime contract columns also present in
+#'   `compatibility`; `relationship_rule`; `device_rule`; and the fixed
+#'   `standardize_affects_structure = FALSE` assurance.
+#' * `metadata`: a normalized typed core-metadata snapshot described below.
+#' * `refinement_input`: a compact, serializable input used and validated by
+#'   [glc_collection_refine()]. It contains `schema`, `version`,
+#'   `canonicalization`, `digest_algorithm`, compact `provenance` and `request`
+#'   lists, a `membership` table, plain-list structural `contracts` and
+#'   relationship `groups`, and a SHA-256 `fingerprint`. Consumers should not
+#'   modify or reconstruct it.
 #'
 #' All tables are tibbles with stable columns, including when they have no rows.
 #' List-columns contain only plain serializable vectors and lists. `print()`
 #' shows a compact package, request, unit, byte, preferred-unit, and assurance
 #' summary and returns the plan invisibly.
+#'
+#' @section Normalized metadata tables:
+#' `metadata` has schema `"glc-package-metadata"`, version `"1.0.0"`, and the
+#' following stable tables. All identifier joins are explicit; there is no
+#' `sites` table because the supported source schema has no stable site id.
+#'
+#' * `resource_status`: `resource`, `declared`, `status`, and `record_count`.
+#'   Status is `"not_declared"`, `"loaded_empty"`, or `"loaded"`.
+#' * `studies`: `study_id`, `schema_version`, `title`, `short_description`,
+#'   `preregistration`, `registration`, `ethics`, `sample`, `intervention`,
+#'   `setting`, `geographical_location`, `study_type`, and list-columns
+#'   `funding_sources`, `keywords`, and `dataset_ids`.
+#' * `study_groups`: `study_id`, `position`, `name`, `description`, `size`, and
+#'   list-columns `inclusion`, `exclusion`, and `dataset_ids`.
+#' * `study_contributors`: `study_id`, `position`, `full_name`, list-column
+#'   `roles`, `email`, `orcid`, `institution_name`, `institution_city`, and
+#'   `institution_country`.
+#' * `contributors`: `contributor_id`, deterministic row key `position`,
+#'   `full_name`, list-column `roles`, `email`, `orcid`, `institution_name`,
+#'   `institution_city`, and `institution_country`. A missing source id remains
+#'   typed `NA`; no id is synthesized.
+#' * `datasets`: `dataset_id`, `schema_version`, `study_id`,
+#'   `study_link_status`, `participant_id`, `participant_associated`,
+#'   `participant_link_status`, `timezone`, numeric `latitude` and `longitude`,
+#'   `file_group_count`, `file_count`, and list-columns `modalities`,
+#'   `device_ids`, and `primary_variables`.
+#' * `dataset_terms`: `dataset_id`, `position`, canonical `term`, and `label`.
+#' * `participants`: `participant_id`, numeric `age`, `sex`, and `gender`.
+#' * `participant_characteristics`: `participant_id`,
+#'   `participant_link_status`, `characteristic_position`, `value_position`,
+#'   `name`, typed scalar list-column `value`, `value_type`, `unit`, and
+#'   `description`.
+#' * `devices`: `device_id`, `schema_version`, `manufacturer`, `model`,
+#'   `serial_number`, `calibration_date`, `firmware_version`, `datasheet_id`, and
+#'   `datasheet_link_status`.
+#' * `device_sensors`: `device_id`, `position`, `sensor_type`, `datasheet_id`,
+#'   and `datasheet_link_status`.
+#' * `datasheets`: `datasheet_id`, `schema_version`, `datasheet_version`,
+#'   `manufacturer`, `type`, list-column `modalities`, `modality_other`, `model`,
+#'   `calibration_interval`, `calibration_method`, `calibration_accuracy`,
+#'   `calibration_range`, `calibration_notes`, typed list-column
+#'   `calibration_spectral_sensitivity`, `calibration_linearity`, and
+#'   `calibration_directional_response`.
+#' * `datasheet_parameters`: `datasheet_id`, `position`, `name`, typed scalar
+#'   list-column `value`, `value_type`, `unit`, and `description`.
+#' * `datasheet_channels`: `datasheet_id`, `position`, integer `channel_number`,
+#'   `name`, `description`, and `unit`.
+#' * `instruments`: `dataset_id`, `file_group_id`, `instrument_type`,
+#'   `instrument_name`, `collection_method`, `recorded_by`, and `software_name`.
+#' * `file_group_variables`: all declared variables for every included group,
+#'   independent of `variable_scope`. Columns are `dataset_id`, `file_group_id`,
+#'   `declaration_position`, `selected_by_request`, `selected_for_output`,
+#'   `selection_origin`, `name`, `label`, `description`, `unit`, `calibration`,
+#'   `type`, canonical `term`, `term_name`, `primary`, and `factor_level_count`.
+#' * `file_group_factor_levels`: `dataset_id`, `file_group_id`,
+#'   `variable_position`, `variable_name`, `level_position`, `value`, `label`,
+#'   and `description`.
+#' * `extensions`: `resource`, `entity_type`, `entity_id`, `parent_id`,
+#'   `position`, and plain list-column `metadata` for forward-compatible unknown
+#'   fields. Standard fields never require parsing this column.
 #'
 #' @section Exclusions and errors:
 #' Per-group declaration outcomes are returned rather than thrown. Stable reason
@@ -1956,14 +2388,17 @@ glc_plan_validate_restrictions <- function(records, request) {
 #' and `glcdp_collection_plan_id`. Term labels that are not canonical ids are
 #' reported as unknown terms rather than matched ambiguously.
 #'
-#' @return A `glc_collection_plan` object described in **Return tables**.
-#' @seealso [glc_variables()] for declared selectors, [glc_read()] for runtime
-#'   import validation, and [glc_collect()] for authoritative final collection.
+#' @return A serializable `glc_collection_plan` object using plan schema
+#'   `"glc-collection-plan"` version `"1.1.0"`, as described in **Return
+#'   tables**.
+#' @seealso [glc_collection_refine()] for fast in-memory narrowing,
+#'   [glc_variables()] for declared selectors, [glc_read()] for runtime import
+#'   validation, and [glc_collect()] for authoritative final collection.
 #' @export
 #'
 #' @examples
 #' \dontrun{
-#' # Use an existing local, manifest-backed directory created by glc_download().
+#' # Use an existing local, manifest-backed package directory.
 #' # This pattern performs no network request and does not read measurements.
 #' pkg <- glc_open("path/to/manifest-backed-package", quiet = TRUE)
 #' plan <- glc_collection_plan(
@@ -1971,9 +2406,16 @@ glc_plan_validate_restrictions <- function(records, request) {
 #'   terms = "photopic illuminance",
 #'   variable_scope = "matched"
 #' )
-#' plan
-#' plan$units
-#' plan$groups[, c("file_group_id", "status", "reason_codes")]
+#' plan$compatibility_sets[, c(
+#'   "compatibility_id", "file_group_count", "final_unit_count",
+#'   "final_selection_required"
+#' )]
+#'
+#' # Filter plan$groups and plan$metadata in memory, then refine exact ids.
+#' set_id <- plan$compatibility_sets$compatibility_id[[1L]]
+#' selected_ids <- plan$compatibility_sets$file_group_ids[[1L]]
+#' refined <- glc_collection_refine(plan, selected_ids, set_id)
+#' refined
 #' }
 glc_collection_plan <- function(
   x,
@@ -2018,6 +2460,7 @@ glc_collection_plan <- function(
   }
 
   provenance <- glc_plan_verified_provenance(x)
+  model <- glc_model(x)
   records <- glc_plan_group_records(x)
   request <- list(
     terms = glc_plan_sort_utf8(terms),
@@ -2040,7 +2483,14 @@ glc_collection_plan <- function(
     request,
     provenance
   )
-  records <- engine$records
+  metadata_snapshot <- glc_plan_metadata_snapshot(
+    x,
+    model,
+    engine$records,
+    variable_scope
+  )
+  records <- metadata_snapshot$records
+  engine$records <- records
   request$resolved_variables <- glc_plan_sort_utf8(unique(unlist(
     lapply(records, function(record) {
       if (!identical(record$status, "included")) {
@@ -2060,6 +2510,11 @@ glc_collection_plan <- function(
   provenance$metadata_fingerprint <- metadata_fingerprint
   provenance$planner_schema <- glc_collection_plan_schema()
   provenance$planner_version <- glc_collection_plan_version()
+  refinement_input <- glc_plan_refinement_input(
+    records,
+    request,
+    provenance
+  )
   structure(
     list(
       plan_schema = glc_collection_plan_schema(),
@@ -2072,6 +2527,12 @@ glc_collection_plan <- function(
         final_validation = c("glc_read", "glc_collect"),
         measurement_contents_transferred = FALSE,
         measurement_contents_inspected = FALSE,
+        core_metadata_transport = paste0(
+          "Only descriptor-declared core resources at the exact source ",
+          "revision may be loaded during this explicit planning call."
+        ),
+        interactive_filtering_network_access = FALSE,
+        refinement_network_access = FALSE,
         byte_policy = paste0(
           "Only explicit supported declaration bytes or entries in the ",
           "already-loaded manifest are used; unknown sizes remain unknown."
@@ -2091,7 +2552,12 @@ glc_collection_plan <- function(
         engine$units,
         standardize
       ),
-      extensions = glc_plan_extensions_table(records)
+      extensions = glc_plan_extensions_table(records),
+      compatibility_sets = glc_plan_compatibility_sets_table(
+        engine$compatibility_sets
+      ),
+      metadata = metadata_snapshot$metadata,
+      refinement_input = refinement_input
     ),
     class = c("glc_collection_plan", "list")
   )
@@ -2145,7 +2611,9 @@ print.glc_collection_plan <- function(x, ...) {
   cat(
     "Result: ",
     nrow(x$units),
-    " unit(s); ",
+    " final unit(s) in ",
+    nrow(x$compatibility_sets),
+    " structural set(s); ",
     included,
     " included, ",
     excluded,
