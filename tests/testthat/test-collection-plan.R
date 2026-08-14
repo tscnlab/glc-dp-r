@@ -73,6 +73,47 @@ make_reserved_plan_fixture <- function() {
   root
 }
 
+make_plan_factor_fixture <- function(
+  levels,
+  labels = levels,
+  descriptions = lapply(levels, function(values) {
+    rep(NA_character_, length(values))
+  }),
+  reverse_datasets = FALSE
+) {
+  root <- make_glc_fixture("3.0.2")
+  base <- fixture_read_datasets(root)[[1L]]
+  datasets <- lapply(seq_along(levels), function(index) {
+    dataset <- base
+    dataset$dataset_internal_id <- paste0("DS", index)
+    variables <- dataset$dataset_file[[1L]]$dataset_file_variables
+    quality <- which(vapply(
+      variables,
+      function(variable) {
+        identical(variable$dataset_file_variables_name, "quality")
+      },
+      logical(1)
+    ))[[1L]]
+    variables[[quality]]$dataset_file_variables_factor_levels <- lapply(
+      seq_along(levels[[index]]),
+      function(position) {
+        list(
+          value = levels[[index]][[position]],
+          label = labels[[index]][[position]],
+          description = descriptions[[index]][[position]]
+        )
+      }
+    )
+    dataset$dataset_file[[1L]]$dataset_file_variables <- variables
+    dataset
+  })
+  if (reverse_datasets) {
+    datasets <- rev(datasets)
+  }
+  fixture_write_datasets(root, datasets)
+  root
+}
+
 plan_has_live_value <- function(x) {
   if (
     is.environment(x) ||
@@ -228,6 +269,8 @@ test_that("a metadata-only plan has the approved structure and print contract", 
       "compatibility",
       "extensions",
       "compatibility_sets",
+      "compatibility_diagnostics",
+      "compatibility_diagnostic_groups",
       "metadata",
       "refinement_input"
     )
@@ -246,6 +289,9 @@ test_that("a metadata-only plan has the approved structure and print contract", 
       "known_file_count",
       "unknown_file_count",
       "declared_bytes_complete",
+      "harmonization_required",
+      "harmonized_variables",
+      "diagnostic_ids",
       "file_group_ids"
     )
   )
@@ -371,6 +417,10 @@ test_that("a metadata-only plan has the approved structure and print contract", 
       "declared_types",
       "factor_values",
       "factor_labels",
+      "factor_descriptions",
+      "harmonization_required",
+      "harmonized_variables",
+      "diagnostic_ids",
       "timezone",
       "modalities",
       "role",
@@ -400,6 +450,9 @@ test_that("a metadata-only plan has the approved structure and print contract", 
       "known_file_count",
       "unknown_file_count",
       "declared_bytes_complete",
+      "harmonization_required",
+      "harmonized_variables",
+      "diagnostic_ids",
       "final_unit_count",
       "final_selection_required",
       "constraint_codes",
@@ -410,6 +463,7 @@ test_that("a metadata-only plan has the approved structure and print contract", 
       "declared_types",
       "factor_values",
       "factor_labels",
+      "factor_descriptions",
       "timezone",
       "modalities",
       "role",
@@ -430,8 +484,48 @@ test_that("a metadata-only plan has the approved structure and print contract", 
     names(plan$extensions),
     c("dataset_id", "file_group_id", "metadata")
   )
+  expect_identical(
+    names(plan$compatibility_diagnostics),
+    c(
+      "diagnostic_id",
+      "selection_scope",
+      "classification",
+      "code",
+      "variable_name",
+      "applies_to_current_plan",
+      "prospective_scopes",
+      "message",
+      "affected_group_count",
+      "affected_structure_count",
+      "affected_unit_count",
+      "file_group_ids",
+      "compatibility_ids",
+      "unit_ids",
+      "union_values",
+      "union_labels",
+      "union_descriptions"
+    )
+  )
+  expect_identical(
+    names(plan$compatibility_diagnostic_groups),
+    c(
+      "diagnostic_id",
+      "dataset_id",
+      "file_group_id",
+      "current_status",
+      "compatibility_id",
+      "unit_id",
+      "variable_present",
+      "selected_by_request",
+      "declaration_position",
+      "declared_type",
+      "factor_values",
+      "factor_labels",
+      "factor_descriptions"
+    )
+  )
   expect_identical(plan$plan_schema, "glc-collection-plan")
-  expect_identical(plan$plan_version, "1.1.0")
+  expect_identical(plan$plan_version, "1.2.0")
   expect_identical(plan$provenance$source_revision, strrep("a", 40L))
   expect_identical(plan$provenance$package_schema_version, "3.0.2")
   expect_identical(
@@ -458,7 +552,7 @@ test_that("a metadata-only plan has the approved structure and print contract", 
   expect_match(plan$units$unit_id, "^glcu_[0-9a-f]{64}$")
   expect_identical(
     plan$units$unit_id,
-    "glcu_51a6381346c57fbd59f9ab342c40bb445528d96135bc5e01f756f746e9b5ee82"
+    "glcu_e37925c31c7587c0732c3359dd21c07780e635c7bbbe9bb68fe9b641a0f3e878"
   )
   expect_true(plan$units$preferred)
   expect_match(plan$units$compatibility_id, "^glcc_[0-9a-f]{64}$")
@@ -1050,6 +1144,141 @@ test_that("descriptive facets do not partition structural compatibility", {
   expect_setequal(plan$groups$device_location, c("non-dominant wrist", "chest"))
 })
 
+test_that("safe factor unions form one stable structural family", {
+  levels <- list(
+    c("0", "1", "2", "3", "5", "10", "11", "12"),
+    c("0", "1", "2", "3", "4"),
+    c("0", "1", "2", "3")
+  )
+  root <- make_plan_factor_fixture(levels)
+  reordered_root <- make_plan_factor_fixture(levels, reverse_datasets = TRUE)
+  package <- plan_validated_package(root)
+  reordered_package <- plan_validated_package(reordered_root)
+
+  plan <- glc_collection_plan(package, variable_scope = "all")
+  reordered <- glc_collection_plan(
+    reordered_package,
+    variable_scope = "all"
+  )
+
+  expect_equal(nrow(plan$compatibility_sets), 1L)
+  expect_equal(nrow(plan$units), 1L)
+  expect_true(plan$units$harmonization_required)
+  expect_identical(plan$units$harmonized_variables[[1L]], "quality")
+  expect_identical(
+    plan$compatibility_sets$factor_values[[1L]][[4L]],
+    c("0", "1", "2", "3", "4", "5", "10", "11", "12")
+  )
+  selected <- plan$compatibility_diagnostics$selection_scope == "selected"
+  expect_identical(
+    plan$compatibility_diagnostics$code[selected],
+    "factor_level_union"
+  )
+  expect_identical(
+    plan$compatibility_diagnostics$classification[selected],
+    "safely_harmonizable"
+  )
+  expect_true(plan$compatibility_diagnostics$applies_to_current_plan[selected])
+  expect_identical(
+    plan$compatibility_sets$compatibility_id,
+    reordered$compatibility_sets$compatibility_id
+  )
+  expect_identical(plan$units$unit_id, reordered$units$unit_id)
+  expect_identical(
+    plan$compatibility_diagnostics$diagnostic_id,
+    reordered$compatibility_diagnostics$diagnostic_id
+  )
+
+  restricted <- glc_collection_plan(
+    package,
+    variable_scope = "all",
+    file_group = "DS1:1"
+  )
+  expect_identical(
+    restricted$compatibility_sets$compatibility_id,
+    plan$compatibility_sets$compatibility_id
+  )
+  expect_identical(
+    restricted$compatibility_sets$factor_values[[1L]][[4L]],
+    plan$compatibility_sets$factor_values[[1L]][[4L]]
+  )
+  expect_identical(
+    restricted$compatibility$factor_values[[1L]][[4L]],
+    levels[[1L]]
+  )
+  expect_false(restricted$units$harmonization_required)
+})
+
+test_that("non-selected factor differences are disclosed without selection", {
+  root <- make_plan_factor_fixture(list(
+    c("good", "bad"),
+    c("good", "bad", "maybe")
+  ))
+  plan <- glc_collection_plan(
+    plan_validated_package(root),
+    terms = "photopic illuminance",
+    variable_scope = "matched"
+  )
+
+  expect_equal(nrow(plan$compatibility_sets), 1L)
+  expect_equal(nrow(plan$units), 1L)
+  expect_identical(plan$variables$name, rep("lux", 2L))
+  diagnostic <- plan$compatibility_diagnostics[
+    plan$compatibility_diagnostics$variable_name == "quality",
+  ]
+  expect_equal(nrow(diagnostic), 1L)
+  expect_identical(diagnostic$selection_scope, "not_selected")
+  expect_identical(diagnostic$classification, "safely_harmonizable")
+  expect_false(diagnostic$applies_to_current_plan)
+  expect_match(diagnostic$message, "not selected", fixed = TRUE)
+  expect_true(all(
+    !plan$compatibility_diagnostic_groups$selected_by_request
+  ))
+})
+
+test_that("conflicting factor mappings remain separate and diagnostic", {
+  plan <- glc_collection_plan(
+    plan_validated_package(make_plan_factor_fixture(
+      levels = list(c("0", "1"), c("0", "1")),
+      labels = list(c("Off", "On"), c("Absent", "On"))
+    )),
+    variable_scope = "all"
+  )
+
+  expect_equal(nrow(plan$compatibility_sets), 2L)
+  expect_equal(nrow(plan$units), 2L)
+  diagnostic <- plan$compatibility_diagnostics[
+    plan$compatibility_diagnostics$code == "factor_label_conflict",
+  ]
+  expect_equal(nrow(diagnostic), 1L)
+  expect_identical(diagnostic$classification, "blocking")
+  expect_true(diagnostic$applies_to_current_plan)
+  expect_equal(diagnostic$affected_group_count, 2L)
+  expect_equal(diagnostic$affected_structure_count, 2L)
+  expect_setequal(
+    diagnostic$file_group_ids[[1L]],
+    c("DS1:1", "DS2:1")
+  )
+})
+
+test_that("invalid factor declarations are excluded before unit construction", {
+  plan <- glc_collection_plan(
+    plan_validated_package(make_plan_factor_fixture(list(
+      c("good", "good"),
+      c("good", "bad")
+    ))),
+    variable_scope = "all"
+  )
+
+  invalid <- plan$groups$file_group_id == "DS1:1"
+  expect_identical(plan$groups$status[invalid], "excluded")
+  expect_true(
+    "invalid_factor_contract" %in% plan$groups$reason_codes[[which(invalid)]]
+  )
+  expect_true(is.na(plan$groups$unit_id[invalid]))
+  expect_equal(nrow(plan$units), 1L)
+})
+
 test_that("collection datetime values are masked in compatibility", {
   root <- make_plan_matrix_fixture(list(
     function(dataset) {
@@ -1080,7 +1309,7 @@ test_that("collection datetime values are masked in compatibility", {
   )
 })
 
-test_that("device relationships produce the minimum safe partition", {
+test_that("device identity is scoped by stable file group", {
   root <- make_glc_fixture("3.0.2")
   datasets <- fixture_read_datasets(root)
   group <- datasets[[1L]]$dataset_file[[1L]]
@@ -1101,14 +1330,11 @@ test_that("device relationships produce the minimum safe partition", {
     variable_scope = "all"
   )
 
-  expect_equal(nrow(plan$units), 2L)
+  expect_equal(nrow(plan$units), 1L)
   expect_equal(nrow(plan$compatibility_sets), 1L)
-  expect_equal(plan$compatibility_sets$final_unit_count, 2L)
-  expect_true(plan$compatibility_sets$final_selection_required)
-  expect_identical(
-    plan$compatibility_sets$constraint_codes[[1L]],
-    "device_slot_allocation"
-  )
+  expect_equal(plan$compatibility_sets$final_unit_count, 1L)
+  expect_false(plan$compatibility_sets$final_selection_required)
+  expect_identical(plan$compatibility_sets$constraint_codes[[1L]], character())
   expect_setequal(
     plan$compatibility_sets$final_unit_ids[[1L]],
     plan$units$unit_id
@@ -1116,24 +1342,18 @@ test_that("device relationships produce the minimum safe partition", {
   expect_true(all(
     plan$groups$compatibility_id == plan$compatibility_sets$compatibility_id
   ))
-  first_device_unit <- plan$groups$unit_id[
-    plan$groups$file_group_id == "DS1:2"
-  ]
-  missing_device_unit <- plan$groups$unit_id[
-    plan$groups$file_group_id == "DS1:3"
-  ]
-  second_device_unit <- plan$groups$unit_id[
-    plan$groups$file_group_id == "DS1:1"
-  ]
-  expect_identical(first_device_unit, missing_device_unit)
-  expect_false(identical(first_device_unit, second_device_unit))
+  expect_length(unique(plan$groups$unit_id), 1L)
+  expect_identical(
+    plan$compatibility$device_rule,
+    "device_identity_is_file_group_scoped"
+  )
   engine <- expect_explorer_plan_parity(
     plan_validated_package(root),
     plan
   )
   expect_identical(
     glcdp:::glc_declared_collection_record_differences(engine$records),
-    "device_relationship"
+    character()
   )
 })
 
@@ -1192,6 +1412,23 @@ test_that("unsupported and incomplete declarations are excluded with reasons", {
   )
   expect_false(compatibility$ok)
   expect_match(paste(compatibility$issues, collapse = " "), "measurement files")
+})
+
+test_that("planning resolves the IANA timezone catalog once per request", {
+  package <- plan_validated_package(
+    make_plan_matrix_fixture(list(identity, identity, identity))
+  )
+  calls <- 0L
+  testthat::local_mocked_bindings(
+    glc_plan_valid_timezones = function() {
+      calls <<- calls + 1L
+      base::OlsonNames()
+    },
+    .package = "glcdp"
+  )
+
+  expect_no_error(glc_collection_plan(package, variable_scope = "all"))
+  expect_identical(calls, 1L)
 })
 
 test_that("reserved provenance declarations can never form a unit", {

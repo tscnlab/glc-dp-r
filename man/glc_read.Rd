@@ -42,7 +42,8 @@ in interactive sessions and \code{FALSE} otherwise.}
 }
 \value{
 A \code{glc_data_collection} tibble with one data list-column per file
-group.
+group and one serializable \code{factor_contract} list-column. The contract
+contains no package handle, token, cache path, or temporary path.
 }
 \description{
 Read metadata-described dataset files
@@ -53,6 +54,14 @@ datetimes are used internally but omitted unless selected by the filters.
 Declared files that are absent from a local package subset are skipped. When
 a local package contains fewer datasets or files than declared,
 \code{glc_read()} reports the discrepancy and reads the available files.
+
+Each returned file-group row includes a plain serializable \code{factor_contract}
+payload for the selected variables. It preserves raw factor values, effective
+labels, descriptions, unordered status, schema version, and a SHA-256
+fingerprint. \code{\link[=glc_collect]{glc_collect()}} validates this payload against the parsed data
+before applying any safe factor-level union. Invalid declarations error with
+class \code{glcdp_factor_contract_invalid}; changed payloads or parsed factors are
+rejected later with class \code{glcdp_factor_contract_tampered}.
 }
 \examples{
 \dontshow{if (interactive()) withAutoprint(\{ # examplesIf}

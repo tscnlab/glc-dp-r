@@ -1,3 +1,30 @@
+make_read_factor_union_fixture <- function(conflict = FALSE) {
+  root <- make_glc_fixture("3.0.2")
+  first <- fixture_read_datasets(root)[[1L]]
+  second <- first
+  second$dataset_internal_id <- "DS2"
+  levels <- second$dataset_file[[1L]]$dataset_file_variables[[4L]][[
+    "dataset_file_variables_factor_levels"
+  ]]
+  if (conflict) {
+    levels[[1L]]$label <- "Accepted"
+  } else {
+    levels <- c(
+      levels,
+      list(list(
+        value = "maybe",
+        label = "Maybe",
+        description = "Uncertain observation"
+      ))
+    )
+  }
+  second$dataset_file[[1L]]$dataset_file_variables[[4L]][[
+    "dataset_file_variables_factor_levels"
+  ]] <- levels
+  fixture_write_datasets(root, list(first, second))
+  root
+}
+
 test_that("schema 3 files are imported from metadata-defined headers and types", {
   package <- glc_open(
     make_glc_fixture("3.0.2", preamble = TRUE, explicit_header = TRUE),
@@ -14,6 +41,11 @@ test_that("schema 3 files are imported from metadata-defined headers and types",
   expect_equal(levels(data$quality), c("Good", "Bad"))
   expect_s3_class(data$.glc_datetime, "POSIXct")
   expect_equal(data$.glc_dataset_id, rep("DS1", 2))
+  expect_identical(
+    collection$factor_contract[[1L]]$schema,
+    "glc-factor-contract"
+  )
+  expect_match(collection$factor_contract[[1L]]$fingerprint, "^[0-9a-f]{64}$")
 })
 
 test_that("schema 3.0.0 retains the same typed import compatibility", {
@@ -297,6 +329,7 @@ test_that("incompatible groups and standard-column conflicts are rejected", {
     class = "glcdp_incompatible_collection"
   )
 
+  collection$factor_contract <- NULL
   collection$data[[1]]$Id <- "wrong"
   expect_error(
     glc_collect(collection),
@@ -318,12 +351,68 @@ test_that("collection preserves the declared factor-level contract", {
 
   expect_error(
     glc_collect(incompatible),
+    "declared factor levels",
+    class = "glcdp_factor_contract_tampered"
+  )
+})
+
+test_that("collection harmonizes compatible declared factor levels", {
+  package <- glc_open(make_read_factor_union_fixture(), quiet = TRUE)
+  collection <- glc_read(package, dataset_id = "all", progress = FALSE)
+
+  result <- glc_collect(collection, standardize = "none")
+
+  expect_equal(nrow(collection), 2L)
+  expect_identical(levels(result$quality), c("Good", "Bad", "Maybe"))
+  expect_setequal(unique(result$.glc_file_group), c("DS1:1", "DS2:1"))
+})
+
+test_that("collection blocks conflicting factor mappings", {
+  package <- glc_open(
+    make_read_factor_union_fixture(conflict = TRUE),
+    quiet = TRUE
+  )
+  collection <- glc_read(package, dataset_id = "all", progress = FALSE)
+
+  expect_error(
+    glc_collect(collection),
+    "conflicting labels",
+    class = "glcdp_factor_harmonization_conflict"
+  )
+})
+
+test_that("legacy collections retain strict factor-level behavior", {
+  package <- glc_open(make_v3_contract_fixture(), quiet = TRUE)
+  collection <- glc_read(package, dataset_id = "DS1")
+  collection$factor_contract <- NULL
+  incompatible <- dplyr::bind_rows(collection, collection)
+  class(incompatible) <- class(collection)
+  incompatible$data[[2L]]$quality <- factor(
+    as.character(incompatible$data[[2L]]$quality),
+    levels = rev(levels(incompatible$data[[2L]]$quality))
+  )
+
+  expect_error(
+    glc_collect(incompatible),
     "factor levels",
     class = "glcdp_incompatible_collection"
   )
 })
 
-test_that("collection rejects contradictory links and multiple devices per dataset", {
+test_that("collection detects tampered factor-contract facts", {
+  package <- glc_open(make_v3_contract_fixture(), quiet = TRUE)
+  collection <- glc_read(package, dataset_id = "DS1")
+  collection$factor_contract[[1L]]$variables[[7L]]$factor_labels[[1L]] <-
+    "Changed"
+
+  expect_error(
+    glc_collect(collection),
+    "changed since reading",
+    class = "glcdp_factor_contract_tampered"
+  )
+})
+
+test_that("collection rejects contradictory links and scopes devices by group", {
   package <- glc_open(make_glc_fixture("3.0.2"), quiet = TRUE)
   first <- glc_read(package, dataset_id = "DS1")
 
@@ -343,10 +432,10 @@ test_that("collection rejects contradictory links and multiple devices per datas
   second_device$data[[1]]$.glc_file_group <- "DS1:2"
   multi_device <- dplyr::bind_rows(first, second_device)
   class(multi_device) <- class(first)
-  expect_error(
-    glc_collect(multi_device),
-    "multiple devices",
-    class = "glcdp_incompatible_collection"
+  collected_devices <- expect_no_error(glc_collect(multi_device))
+  expect_setequal(
+    unique(collected_devices$file_group_id),
+    c("DS1:1", "DS1:2")
   )
 
   second_dataset <- second_device

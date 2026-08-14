@@ -3,7 +3,7 @@ glc_collection_plan_schema <- function() {
 }
 
 glc_collection_plan_version <- function() {
-  "1.1.0"
+  "1.2.0"
 }
 
 glc_collection_unit_id_schema <- function() {
@@ -11,7 +11,7 @@ glc_collection_unit_id_schema <- function() {
 }
 
 glc_collection_unit_id_version <- function() {
-  "1.0.0"
+  "2.0.0"
 }
 
 glc_collection_compatibility_id_schema <- function() {
@@ -19,7 +19,11 @@ glc_collection_compatibility_id_schema <- function() {
 }
 
 glc_collection_compatibility_id_version <- function() {
-  "1.0.0"
+  "2.0.0"
+}
+
+glc_plan_valid_timezones <- function() {
+  OlsonNames()
 }
 
 glc_plan_utf8_key <- function(x) {
@@ -96,15 +100,16 @@ glc_plan_canonical_tokens <- function(x) {
     if (named) {
       keys <- glc_plan_utf8_key(object_names)
       order_index <- order(keys, seq_along(keys), method = "radix")
-      tokens <- glc_plan_length_token("object", length(x))
-      for (index in order_index) {
-        tokens <- c(
-          tokens,
+      fields <- lapply(order_index, function(index) {
+        c(
           glc_plan_length_token("key", object_names[[index]]),
           glc_plan_canonical_tokens(x[[index]])
         )
-      }
-      return(tokens)
+      })
+      return(c(
+        glc_plan_length_token("object", length(x)),
+        unlist(fields, use.names = FALSE)
+      ))
     }
     return(c(
       glc_plan_length_token("array", length(x)),
@@ -112,18 +117,18 @@ glc_plan_canonical_tokens <- function(x) {
     ))
   }
   if (is.character(x)) {
-    tokens <- glc_plan_length_token("character", length(x))
-    for (value in x) {
-      tokens <- c(
-        tokens,
+    values <- vapply(
+      x,
+      function(value) {
         if (is.na(value)) {
           "character-na:0:"
         } else {
           glc_plan_length_token("character-value", value)
         }
-      )
-    }
-    return(tokens)
+      },
+      character(1)
+    )
+    return(c(glc_plan_length_token("character", length(x)), values))
   }
   if (is.logical(x)) {
     values <- vapply(
@@ -646,22 +651,10 @@ glc_plan_selected_variables <- function(record, request) {
 }
 
 glc_plan_declared_compatibility <- function(record) {
-  variables <- lapply(record$selected_variables, function(variable) {
-    list(
-      name = variable$name,
-      type = variable$type,
-      factor_values = vapply(
-        variable$factor_levels,
-        function(level) level$value,
-        character(1)
-      ),
-      factor_labels = vapply(
-        variable$factor_levels,
-        function(level) level$label,
-        character(1)
-      )
-    )
-  })
+  variables <- lapply(
+    record$selected_variables,
+    glc_factor_contract_variable
+  )
   datetime <- record$datetime
   datetime_signature <- glc_datetime_compatibility_signature(
     datetime$source,
@@ -690,8 +683,8 @@ glc_plan_declared_compatibility <- function(record) {
       time = datetime$time,
       time_format = datetime$time_format
     ),
-    relationship_rule = "consistent_dataset_and_file_group_links",
-    device_rule = "at_most_one_nonmissing_device_per_dataset"
+    relationship_rule = "consistent_file_group_and_dataset_relationships",
+    device_rule = "device_identity_is_file_group_scoped"
   )
 }
 
@@ -699,7 +692,7 @@ glc_plan_add_reason <- function(reasons, code, message) {
   c(reasons, list(glc_plan_reason(code, message)))
 }
 
-glc_plan_evaluate_group <- function(record, request) {
+glc_plan_evaluate_group <- function(record, request, valid_timezones) {
   reasons <- list()
   if (
     length(request$dataset_id) > 0L &&
@@ -792,6 +785,20 @@ glc_plan_evaluate_group <- function(record, request) {
       )
     )
   }
+  if (in_scope && length(selected_variables) > 0L) {
+    factor_issues <- lapply(selected_variables, function(variable) {
+      glc_factor_contract_issue(glc_factor_contract_variable(variable))
+    })
+    invalid <- which(!vapply(factor_issues, is.null, logical(1)))
+    if (length(invalid) > 0L) {
+      issue <- factor_issues[[invalid[[1L]]]]
+      reasons <- glc_plan_add_reason(
+        reasons,
+        "invalid_factor_contract",
+        issue$message
+      )
+    }
+  }
   if (
     in_scope &&
       isTRUE(record$file_declarations_known %||% TRUE) &&
@@ -816,7 +823,7 @@ glc_plan_evaluate_group <- function(record, request) {
   }
   if (
     in_scope &&
-      (is.na(record$timezone) || !record$timezone %in% OlsonNames())
+      (is.na(record$timezone) || !record$timezone %in% valid_timezones)
   ) {
     reasons <- glc_plan_add_reason(
       reasons,
@@ -851,43 +858,6 @@ glc_plan_evaluate_group <- function(record, request) {
   record$unit_id <- NA_character_
   record$compatibility_id <- NA_character_
   record
-}
-
-glc_plan_device_slots <- function(records, indexes) {
-  slots <- stats::setNames(rep(1L, length(indexes)), indexes)
-  dataset_ids <- unique(vapply(
-    records[indexes],
-    function(record) record$dataset_id,
-    character(1)
-  ))
-  dataset_ids <- glc_plan_sort_utf8(dataset_ids)
-  for (dataset_id in dataset_ids) {
-    dataset_indexes <- indexes[vapply(
-      records[indexes],
-      function(record) {
-        identical(record$dataset_id, dataset_id)
-      },
-      logical(1)
-    )]
-    device_ids <- vapply(
-      records[dataset_indexes],
-      function(record) {
-        record$device_id
-      },
-      character(1)
-    )
-    present <- !is.na(device_ids) & nzchar(device_ids)
-    devices <- glc_plan_sort_utf8(unique(device_ids[present]))
-    for (position in seq_along(dataset_indexes)) {
-      if (present[[position]]) {
-        slots[as.character(dataset_indexes[[position]])] <- match(
-          device_ids[[position]],
-          devices
-        )
-      }
-    }
-  }
-  as.integer(slots)
 }
 
 glc_plan_unit_id <- function(
@@ -962,7 +932,12 @@ glc_plan_unit_byte_summary <- function(records) {
   )
 }
 
-glc_declared_collection_partition <- function(records, request, provenance) {
+glc_declared_collection_partition <- function(
+  records,
+  request,
+  provenance,
+  diagnostics = list()
+) {
   included <- which(vapply(
     records,
     function(record) {
@@ -974,84 +949,128 @@ glc_declared_collection_partition <- function(records, request, provenance) {
   compatibility_sets <- list()
 
   if (length(included) > 0L) {
-    compatibility <- lapply(
+    family_ids <- vapply(
       records[included],
       function(record) {
-        record$declared_compatibility %||%
-          glc_plan_declared_compatibility(record)
-      }
-    )
-    compatibility_text <- vapply(
-      compatibility,
-      glc_plan_canonical_text,
+        record$family_compatibility_id %||% record$compatibility_id
+      },
       character(1)
     )
-    bucket_values <- unique(compatibility_text)
-    for (bucket_value in bucket_values) {
-      bucket_positions <- which(compatibility_text == bucket_value)
-      bucket_indexes <- included[bucket_positions]
-      contract <- compatibility[[bucket_positions[[1L]]]]
-      compatibility_id <- glc_plan_compatibility_id(contract, provenance)
-      for (bucket_index in bucket_indexes) {
-        records[[bucket_index]]$compatibility_id <- compatibility_id
+    if (anyNA(family_ids) || any(!nzchar(family_ids))) {
+      glc_abort(
+        "Collection planning could not resolve structural family identifiers.",
+        class = "glcdp_collection_plan_id"
+      )
+    }
+    for (compatibility_id in unique(family_ids)) {
+      bucket_indexes <- included[family_ids == compatibility_id]
+      declared_contracts <- lapply(records[bucket_indexes], function(record) {
+        record$declared_compatibility %||%
+          glc_plan_declared_compatibility(record)
+      })
+      merged <- glc_compatibility_merge_contracts(declared_contracts)
+      if (!isTRUE(merged$compatible)) {
+        glc_abort(
+          "A structural family no longer has a compatible active declaration contract.",
+          class = "glcdp_collection_plan_contract"
+        )
       }
-      slots <- glc_plan_device_slots(records, bucket_indexes)
-      for (slot in sort(unique(slots))) {
-        member_indexes <- bucket_indexes[slots == slot]
-        member_ids <- vapply(
-          records[member_indexes],
-          function(record) {
-            record$file_group_id
+      contract <- merged$contract
+      family_contract <- records[[bucket_indexes[[
+        1L
+      ]]]]$family_compatibility %||%
+        contract
+      harmonized_variables <- vapply(
+        merged$results[vapply(
+          merged$results,
+          function(result) {
+            isTRUE(result$harmonization_required)
           },
-          character(1)
-        )
-        member_ids <- glc_plan_sort_utf8(member_ids)
-        unit_id <- glc_plan_unit_id(
-          contract,
-          member_ids,
-          request,
-          provenance
-        )
-        for (member_index in member_indexes) {
-          records[[member_index]]$unit_id <- unit_id
-        }
-        member_records <- records[member_indexes]
-        byte_summary <- glc_plan_unit_byte_summary(member_records)
-        units[[length(units) + 1L]] <- c(
-          list(
-            unit_id = unit_id,
-            compatibility_id = compatibility_id,
-            file_group_ids = member_ids,
-            compatibility = contract,
-            dataset_count = length(unique(vapply(
-              member_records,
-              function(record) record$dataset_id,
-              character(1)
-            ))),
-            file_group_count = length(member_records),
-            variable_count = length(contract$variables)
-          ),
-          byte_summary
-        )
-      }
-      set_records <- records[bucket_indexes]
-      set_member_ids <- glc_plan_sort_utf8(vapply(
-        set_records,
+          logical(1)
+        )],
+        function(result) result$variable_name,
+        character(1)
+      )
+      member_ids <- glc_plan_sort_utf8(vapply(
+        records[bucket_indexes],
         function(record) record$file_group_id,
         character(1)
       ))
+      diagnostic_ids <- if (length(diagnostics) == 0L) {
+        glc_plan_sort_utf8(unique(unlist(lapply(
+          records[bucket_indexes],
+          function(record) record$diagnostic_ids %||% character()
+        ))))
+      } else {
+        glc_plan_sort_utf8(vapply(
+          diagnostics[vapply(
+            diagnostics,
+            function(diagnostic) {
+              length(intersect(
+                diagnostic$affected_file_group_ids,
+                member_ids
+              )) >
+                0L
+            },
+            logical(1)
+          )],
+          function(diagnostic) {
+            diagnostic$diagnostic_id
+          },
+          character(1)
+        ))
+      }
+      for (bucket_index in bucket_indexes) {
+        records[[bucket_index]]$compatibility_id <- compatibility_id
+        records[[bucket_index]]$active_compatibility <- contract
+        records[[bucket_index]]$diagnostic_ids <- diagnostic_ids
+      }
+      unit_id <- glc_plan_unit_id(
+        contract,
+        member_ids,
+        request,
+        provenance
+      )
+      for (member_index in bucket_indexes) {
+        records[[member_index]]$unit_id <- unit_id
+      }
+      member_records <- records[bucket_indexes]
+      byte_summary <- glc_plan_unit_byte_summary(member_records)
+      units[[length(units) + 1L]] <- c(
+        list(
+          unit_id = unit_id,
+          compatibility_id = compatibility_id,
+          file_group_ids = member_ids,
+          compatibility = contract,
+          dataset_count = length(unique(vapply(
+            member_records,
+            function(record) record$dataset_id,
+            character(1)
+          ))),
+          file_group_count = length(member_records),
+          variable_count = length(contract$variables),
+          harmonization_required = length(harmonized_variables) > 0L,
+          harmonized_variables = harmonized_variables,
+          diagnostic_ids = diagnostic_ids
+        ),
+        byte_summary
+      )
+      set_records <- records[bucket_indexes]
       compatibility_sets[[length(compatibility_sets) + 1L]] <- c(
         list(
           compatibility_id = compatibility_id,
-          file_group_ids = set_member_ids,
-          compatibility = contract,
+          file_group_ids = member_ids,
+          compatibility = family_contract,
           dataset_count = length(unique(vapply(
             set_records,
             function(record) record$dataset_id,
             character(1)
           ))),
           file_group_count = length(set_records),
-          variable_count = length(contract$variables)
+          variable_count = length(family_contract$variables),
+          harmonization_required = length(harmonized_variables) > 0L,
+          harmonized_variables = harmonized_variables,
+          diagnostic_ids = diagnostic_ids
         ),
         glc_plan_unit_byte_summary(set_records)
       )
@@ -1118,18 +1137,9 @@ glc_declared_collection_partition <- function(records, request, provenance) {
       ))
       set$final_unit_ids <- final_unit_ids
       set$final_unit_count <- length(final_unit_ids)
-      set$final_selection_required <- length(final_unit_ids) > 1L
-      if (set$final_selection_required) {
-        set$constraint_codes <- "device_slot_allocation"
-        set$constraint_messages <- paste0(
-          "This structural set spans multiple final units because at least ",
-          "one dataset links groups to more than one non-missing device. ",
-          "Narrow stable file-group identifiers and refine before reading."
-        )
-      } else {
-        set$constraint_codes <- character()
-        set$constraint_messages <- character()
-      }
+      set$final_selection_required <- FALSE
+      set$constraint_codes <- character()
+      set$constraint_messages <- character()
       set
     })
   }
@@ -1138,17 +1148,58 @@ glc_declared_collection_partition <- function(records, request, provenance) {
     records = records,
     units = units,
     compatibility_sets = compatibility_sets,
-    preferred_unit_id = preferred_unit_id
+    preferred_unit_id = preferred_unit_id,
+    diagnostics = diagnostics
   )
 }
 
 glc_declared_collection_engine <- function(records, request, provenance) {
+  valid_timezones <- glc_plan_valid_timezones()
+  family_request <- request
+  family_request$dataset_id <- character()
+  family_request$file_group <- character()
+  family_records <- lapply(
+    records,
+    glc_plan_evaluate_group,
+    request = family_request,
+    valid_timezones = valid_timezones
+  )
+  families <- glc_collection_compatibility_families(
+    family_records,
+    request,
+    provenance
+  )
   records <- lapply(
     records,
     glc_plan_evaluate_group,
-    request = request
+    request = request,
+    valid_timezones = valid_timezones
   )
-  glc_declared_collection_partition(records, request, provenance)
+  family_ids <- vapply(
+    families$records,
+    function(record) {
+      record$file_group_id
+    },
+    character(1)
+  )
+  for (index in seq_along(records)) {
+    family <- families$records[[match(
+      records[[index]]$file_group_id,
+      family_ids
+    )]]
+    records[[index]]$declared_compatibility <-
+      family$declared_compatibility %||%
+      glc_plan_declared_compatibility(records[[index]])
+    records[[index]]$family_compatibility_id <-
+      family$family_compatibility_id %||% NA_character_
+    records[[index]]$family_compatibility <- family$family_compatibility
+  }
+  glc_declared_collection_partition(
+    records,
+    request,
+    provenance,
+    diagnostics = families$diagnostics
+  )
 }
 
 glc_declared_collection_contract_differences <- function(contracts) {
@@ -1210,48 +1261,19 @@ glc_declared_collection_contract_differences <- function(contracts) {
 
 glc_declared_collection_unit_differences <- function(units) {
   contracts <- lapply(units, function(unit) unit$compatibility)
-  differences <- glc_declared_collection_contract_differences(contracts)
-  compatibility_keys <- vapply(contracts, glc_plan_canonical_text, character(1))
-  if (anyDuplicated(compatibility_keys)) {
-    differences <- c(differences, "device_relationship")
-  }
-  differences
+  glc_declared_collection_contract_differences(contracts)
 }
 
 glc_declared_collection_record_differences <- function(records) {
   if (length(records) < 2L) {
     return(character())
   }
-  contracts <- lapply(records, glc_plan_declared_compatibility)
-  differences <- glc_declared_collection_contract_differences(contracts)
-  dataset_ids <- unique(vapply(
-    records,
-    function(record) record$dataset_id,
-    character(1)
-  ))
-  multiple_devices <- any(vapply(
-    dataset_ids,
-    function(dataset_id) {
-      devices <- vapply(
-        records[vapply(
-          records,
-          function(record) {
-            identical(record$dataset_id, dataset_id)
-          },
-          logical(1)
-        )],
-        function(record) record$device_id,
-        character(1)
-      )
-      devices <- devices[!is.na(devices) & nzchar(devices)]
-      length(unique(devices)) > 1L
-    },
-    logical(1)
-  ))
-  if (multiple_devices) {
-    differences <- c(differences, "device_relationship")
-  }
-  differences
+  contracts <- lapply(records, function(record) {
+    record$active_compatibility %||%
+      record$declared_compatibility %||%
+      glc_plan_declared_compatibility(record)
+  })
+  glc_declared_collection_contract_differences(contracts)
 }
 
 glc_plan_variable_snapshot <- function(variable) {
@@ -1325,6 +1347,9 @@ glc_plan_empty_units <- function() {
     known_file_count = integer(),
     unknown_file_count = integer(),
     declared_bytes_complete = logical(),
+    harmonization_required = logical(),
+    harmonized_variables = list(),
+    diagnostic_ids = list(),
     file_group_ids = list()
   )
 }
@@ -1346,6 +1371,9 @@ glc_plan_units_table <- function(units) {
       known_file_count = unit$known_file_count,
       unknown_file_count = unit$unknown_file_count,
       declared_bytes_complete = unit$declared_bytes_complete,
+      harmonization_required = unit$harmonization_required,
+      harmonized_variables = list(unit$harmonized_variables),
+      diagnostic_ids = list(unit$diagnostic_ids),
       file_group_ids = list(unit$file_group_ids)
     )
   }))
@@ -1402,65 +1430,111 @@ glc_plan_groups_table <- function(records) {
   if (length(records) == 0L) {
     return(glc_plan_empty_groups())
   }
-  dplyr::bind_rows(lapply(records, function(record) {
-    selected_names <- vapply(
-      record$selected_variables,
-      function(variable) variable$name,
+  character_field <- function(field) {
+    vapply(records, function(record) record[[field]], character(1))
+  }
+  tibble::tibble(
+    status = character_field("status"),
+    unit_id = character_field("unit_id"),
+    compatibility_id = character_field("compatibility_id"),
+    dataset_id = character_field("dataset_id"),
+    file_group = vapply(
+      records,
+      function(record) record$file_group,
+      integer(1)
+    ),
+    file_group_id = character_field("file_group_id"),
+    study_id = character_field("study_id"),
+    participant_id = character_field("participant_id"),
+    participant_associated = vapply(
+      records,
+      function(record) record$participant_associated,
+      logical(1)
+    ),
+    study_link_status = character_field("study_link_status"),
+    participant_link_status = character_field("participant_link_status"),
+    device_id = character_field("device_id"),
+    device_link_status = character_field("device_link_status"),
+    datasheet_id = character_field("datasheet_id"),
+    device_location = character_field("device_location"),
+    device_location_type = character_field("device_location_type"),
+    description = character_field("description"),
+    instructions = character_field("instructions"),
+    instrument_declared = vapply(
+      records,
+      function(record) length(record$instrument) > 0L,
+      logical(1)
+    ),
+    dataset_timezone = character_field("dataset_timezone"),
+    dataset_latitude = vapply(
+      records,
+      function(record) record$dataset_latitude,
+      numeric(1)
+    ),
+    dataset_longitude = vapply(
+      records,
+      function(record) record$dataset_longitude,
+      numeric(1)
+    ),
+    format = character_field("format"),
+    timezone = character_field("timezone"),
+    modalities = lapply(records, function(record) record$modalities),
+    modality_other = character_field("modality_other"),
+    modality_other_type = character_field("modality_other_type"),
+    role = character_field("role"),
+    data_state = character_field("data_state"),
+    temporal_type = character_field("temporal_type"),
+    temporal_value = vapply(
+      records,
+      function(record) record$temporal_value,
+      numeric(1)
+    ),
+    temporal_unit = character_field("temporal_unit"),
+    header_row = vapply(
+      records,
+      function(record) record$header_row,
+      integer(1)
+    ),
+    preprocessing = lapply(records, function(record) record$preprocessing),
+    datetime_source = vapply(
+      records,
+      function(record) record$datetime$source,
       character(1)
-    )
-    tibble::tibble(
-      status = record$status,
-      unit_id = record$unit_id,
-      compatibility_id = record$compatibility_id,
-      dataset_id = record$dataset_id,
-      file_group = record$file_group,
-      file_group_id = record$file_group_id,
-      study_id = record$study_id,
-      participant_id = record$participant_id,
-      participant_associated = record$participant_associated,
-      study_link_status = record$study_link_status,
-      participant_link_status = record$participant_link_status,
-      device_id = record$device_id,
-      device_link_status = record$device_link_status,
-      datasheet_id = record$datasheet_id,
-      device_location = record$device_location,
-      device_location_type = record$device_location_type,
-      description = record$description,
-      instructions = record$instructions,
-      instrument_declared = length(record$instrument) > 0L,
-      dataset_timezone = record$dataset_timezone,
-      dataset_latitude = record$dataset_latitude,
-      dataset_longitude = record$dataset_longitude,
-      format = record$format,
-      timezone = record$timezone,
-      modalities = list(record$modalities),
-      modality_other = record$modality_other,
-      modality_other_type = record$modality_other_type,
-      role = record$role,
-      data_state = record$data_state,
-      temporal_type = record$temporal_type,
-      temporal_value = record$temporal_value,
-      temporal_unit = record$temporal_unit,
-      header_row = record$header_row,
-      preprocessing = list(record$preprocessing),
-      datetime_source = record$datetime$source,
-      datetime_date = record$datetime$date,
-      datetime_format = record$datetime$date_format,
-      datetime_time = record$datetime$time,
-      datetime_time_format = record$datetime$time_format,
-      selected_variables = list(selected_names),
-      reason_codes = list(vapply(
-        record$reasons,
-        function(reason) reason$code,
+    ),
+    datetime_date = vapply(
+      records,
+      function(record) record$datetime$date,
+      character(1)
+    ),
+    datetime_format = vapply(
+      records,
+      function(record) record$datetime$date_format,
+      character(1)
+    ),
+    datetime_time = vapply(
+      records,
+      function(record) record$datetime$time,
+      character(1)
+    ),
+    datetime_time_format = vapply(
+      records,
+      function(record) record$datetime$time_format,
+      character(1)
+    ),
+    selected_variables = lapply(records, function(record) {
+      vapply(
+        record$selected_variables,
+        function(variable) variable$name,
         character(1)
-      )),
-      messages = list(vapply(
-        record$reasons,
-        function(reason) reason$message,
-        character(1)
-      ))
-    )
-  }))
+      )
+    }),
+    reason_codes = lapply(records, function(record) {
+      vapply(record$reasons, function(reason) reason$code, character(1))
+    }),
+    messages = lapply(records, function(record) {
+      vapply(record$reasons, function(reason) reason$message, character(1))
+    })
+  )
 }
 
 glc_plan_empty_variables <- function() {
@@ -1836,6 +1910,10 @@ glc_plan_empty_compatibility <- function() {
     declared_types = list(),
     factor_values = list(),
     factor_labels = list(),
+    factor_descriptions = list(),
+    harmonization_required = logical(),
+    harmonized_variables = list(),
+    diagnostic_ids = list(),
     timezone = character(),
     modalities = list(),
     role = character(),
@@ -1880,6 +1958,13 @@ glc_plan_compatibility_table <- function(units, standardize) {
         contract$variables,
         function(variable) variable$factor_labels
       )),
+      factor_descriptions = list(lapply(
+        contract$variables,
+        function(variable) variable$factor_descriptions
+      )),
+      harmonization_required = unit$harmonization_required,
+      harmonized_variables = list(unit$harmonized_variables),
+      diagnostic_ids = list(unit$diagnostic_ids),
       timezone = contract$timezone,
       modalities = list(contract$modalities),
       role = contract$role,
@@ -1913,6 +1998,9 @@ glc_plan_empty_compatibility_sets <- function() {
     known_file_count = integer(),
     unknown_file_count = integer(),
     declared_bytes_complete = logical(),
+    harmonization_required = logical(),
+    harmonized_variables = list(),
+    diagnostic_ids = list(),
     final_unit_count = integer(),
     final_selection_required = logical(),
     constraint_codes = list(),
@@ -1923,6 +2011,7 @@ glc_plan_empty_compatibility_sets <- function() {
     declared_types = list(),
     factor_values = list(),
     factor_labels = list(),
+    factor_descriptions = list(),
     timezone = character(),
     modalities = list(),
     role = character(),
@@ -1956,6 +2045,9 @@ glc_plan_compatibility_sets_table <- function(compatibility_sets) {
       known_file_count = set$known_file_count,
       unknown_file_count = set$unknown_file_count,
       declared_bytes_complete = set$declared_bytes_complete,
+      harmonization_required = set$harmonization_required,
+      harmonized_variables = list(set$harmonized_variables),
+      diagnostic_ids = list(set$diagnostic_ids),
       final_unit_count = set$final_unit_count,
       final_selection_required = set$final_selection_required,
       constraint_codes = list(set$constraint_codes),
@@ -1979,6 +2071,10 @@ glc_plan_compatibility_sets_table <- function(compatibility_sets) {
       factor_labels = list(lapply(
         contract$variables,
         function(variable) variable$factor_labels
+      )),
+      factor_descriptions = list(lapply(
+        contract$variables,
+        function(variable) variable$factor_descriptions
       )),
       timezone = contract$timezone,
       modalities = list(contract$modalities),
@@ -2138,36 +2234,53 @@ glc_plan_validate_restrictions <- function(records, request) {
 #' produce different unit identifiers.
 #'
 #' @section Structural compatibility and final units:
-#' Included groups are first partitioned by selected source names and declaration
-#' order, declared types, factor values and labels in declaration order, time
-#' zone, ordered modalities, role, data state, and datetime contract.
-#' Collection-based datetime values are record-specific and are ignored when
-#' comparing otherwise identical collection-based contracts.
+#' Included groups are first compared by selected source names and declaration
+#' order, declared types, time zone, ordered modalities, role, data state, and
+#' datetime contract. Collection-based datetime values are record-specific and
+#' are ignored when comparing otherwise identical collection-based contracts.
+#'
+#' Unordered factor declarations can share a structural set when their raw
+#' values have compatible effective labels and descriptions and their declared
+#' order constraints form an acyclic graph. An absent label means the raw value;
+#' no text normalization or semantic inference is performed. The union order is
+#' deterministic and preserves every declared order constraint. Duplicate raw
+#' values, ambiguous labels, conflicting labels or non-missing descriptions,
+#' cyclic order constraints, and unsupported ordered factors remain blocking.
+#' Blocking families retain exact factor-contract partitions.
 #'
 #' Each structural set has a `compatibility_id` beginning with `"glcc_"`. It is
-#' a SHA-256 digest of length-prefixed canonical UTF-8 text containing the exact
-#' package identity, repository, source revision, package schema, and structural
-#' contract. It does not contain current membership, `dataset_id` or
-#' `file_group` restrictions, metadata facets, `standardize`, or device-slot
-#' allocation. The identifier therefore stays the same when an unchanged
-#' contract is narrowed at the same package revision. Wearing position, device
-#' location or type, participant characteristics, file description, site
-#' context, and other descriptive metadata do not split structural sets.
+#' a version 2 SHA-256 digest of length-prefixed canonical UTF-8 text containing
+#' the exact package identity, repository, source revision, package schema, and
+#' the full structural-family contract computed before `dataset_id` and
+#' `file_group` restrictions are applied. It does not contain current membership,
+#' restrictions, metadata facets, or `standardize`. The identifier therefore
+#' stays the same when an unchanged family is narrowed at the same package
+#' revision. Wearing position, device identity or location, participant
+#' characteristics, file description, site context, and other descriptive
+#' metadata do not split structural sets.
 #'
-#' A structural set is not itself declared finally collectable. Relationship
-#' allocation is applied next. Final units enforce consistent dataset and
-#' file-group links and permit at most one non-missing device per dataset. A
-#' structural set can therefore map to multiple final units. In that case,
-#' `final_selection_required` is `TRUE` and `constraint_codes` contains
-#' `"device_slot_allocation"`.
+#' Final units enforce consistent stable file-group relationships and dataset
+#' study and participant relationships. Device identity is file-group-scoped,
+#' so distinct file groups in one dataset may reference different devices while
+#' remaining in one final unit. The active factor union is recomputed after
+#' restrictions. [glc_read()] carries the raw declaration contract and
+#' [glc_collect()] validates and applies the same union to actual factors.
 #'
-#' Existing final unit identifiers retain their version 1.0 canonical identity.
-#' A `unit_id` begins with `"glcu_"` and hashes the package and revision, the
-#' normalized request including restrictions and `standardize`, the structural
-#' contract, and sorted member file-group identifiers. Final unit ids are thus
-#' request- and membership-sensitive, while structural ids are restriction
-#' stable. Both use canonical UTF-8 text rather than R serialized-object bytes,
-#' and both their values and table order are stable under input row reordering.
+#' A `unit_id` begins with `"glcu_"` and uses version 2 canonical identity. It
+#' hashes the package and revision, normalized request including restrictions
+#' and `standardize`, active structural contract, and sorted member file-group
+#' identifiers. Final unit ids are request- and membership-sensitive, while
+#' structural ids are restriction stable. Both use canonical UTF-8 text rather
+#' than R serialized-object bytes, and their values and table order are stable
+#' under input row reordering. Version 2 identifiers deliberately differ from
+#' earlier identifiers because factor equivalence and device allocation rules
+#' changed.
+#'
+#' `compatibility_diagnostics` explains safe unions and blocking differences.
+#' Selected-variable diagnostics describe the current partition. Non-selected
+#' diagnostics disclose what would require harmonization or block a later
+#' expanded variable request without selecting those variables now. Re-plan an
+#' expanded request before reading or collecting additional variables.
 #'
 #' @section Declaration-only assurance:
 #' The planner uses the validated descriptor and core metadata associated with
@@ -2191,10 +2304,11 @@ glc_plan_validate_restrictions <- function(records, request) {
 #' `declared_bytes_complete` records whether every file size is known.
 #'
 #' Compatibility is an assurance about validated declarations, not downloaded
-#' values. Actual columns, parsed classes, factor values, datetime values, and
+#' values. Actual columns, parsed classes and factor values, datetime values, and
 #' output-column collisions can only be checked after reading. [glc_read()]
-#' remains authoritative for source-file validation, and [glc_collect()] remains
-#' authoritative for final collection compatibility and standardization.
+#' remains authoritative for source-file validation. [glc_collect()] validates
+#' the preserved raw factor declarations, harmonizes only safe unions, and
+#' remains authoritative for final compatibility and standardization.
 #'
 #' @section Missing values and relationship links:
 #' Source missingness is retained. Missing scalar metadata stays as a typed
@@ -2245,7 +2359,8 @@ glc_plan_validate_restrictions <- function(records, request) {
 #' * `units`: one row per final unit. Columns are `unit_id`,
 #'   `compatibility_id`, `preferred`, `dataset_count`, `file_group_count`,
 #'   `variable_count`, `file_count`, `declared_bytes`, `known_file_count`,
-#'   `unknown_file_count`, `declared_bytes_complete`, and list-column
+#'   `unknown_file_count`, `declared_bytes_complete`, `harmonization_required`,
+#'   and list-columns `harmonized_variables`, `diagnostic_ids`, and
 #'   `file_group_ids`.
 #' * `groups`: one row per declared file group. Columns are `status`, `unit_id`,
 #'   `compatibility_id`, `dataset_id`, integer declaration index `file_group`,
@@ -2280,8 +2395,10 @@ glc_plan_validate_restrictions <- function(records, request) {
 #'   are `status`, `unit_id`, `dataset_id`, `file_group_id`, `position`,
 #'   `declared_path`, `format`, `encoding`, `declared_bytes`, and `bytes_known`.
 #' * `compatibility`: one row per unit. Columns are `unit_id`, list-columns
-#'   `selected_names`, `declared_types`, `factor_values`, and `factor_labels`,
-#'   `timezone`, list-column `modalities`, `role`, `data_state`,
+#'   `selected_names`, `declared_types`, `factor_values`, `factor_labels`, and
+#'   `factor_descriptions`, `harmonization_required`, list-columns
+#'   `harmonized_variables` and `diagnostic_ids`, `timezone`, list-column
+#'   `modalities`, `role`, `data_state`,
 #'   `datetime_source`, `datetime_signature`, `datetime_date`,
 #'   `datetime_format`, `datetime_time`, `datetime_time_format`,
 #'   `collection_values_ignored`, `relationship_rule`, `device_rule`,
@@ -2292,24 +2409,36 @@ glc_plan_validate_restrictions <- function(records, request) {
 #'   fields in the plain list-column `metadata`.
 #' * `compatibility_sets`: one row per structural set. Columns are
 #'   `compatibility_id`, dataset, file-group, variable, and file counts; byte
-#'   summaries; `final_unit_count`; `final_selection_required`; list-columns
-#'   `constraint_codes`, `constraint_messages`, `file_group_ids`, and
+#'   summaries; `harmonization_required`; list-columns `harmonized_variables`
+#'   and `diagnostic_ids`; `final_unit_count`; `final_selection_required`;
+#'   list-columns `constraint_codes`, `constraint_messages`, `file_group_ids`, and
 #'   `final_unit_ids`; the selected-name, declared-type, factor, timezone,
 #'   modality, role, data-state, and datetime contract columns also present in
 #'   `compatibility`; `relationship_rule`; `device_rule`; and the fixed
 #'   `standardize_affects_structure = FALSE` assurance.
+#' * `compatibility_diagnostics`: one row per stable diagnostic. Columns are
+#'   `diagnostic_id`, `selection_scope`, `classification`, `code`,
+#'   `variable_name`, `applies_to_current_plan`, list-column
+#'   `prospective_scopes`, `message`, affected group, structure, and unit counts,
+#'   and list-columns `file_group_ids`, `compatibility_ids`, `unit_ids`,
+#'   `union_values`, `union_labels`, and `union_descriptions`.
+#' * `compatibility_diagnostic_groups`: one row per affected diagnostic and
+#'   file-group pair. Columns are `diagnostic_id`, `dataset_id`, stable
+#'   `file_group_id`, `current_status`, `compatibility_id`, `unit_id`,
+#'   `variable_present`, `selected_by_request`, `declaration_position`,
+#'   `declared_type`, and factor value, label, and description list-columns.
 #' * `metadata`: a normalized typed core-metadata snapshot described below.
 #' * `refinement_input`: a compact, serializable input used and validated by
 #'   [glc_collection_refine()]. It contains `schema`, `version`,
 #'   `canonicalization`, `digest_algorithm`, compact `provenance` and `request`
-#'   lists, a `membership` table, plain-list structural `contracts` and
-#'   relationship `groups`, and a SHA-256 `fingerprint`. Consumers should not
-#'   modify or reconstruct it.
+#'   lists, a `membership` table, plain-list structural `contracts`, per-group
+#'   declarations and relationship facts, and a SHA-256 `fingerprint`.
+#'   Consumers should not modify or reconstruct it.
 #'
 #' All tables are tibbles with stable columns, including when they have no rows.
 #' List-columns contain only plain serializable vectors and lists. `print()`
-#' shows a compact package, request, unit, byte, preferred-unit, and assurance
-#' summary and returns the plan invisibly.
+#' shows a compact package, request, unit, diagnostic, harmonization, byte,
+#' preferred-unit, and assurance summary and returns the plan invisibly.
 #'
 #' @section Normalized metadata tables:
 #' `metadata` has schema `"glc-package-metadata"`, version `"1.0.0"`, and the
@@ -2375,8 +2504,9 @@ glc_plan_validate_restrictions <- function(records, request) {
 #' Per-group declaration outcomes are returned rather than thrown. Stable reason
 #' codes are `included`, `scope_dataset`, `scope_file_group`,
 #' `reserved_provenance_column`, `term_missing`, `variable_missing`,
-#' `no_declared_files`, `unsupported_format`, `invalid_timezone`, and
-#' `incomplete_datetime`; each has a plain-language message.
+#' `invalid_factor_contract`, `no_declared_files`, `unsupported_format`,
+#' `invalid_timezone`, and `incomplete_datetime`; each has a plain-language
+#' message.
 #'
 #' Invalid argument types, empty values, duplicates, and inconsistent
 #' `variable_scope`/selector combinations error before planning. Programmatically
@@ -2389,7 +2519,7 @@ glc_plan_validate_restrictions <- function(records, request) {
 #' reported as unknown terms rather than matched ambiguously.
 #'
 #' @return A serializable `glc_collection_plan` object using plan schema
-#'   `"glc-collection-plan"` version `"1.1.0"`, as described in **Return
+#'   `"glc-collection-plan"` version `"1.2.0"`, as described in **Return
 #'   tables**.
 #' @seealso [glc_collection_refine()] for fast in-memory narrowing,
 #'   [glc_variables()] for declared selectors, [glc_read()] for runtime import
@@ -2556,6 +2686,14 @@ glc_collection_plan <- function(
       compatibility_sets = glc_plan_compatibility_sets_table(
         engine$compatibility_sets
       ),
+      compatibility_diagnostics = glc_plan_compatibility_diagnostics_table(
+        engine$diagnostics,
+        records
+      ),
+      compatibility_diagnostic_groups = glc_plan_compatibility_diagnostic_groups_table(
+        engine$diagnostics,
+        records
+      ),
       metadata = metadata_snapshot$metadata,
       refinement_input = refinement_input
     ),
@@ -2618,6 +2756,25 @@ print.glc_collection_plan <- function(x, ...) {
     " included, ",
     excluded,
     " excluded group(s)\n",
+    sep = ""
+  )
+  safe_diagnostics <- sum(
+    x$compatibility_diagnostics$classification == "safely_harmonizable"
+  )
+  blocking_diagnostics <- sum(
+    x$compatibility_diagnostics$classification == "blocking"
+  )
+  harmonized_structures <- sum(
+    x$compatibility_sets$harmonization_required
+  )
+  cat(
+    "Compatibility: ",
+    safe_diagnostics,
+    " safely harmonizable, ",
+    blocking_diagnostics,
+    " blocking diagnostic(s); ",
+    harmonized_structures,
+    " active harmonized structure(s)\n",
     sep = ""
   )
   cat(

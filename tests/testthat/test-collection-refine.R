@@ -98,6 +98,27 @@ make_collection_refine_factor_fixture <- function() {
   root
 }
 
+make_collection_refine_factor_union_fixture <- function() {
+  root <- make_glc_fixture("3.0.2")
+  datasets <- fixture_read_datasets(root)
+  first <- datasets[[1L]]
+  second <- first
+  first$dataset_internal_id <- "DS1"
+  second$dataset_internal_id <- "DS2"
+  first$dataset_file[[1L]]$dataset_file_names <- list("data/files/one.csv")
+  second$dataset_file[[1L]]$dataset_file_names <- list("data/files/two.csv")
+  second$dataset_file[[1L]]$dataset_file_variables[[4L]][[
+    "dataset_file_variables_factor_levels"
+  ]] <- c(
+    second$dataset_file[[1L]]$dataset_file_variables[[4L]][[
+      "dataset_file_variables_factor_levels"
+    ]],
+    list(list(value = "maybe", label = "Maybe"))
+  )
+  fixture_write_datasets(root, list(first, second))
+  root
+}
+
 test_that("refinement is lightweight and matches a fresh restricted plan", {
   package <- collection_refine_validated_package(
     make_collection_refine_device_fixture()
@@ -121,8 +142,8 @@ test_that("refinement is lightweight and matches a fresh restricted plan", {
     get("print.glc_collection_refinement", envir = asNamespace("glcdp"))
   )
   expect_equal(nrow(parent$compatibility_sets), 1L)
-  expect_equal(nrow(parent$units), 2L)
-  expect_true(parent$compatibility_sets$final_selection_required)
+  expect_equal(nrow(parent$units), 1L)
+  expect_false(parent$compatibility_sets$final_selection_required)
   compatibility_id <- parent$compatibility_sets$compatibility_id[[1L]]
 
   selected <- "DS1:1"
@@ -199,6 +220,9 @@ test_that("refinement is lightweight and matches a fresh restricted plan", {
       "known_file_count",
       "unknown_file_count",
       "declared_bytes_complete",
+      "harmonization_required",
+      "harmonized_variables",
+      "diagnostic_ids",
       "file_group_ids"
     )
   )
@@ -230,7 +254,7 @@ test_that("refinement is lightweight and matches a fresh restricted plan", {
     refinement$refinement_schema,
     "glc-collection-refinement"
   )
-  expect_identical(refinement$refinement_version, "1.0.0")
+  expect_identical(refinement$refinement_version, "1.1.0")
   expect_identical(refinement$compatibility_id, compatibility_id)
   expect_identical(explicit, refinement)
   expect_false(refinement$final_selection_required)
@@ -267,7 +291,7 @@ test_that("refinement is lightweight and matches a fresh restricted plan", {
   expect_match(printed, "no package or network access", fixed = TRUE)
 })
 
-test_that("refinement reruns device allocation deterministically", {
+test_that("refinement retains file-group-scoped devices deterministically", {
   package <- collection_refine_validated_package(
     make_collection_refine_device_fixture()
   )
@@ -282,12 +306,11 @@ test_that("refinement reruns device allocation deterministically", {
   )
 
   expect_identical(reordered, refinement)
-  expect_true(refinement$final_selection_required)
-  expect_equal(nrow(refinement$units), 2L)
+  expect_false(refinement$final_selection_required)
+  expect_equal(nrow(refinement$units), 1L)
   expect_identical(refinement$units, fresh$units)
   expect_identical(refinement$preferred_unit_id, fresh$preferred_unit_id)
-  expect_identical(refinement$constraints$code, "device_slot_allocation")
-  expect_false(refinement$constraints$resolved)
+  expect_equal(nrow(refinement$constraints), 0L)
   expect_identical(
     unique(refinement$groups$compatibility_id),
     parent$compatibility_sets$compatibility_id
@@ -297,6 +320,43 @@ test_that("refinement reruns device allocation deterministically", {
   expect_false(one_device$final_selection_required)
   expect_equal(nrow(one_device$units), 1L)
   expect_identical(one_device$compatibility_id, refinement$compatibility_id)
+})
+
+test_that("refinement recomputes active factor unions without package access", {
+  package <- collection_refine_validated_package(
+    make_collection_refine_factor_union_fixture()
+  )
+  parent <- glc_collection_plan(package, variable_scope = "all")
+  compatibility_id <- parent$compatibility_sets$compatibility_id[[1L]]
+
+  expect_equal(nrow(parent$compatibility_sets), 1L)
+  expect_equal(nrow(parent$units), 1L)
+  expect_true(parent$units$harmonization_required)
+  expect_identical(parent$units$harmonized_variables[[1L]], "quality")
+
+  selected <- c("DS2:1", "DS1:1")
+  refinement <- glc_collection_refine(parent, selected)
+  reordered <- glc_collection_refine(parent, rev(selected))
+  fresh <- glc_collection_plan(
+    package,
+    variable_scope = "all",
+    file_group = selected
+  )
+  expect_identical(refinement, reordered)
+  expect_identical(refinement$units, fresh$units)
+  expect_identical(refinement$compatibility_id, compatibility_id)
+  expect_true(refinement$units$harmonization_required)
+  expect_false(refinement$final_selection_required)
+
+  narrowed <- glc_collection_refine(parent, "DS1:1")
+  narrowed_fresh <- glc_collection_plan(
+    package,
+    variable_scope = "all",
+    file_group = "DS1:1"
+  )
+  expect_identical(narrowed$units, narrowed_fresh$units)
+  expect_identical(narrowed$compatibility_id, compatibility_id)
+  expect_false(narrowed$units$harmonization_required)
 })
 
 test_that("refinement preserves each original variable request", {
@@ -489,11 +549,13 @@ test_that("public collection help matches the exported safe workflow", {
 
   plan_text <- collection_rd_text(plan_rd)
   refine_text <- collection_rd_text(refine_rd)
-  expect_match(plan_text, "glc-collection-plan.*1.1.0")
+  expect_match(plan_text, "glc-collection-plan.*1.2.0")
   expect_match(plan_text, "compatibility_sets", fixed = TRUE)
+  expect_match(plan_text, "compatibility_diagnostics", fixed = TRUE)
   expect_match(plan_text, "glc-package-metadata", fixed = TRUE)
   expect_match(plan_text, "refinement_input", fixed = TRUE)
   expect_match(refine_text, "glc-collection-refinement", fixed = TRUE)
+  expect_match(refine_text, "1.1.0", fixed = TRUE)
   expect_match(refine_text, "zero-access", ignore.case = TRUE)
   expect_match(refine_text, "final_selection_required", fixed = TRUE)
   expect_match(refine_text, "parent plan", ignore.case = TRUE)

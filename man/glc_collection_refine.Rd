@@ -38,27 +38,30 @@ narrowing. Build \code{\link[=glc_collection_plan]{glc_collection_plan()}} once,
 tables in \code{plan$groups} and \code{plan$metadata}. Pass only the resulting stable
 file-group ids to this function. Input order does not affect the result.
 
-Refinement reapplies the stored relationship and device-slot rules and
-creates request-sensitive final unit ids. Its \code{units} table is identical to
+Refinement reapplies the stored structural and relationship rules, recomputes
+the active deterministic factor union, and creates request-sensitive final
+unit ids. Its \code{units} table is identical to
 a fresh \code{\link[=glc_collection_plan]{glc_collection_plan()}} call with the parent's original term,
 variable, dataset, and standardization request and with \code{file_group} set to
 the refined ids. The restriction-stable \code{compatibility_id} is retained. No
 full variable or metadata tables are rebuilt.
 
-A result with more than one final unit has \code{final_selection_required = TRUE}
-and an unresolved \code{"device_slot_allocation"} constraint. Narrow the stable
-group ids again and refine again. A deterministic \code{preferred_unit_id} is
-reported for display parity, but it does not override the final-selection
-gate.
+Device identity remains linked by stable file-group id, so different devices
+in one dataset do not split otherwise compatible groups. A safe active factor
+union is reported through the unit's \code{harmonization_required} and
+\code{harmonized_variables} fields. \code{glc_read()} and \code{glc_collect()} still validate
+actual source values and apply the same union before binding.
 }
 \section{Validation and conditions}{
 
-Refinement supports plan schema \code{"glc-collection-plan"} version \code{"1.1.0"}
+Refinement supports plan schema \code{"glc-collection-plan"} version \code{"1.2.0"}
 and refinement-input schema \code{"glc-collection-refinement-input"} version
-\code{"1.0.0"}. It verifies the compact input fingerprint and checks it against
+\code{"1.1.0"}. It verifies the compact input fingerprint and checks it against
 the parent plan's provenance, request, and group membership. The fingerprint
-covers only facts needed for refinement, not the larger normalized metadata
-snapshot, so validation does not rehash the complete plan.
+covers the structural-family contract, each member's declared factor contract,
+and relationship facts needed for refinement. It does not cover the larger
+normalized metadata snapshot, so validation does not rehash the complete plan.
+Earlier plan versions do not contain these facts and must be planned again.
 
 All refinement errors inherit from \code{glcdp_collection_refine_error}.
 More specific subclasses are:
@@ -99,7 +102,7 @@ not probed, and measurement contents were neither transferred nor inspected.
 
 The result is a plain serializable list with class
 \code{glc_collection_refinement}, schema \code{"glc-collection-refinement"}, and
-version \code{"1.0.0"}. It contains:
+version \code{"1.1.0"}. It contains:
 \itemize{
 \item \code{parent}: \code{plan_schema}, \code{plan_version}, and the validated refinement-input
 \code{fingerprint} linking this result to the retained parent plan;
@@ -111,7 +114,7 @@ the parent's compact \code{original} request;
 measurement-transfer, measurement-inspection, and final-validation fields;
 \item \code{compatibility_id}, \code{final_selection_required}, and \code{preferred_unit_id};
 \item \code{units}: the same stable final-unit columns documented for
-\code{\link[=glc_collection_plan]{glc_collection_plan()}};
+\code{\link[=glc_collection_plan]{glc_collection_plan()}}, including active factor harmonization fields;
 \item \code{groups}: \code{status}, \code{unit_id}, \code{compatibility_id}, \code{dataset_id}, integer
 \code{file_group}, stable \code{file_group_id}, \code{study_id}, \code{participant_id},
 \code{participant_associated}, \code{study_link_status}, \code{participant_link_status},

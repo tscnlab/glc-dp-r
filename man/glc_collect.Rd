@@ -22,9 +22,27 @@ the dataset id, \code{file_group_id} identifies the source file group,
 }
 \description{
 Explicitly combines file-group tibbles after checking their columns, types,
-factor-level contracts, time zones, modalities, roles, data states, and
-relationship consistency. Multiple non-missing device links within one
-dataset are rejected.
+factor contracts, time zones, modalities, roles, data states, and relationship
+consistency. Compatible unordered factor declarations are harmonized with the
+same deterministic union used by \code{\link[=glc_collection_plan]{glc_collection_plan()}}. Conflicting value,
+label, description, or order mappings remain blocking. Distinct stable file
+groups in one dataset may reference different devices because device identity
+is resolved by \code{file_group_id}.
+}
+\details{
+Collections returned by current \code{\link[=glc_read]{glc_read()}} carry fingerprinted raw factor
+declarations. \code{glc_collect()} first verifies those facts against each parsed
+factor, computes a safe active union, and recasts the factors before binding.
+Invalid, changed, or conflicting contracts use condition classes
+\code{glcdp_factor_contract_invalid}, \code{glcdp_factor_contract_tampered}, or
+\code{glcdp_factor_harmonization_conflict}. The latter also inherits from
+\code{glcdp_incompatible_collection}. Legacy \code{glc_data_collection} objects without
+a factor-contract payload retain strict exact factor-level comparison.
+
+A repeated \code{file_group_id} must still have one consistent dataset, study,
+participant, and device relationship. Each dataset must retain consistent
+study and participant relationships. These runtime checks are not weakened by
+file-group-scoped device identity.
 }
 \examples{
 \dontshow{if (interactive()) withAutoprint(\{ # examplesIf}

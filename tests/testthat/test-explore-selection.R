@@ -579,6 +579,7 @@ test_that("compatibility detects every blocking group difference", {
   )
 
   factor_levels <- groups
+  factor_levels$variables[[1L]]$type[[2L]] <- "factor"
   factor_levels$variables[[1L]]$factor_values <- list(
     character(),
     c("low", "high")
@@ -587,6 +588,7 @@ test_that("compatibility detects every blocking group difference", {
     character(),
     c("Low", "High")
   )
+  factor_levels$variables[[2L]]$type[[2L]] <- "factor"
   factor_levels$variables[[2L]]$factor_values <- list(
     character(),
     c("high", "low")
@@ -686,16 +688,16 @@ test_that("compatibility detects every blocking group difference", {
 
   multiple_devices <- groups
   multiple_devices$dataset_id[[2L]] <- "DS1"
-  expect_match(
-    paste(
-      glcdp:::glc_explorer_selection_compatibility(
-        multiple_devices,
-        c("timestamp", "lux")
-      )$issues
-    ),
-    "one dataset to multiple devices",
-    fixed = TRUE
+  device_compatibility <- glcdp:::glc_explorer_selection_compatibility(
+    multiple_devices,
+    c("timestamp", "lux")
   )
+  expect_true(device_compatibility$ok)
+  expect_false(any(grepl(
+    "multiple devices",
+    device_compatibility$issues,
+    fixed = TRUE
+  )))
 })
 
 test_that("compatibility ignores differing collection datetime values", {
@@ -911,7 +913,7 @@ test_that("selection narrowing maps to canonical planner restrictions", {
   expect_match(script, "source_terms <- NULL", fixed = TRUE)
 })
 
-test_that("automatic compatibility keeps at most one device per dataset", {
+test_that("automatic compatibility retains file-group-scoped devices", {
   groups <- dplyr::bind_rows(
     selection_group("DS1", "DS1:1", "D1"),
     selection_group("DS1", "DS1:2", "D2"),
@@ -925,9 +927,12 @@ test_that("automatic compatibility keeps at most one device per dataset", {
 
   expect_true(filtered$active)
   expect_equal(filtered$candidate_count, 3L)
-  expect_equal(filtered$included_count, 2L)
-  expect_equal(filtered$excluded_count, 1L)
-  expect_equal(filtered$groups$file_group_id, c("DS1:1", "DS2:1"))
+  expect_equal(filtered$included_count, 3L)
+  expect_equal(filtered$excluded_count, 0L)
+  expect_equal(
+    filtered$groups$file_group_id,
+    c("DS1:1", "DS1:2", "DS2:1")
+  )
 })
 
 test_that("selection paths and generated R scripts are deterministic and safe", {

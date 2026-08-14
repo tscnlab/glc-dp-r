@@ -204,10 +204,17 @@ glc_cast_variable <- function(value, variable, locale, mode) {
     numeric = suppressWarnings(readr::parse_double(original, locale = locale)),
     integer = suppressWarnings(readr::parse_integer(original, locale = locale)),
     factor = {
-      levels <- variable$factor_levels
-      values <- vapply(levels, function(level) level$value, character(1))
-      labels <- vapply(levels, function(level) level$label, character(1))
-      factor(original, levels = values, labels = labels)
+      contract <- glc_factor_contract_variable(variable)
+      issue <- glc_factor_contract_issue(contract)
+      if (!is.null(issue)) {
+        glc_abort(issue$message, class = "glcdp_factor_contract_invalid")
+      }
+      factor(
+        original,
+        levels = contract$factor_values,
+        labels = contract$factor_labels,
+        ordered = contract$ordered
+      )
     },
     guess = suppressWarnings(readr::parse_guess(original, locale = locale)),
     glc_abort(
@@ -560,8 +567,17 @@ glc_inform_local_subset <- function(x) {
 #' a local package contains fewer datasets or files than declared,
 #' `glc_read()` reports the discrepancy and reads the available files.
 #'
+#' Each returned file-group row includes a plain serializable `factor_contract`
+#' payload for the selected variables. It preserves raw factor values, effective
+#' labels, descriptions, unordered status, schema version, and a SHA-256
+#' fingerprint. [glc_collect()] validates this payload against the parsed data
+#' before applying any safe factor-level union. Invalid declarations error with
+#' class `glcdp_factor_contract_invalid`; changed payloads or parsed factors are
+#' rejected later with class `glcdp_factor_contract_tampered`.
+#'
 #' @return A `glc_data_collection` tibble with one data list-column per file
-#'   group.
+#'   group and one serializable `factor_contract` list-column. The contract
+#'   contains no package handle, token, cache path, or temporary path.
 #' @export
 #'
 #' @examplesIf interactive()
@@ -625,6 +641,23 @@ glc_read <- function(
         next
       if (!glc_group_matches_variables(group, variables, terms, primary_only))
         next
+      selection <- glc_selected_variable_names(
+        group,
+        variables,
+        terms,
+        primary_only
+      )
+      variable_names <- vapply(
+        group$variables,
+        function(variable) variable$name,
+        character(1)
+      )
+      selected_variables <- group$variables[match(
+        selection$names,
+        variable_names
+      )]
+      factor_contract <- glc_runtime_factor_contract(selected_variables)
+      glc_validate_runtime_factor_contract(factor_contract)
       group_files <- group$files
       group_file_indices <- seq_along(group_files)
       resolved_all <- vapply(
@@ -653,7 +686,8 @@ glc_read <- function(
         dataset = dataset,
         group = group,
         resolved = resolved,
-        encodings = group$encodings[group_file_indices]
+        encodings = group$encodings[group_file_indices],
+        factor_contract = factor_contract
       )
     }
   }
@@ -731,6 +765,7 @@ glc_read <- function(
       datetime_time = group$datetime$time,
       datetime_time_format = group$datetime$time_format,
       primary_variables = list(group$primary_variables),
+      factor_contract = list(selection$factor_contract),
       files = list(resolved),
       data = list(combined)
     )

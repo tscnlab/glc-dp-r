@@ -50,7 +50,7 @@ compatibility partition.}
 }
 \value{
 A serializable \code{glc_collection_plan} object using plan schema
-\code{"glc-collection-plan"} version \code{"1.1.0"}, as described in \strong{Return
+\code{"glc-collection-plan"} version \code{"1.2.0"}, as described in \strong{Return
 tables}.
 }
 \description{
@@ -75,36 +75,53 @@ produce different unit identifiers.
 }
 \section{Structural compatibility and final units}{
 
-Included groups are first partitioned by selected source names and declaration
-order, declared types, factor values and labels in declaration order, time
-zone, ordered modalities, role, data state, and datetime contract.
-Collection-based datetime values are record-specific and are ignored when
-comparing otherwise identical collection-based contracts.
+Included groups are first compared by selected source names and declaration
+order, declared types, time zone, ordered modalities, role, data state, and
+datetime contract. Collection-based datetime values are record-specific and
+are ignored when comparing otherwise identical collection-based contracts.
+
+Unordered factor declarations can share a structural set when their raw
+values have compatible effective labels and descriptions and their declared
+order constraints form an acyclic graph. An absent label means the raw value;
+no text normalization or semantic inference is performed. The union order is
+deterministic and preserves every declared order constraint. Duplicate raw
+values, ambiguous labels, conflicting labels or non-missing descriptions,
+cyclic order constraints, and unsupported ordered factors remain blocking.
+Blocking families retain exact factor-contract partitions.
 
 Each structural set has a \code{compatibility_id} beginning with \code{"glcc_"}. It is
-a SHA-256 digest of length-prefixed canonical UTF-8 text containing the exact
-package identity, repository, source revision, package schema, and structural
-contract. It does not contain current membership, \code{dataset_id} or
-\code{file_group} restrictions, metadata facets, \code{standardize}, or device-slot
-allocation. The identifier therefore stays the same when an unchanged
-contract is narrowed at the same package revision. Wearing position, device
-location or type, participant characteristics, file description, site
-context, and other descriptive metadata do not split structural sets.
+a version 2 SHA-256 digest of length-prefixed canonical UTF-8 text containing
+the exact package identity, repository, source revision, package schema, and
+the full structural-family contract computed before \code{dataset_id} and
+\code{file_group} restrictions are applied. It does not contain current membership,
+restrictions, metadata facets, or \code{standardize}. The identifier therefore
+stays the same when an unchanged family is narrowed at the same package
+revision. Wearing position, device identity or location, participant
+characteristics, file description, site context, and other descriptive
+metadata do not split structural sets.
 
-A structural set is not itself declared finally collectable. Relationship
-allocation is applied next. Final units enforce consistent dataset and
-file-group links and permit at most one non-missing device per dataset. A
-structural set can therefore map to multiple final units. In that case,
-\code{final_selection_required} is \code{TRUE} and \code{constraint_codes} contains
-\code{"device_slot_allocation"}.
+Final units enforce consistent stable file-group relationships and dataset
+study and participant relationships. Device identity is file-group-scoped,
+so distinct file groups in one dataset may reference different devices while
+remaining in one final unit. The active factor union is recomputed after
+restrictions. \code{\link[=glc_read]{glc_read()}} carries the raw declaration contract and
+\code{\link[=glc_collect]{glc_collect()}} validates and applies the same union to actual factors.
 
-Existing final unit identifiers retain their version 1.0 canonical identity.
-A \code{unit_id} begins with \code{"glcu_"} and hashes the package and revision, the
-normalized request including restrictions and \code{standardize}, the structural
-contract, and sorted member file-group identifiers. Final unit ids are thus
-request- and membership-sensitive, while structural ids are restriction
-stable. Both use canonical UTF-8 text rather than R serialized-object bytes,
-and both their values and table order are stable under input row reordering.
+A \code{unit_id} begins with \code{"glcu_"} and uses version 2 canonical identity. It
+hashes the package and revision, normalized request including restrictions
+and \code{standardize}, active structural contract, and sorted member file-group
+identifiers. Final unit ids are request- and membership-sensitive, while
+structural ids are restriction stable. Both use canonical UTF-8 text rather
+than R serialized-object bytes, and their values and table order are stable
+under input row reordering. Version 2 identifiers deliberately differ from
+earlier identifiers because factor equivalence and device allocation rules
+changed.
+
+\code{compatibility_diagnostics} explains safe unions and blocking differences.
+Selected-variable diagnostics describe the current partition. Non-selected
+diagnostics disclose what would require harmonization or block a later
+expanded variable request without selecting those variables now. Re-plan an
+expanded request before reading or collecting additional variables.
 }
 
 \section{Declaration-only assurance}{
@@ -130,10 +147,11 @@ A unit's \code{declared_bytes} is the sum of known sizes, and
 \code{declared_bytes_complete} records whether every file size is known.
 
 Compatibility is an assurance about validated declarations, not downloaded
-values. Actual columns, parsed classes, factor values, datetime values, and
+values. Actual columns, parsed classes and factor values, datetime values, and
 output-column collisions can only be checked after reading. \code{\link[=glc_read]{glc_read()}}
-remains authoritative for source-file validation, and \code{\link[=glc_collect]{glc_collect()}} remains
-authoritative for final collection compatibility and standardization.
+remains authoritative for source-file validation. \code{\link[=glc_collect]{glc_collect()}} validates
+the preserved raw factor declarations, harmonizes only safe unions, and
+remains authoritative for final compatibility and standardization.
 }
 
 \section{Missing values and relationship links}{
@@ -190,7 +208,8 @@ groups, then the lexically smallest unit id.
 \item \code{units}: one row per final unit. Columns are \code{unit_id},
 \code{compatibility_id}, \code{preferred}, \code{dataset_count}, \code{file_group_count},
 \code{variable_count}, \code{file_count}, \code{declared_bytes}, \code{known_file_count},
-\code{unknown_file_count}, \code{declared_bytes_complete}, and list-column
+\code{unknown_file_count}, \code{declared_bytes_complete}, \code{harmonization_required},
+and list-columns \code{harmonized_variables}, \code{diagnostic_ids}, and
 \code{file_group_ids}.
 \item \code{groups}: one row per declared file group. Columns are \code{status}, \code{unit_id},
 \code{compatibility_id}, \code{dataset_id}, integer declaration index \code{file_group},
@@ -225,8 +244,10 @@ still subject to \code{\link[=glc_collect]{glc_collect()}} validation.
 are \code{status}, \code{unit_id}, \code{dataset_id}, \code{file_group_id}, \code{position},
 \code{declared_path}, \code{format}, \code{encoding}, \code{declared_bytes}, and \code{bytes_known}.
 \item \code{compatibility}: one row per unit. Columns are \code{unit_id}, list-columns
-\code{selected_names}, \code{declared_types}, \code{factor_values}, and \code{factor_labels},
-\code{timezone}, list-column \code{modalities}, \code{role}, \code{data_state},
+\code{selected_names}, \code{declared_types}, \code{factor_values}, \code{factor_labels}, and
+\code{factor_descriptions}, \code{harmonization_required}, list-columns
+\code{harmonized_variables} and \code{diagnostic_ids}, \code{timezone}, list-column
+\code{modalities}, \code{role}, \code{data_state},
 \code{datetime_source}, \code{datetime_signature}, \code{datetime_date},
 \code{datetime_format}, \code{datetime_time}, \code{datetime_time_format},
 \code{collection_values_ignored}, \code{relationship_rule}, \code{device_rule},
@@ -237,25 +258,37 @@ assurance.
 fields in the plain list-column \code{metadata}.
 \item \code{compatibility_sets}: one row per structural set. Columns are
 \code{compatibility_id}, dataset, file-group, variable, and file counts; byte
-summaries; \code{final_unit_count}; \code{final_selection_required}; list-columns
-\code{constraint_codes}, \code{constraint_messages}, \code{file_group_ids}, and
+summaries; \code{harmonization_required}; list-columns \code{harmonized_variables}
+and \code{diagnostic_ids}; \code{final_unit_count}; \code{final_selection_required};
+list-columns \code{constraint_codes}, \code{constraint_messages}, \code{file_group_ids}, and
 \code{final_unit_ids}; the selected-name, declared-type, factor, timezone,
 modality, role, data-state, and datetime contract columns also present in
 \code{compatibility}; \code{relationship_rule}; \code{device_rule}; and the fixed
 \code{standardize_affects_structure = FALSE} assurance.
+\item \code{compatibility_diagnostics}: one row per stable diagnostic. Columns are
+\code{diagnostic_id}, \code{selection_scope}, \code{classification}, \code{code},
+\code{variable_name}, \code{applies_to_current_plan}, list-column
+\code{prospective_scopes}, \code{message}, affected group, structure, and unit counts,
+and list-columns \code{file_group_ids}, \code{compatibility_ids}, \code{unit_ids},
+\code{union_values}, \code{union_labels}, and \code{union_descriptions}.
+\item \code{compatibility_diagnostic_groups}: one row per affected diagnostic and
+file-group pair. Columns are \code{diagnostic_id}, \code{dataset_id}, stable
+\code{file_group_id}, \code{current_status}, \code{compatibility_id}, \code{unit_id},
+\code{variable_present}, \code{selected_by_request}, \code{declaration_position},
+\code{declared_type}, and factor value, label, and description list-columns.
 \item \code{metadata}: a normalized typed core-metadata snapshot described below.
 \item \code{refinement_input}: a compact, serializable input used and validated by
 \code{\link[=glc_collection_refine]{glc_collection_refine()}}. It contains \code{schema}, \code{version},
 \code{canonicalization}, \code{digest_algorithm}, compact \code{provenance} and \code{request}
-lists, a \code{membership} table, plain-list structural \code{contracts} and
-relationship \code{groups}, and a SHA-256 \code{fingerprint}. Consumers should not
-modify or reconstruct it.
+lists, a \code{membership} table, plain-list structural \code{contracts}, per-group
+declarations and relationship facts, and a SHA-256 \code{fingerprint}.
+Consumers should not modify or reconstruct it.
 }
 
 All tables are tibbles with stable columns, including when they have no rows.
 List-columns contain only plain serializable vectors and lists. \code{print()}
-shows a compact package, request, unit, byte, preferred-unit, and assurance
-summary and returns the plan invisibly.
+shows a compact package, request, unit, diagnostic, harmonization, byte,
+preferred-unit, and assurance summary and returns the plan invisibly.
 }
 
 \section{Normalized metadata tables}{
@@ -326,8 +359,9 @@ fields. Standard fields never require parsing this column.
 Per-group declaration outcomes are returned rather than thrown. Stable reason
 codes are \code{included}, \code{scope_dataset}, \code{scope_file_group},
 \code{reserved_provenance_column}, \code{term_missing}, \code{variable_missing},
-\code{no_declared_files}, \code{unsupported_format}, \code{invalid_timezone}, and
-\code{incomplete_datetime}; each has a plain-language message.
+\code{invalid_factor_contract}, \code{no_declared_files}, \code{unsupported_format},
+\code{invalid_timezone}, and \code{incomplete_datetime}; each has a plain-language
+message.
 
 Invalid argument types, empty values, duplicates, and inconsistent
 \code{variable_scope}/selector combinations error before planning. Programmatically

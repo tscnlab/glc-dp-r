@@ -1219,10 +1219,7 @@ glc_explorer_selection_compatibility <- function(
     modalities = "Included file groups use different modalities.",
     role = "Included file groups use different file roles.",
     data_state = "Included file groups use different data states.",
-    datetime = "Included file groups use different datetime specifications.",
-    device_relationship = paste0(
-      "Included file groups link one dataset to multiple devices."
-    )
+    datetime = "Included file groups use different datetime specifications."
   )
   if (length(differences) > 0L) {
     issues <- c(issues, unname(difference_messages[differences]))

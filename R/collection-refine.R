@@ -3,7 +3,7 @@ glc_collection_refinement_schema <- function() {
 }
 
 glc_collection_refinement_version <- function() {
-  "1.0.0"
+  "1.1.0"
 }
 
 glc_collection_refinement_input_schema <- function() {
@@ -11,11 +11,11 @@ glc_collection_refinement_input_schema <- function() {
 }
 
 glc_collection_refinement_input_version <- function() {
-  "1.0.0"
+  "1.1.0"
 }
 
 glc_collection_refine_supported_plan_versions <- function() {
-  "1.1.0"
+  "1.2.0"
 }
 
 glc_plan_refinement_group <- function(record) {
@@ -31,6 +31,9 @@ glc_plan_refinement_group <- function(record) {
     device_id = record$device_id,
     device_link_status = record$device_link_status,
     compatibility_id = record$compatibility_id,
+    declared_compatibility = record$declared_compatibility,
+    family_compatibility = record$family_compatibility,
+    diagnostic_ids = record$diagnostic_ids %||% character(),
     files = lapply(record$files, function(file) {
       list(declared_bytes = file$declared_bytes)
     })
@@ -51,7 +54,7 @@ glc_plan_refinement_contracts <- function(records) {
     index <- which(compatibility_ids == compatibility_id)[[1L]]
     list(
       compatibility_id = compatibility_id,
-      compatibility = glc_plan_declared_compatibility(records[[index]])
+      compatibility = records[[index]]$family_compatibility
     )
   })
 }
@@ -384,18 +387,7 @@ glc_collection_refine_empty_constraints <- function() {
 }
 
 glc_collection_refine_constraints <- function(compatibility_id, units) {
-  if (length(units) <= 1L) {
-    return(glc_collection_refine_empty_constraints())
-  }
-  tibble::tibble(
-    compatibility_id = compatibility_id,
-    code = "device_slot_allocation",
-    message = paste0(
-      "The narrowed groups still require multiple final units because one ",
-      "dataset links groups to more than one non-missing device."
-    ),
-    resolved = FALSE
-  )
+  glc_collection_refine_empty_constraints()
 }
 
 glc_collection_refine_groups_table <- function(records) {
@@ -507,26 +499,29 @@ glc_collection_refine_groups_table <- function(records) {
 #' tables in `plan$groups` and `plan$metadata`. Pass only the resulting stable
 #' file-group ids to this function. Input order does not affect the result.
 #'
-#' Refinement reapplies the stored relationship and device-slot rules and
-#' creates request-sensitive final unit ids. Its `units` table is identical to
+#' Refinement reapplies the stored structural and relationship rules, recomputes
+#' the active deterministic factor union, and creates request-sensitive final
+#' unit ids. Its `units` table is identical to
 #' a fresh [glc_collection_plan()] call with the parent's original term,
 #' variable, dataset, and standardization request and with `file_group` set to
 #' the refined ids. The restriction-stable `compatibility_id` is retained. No
 #' full variable or metadata tables are rebuilt.
 #'
-#' A result with more than one final unit has `final_selection_required = TRUE`
-#' and an unresolved `"device_slot_allocation"` constraint. Narrow the stable
-#' group ids again and refine again. A deterministic `preferred_unit_id` is
-#' reported for display parity, but it does not override the final-selection
-#' gate.
+#' Device identity remains linked by stable file-group id, so different devices
+#' in one dataset do not split otherwise compatible groups. A safe active factor
+#' union is reported through the unit's `harmonization_required` and
+#' `harmonized_variables` fields. `glc_read()` and `glc_collect()` still validate
+#' actual source values and apply the same union before binding.
 #'
 #' @section Validation and conditions:
-#' Refinement supports plan schema `"glc-collection-plan"` version `"1.1.0"`
+#' Refinement supports plan schema `"glc-collection-plan"` version `"1.2.0"`
 #' and refinement-input schema `"glc-collection-refinement-input"` version
-#' `"1.0.0"`. It verifies the compact input fingerprint and checks it against
+#' `"1.1.0"`. It verifies the compact input fingerprint and checks it against
 #' the parent plan's provenance, request, and group membership. The fingerprint
-#' covers only facts needed for refinement, not the larger normalized metadata
-#' snapshot, so validation does not rehash the complete plan.
+#' covers the structural-family contract, each member's declared factor contract,
+#' and relationship facts needed for refinement. It does not cover the larger
+#' normalized metadata snapshot, so validation does not rehash the complete plan.
+#' Earlier plan versions do not contain these facts and must be planned again.
 #'
 #' All refinement errors inherit from `glcdp_collection_refine_error`.
 #' More specific subclasses are:
@@ -562,7 +557,7 @@ glc_collection_refine_groups_table <- function(records) {
 #' @section Return structure:
 #' The result is a plain serializable list with class
 #' `glc_collection_refinement`, schema `"glc-collection-refinement"`, and
-#' version `"1.0.0"`. It contains:
+#' version `"1.1.0"`. It contains:
 #'
 #' * `parent`: `plan_schema`, `plan_version`, and the validated refinement-input
 #'   `fingerprint` linking this result to the retained parent plan;
@@ -574,7 +569,7 @@ glc_collection_refine_groups_table <- function(records) {
 #'   measurement-transfer, measurement-inspection, and final-validation fields;
 #' * `compatibility_id`, `final_selection_required`, and `preferred_unit_id`;
 #' * `units`: the same stable final-unit columns documented for
-#'   [glc_collection_plan()];
+#'   [glc_collection_plan()], including active factor harmonization fields;
 #' * `groups`: `status`, `unit_id`, `compatibility_id`, `dataset_id`, integer
 #'   `file_group`, stable `file_group_id`, `study_id`, `participant_id`,
 #'   `participant_associated`, `study_link_status`, `participant_link_status`,
@@ -653,7 +648,8 @@ glc_collection_refine <- function(
       "The group matches the request and has a complete supported declaration."
     ))
     record$unit_id <- NA_character_
-    record$declared_compatibility <- contract
+    record$family_compatibility_id <- compatibility_id
+    record$family_compatibility <- contract
     record
   })
   request <- input$request
@@ -739,6 +735,15 @@ print.glc_collection_refinement <- function(x, ...) {
     "\n",
     sep = ""
   )
+  harmonized <- unique(unlist(x$units$harmonized_variables))
+  if (length(harmonized) > 0L) {
+    cat(
+      "Harmonized variables: ",
+      paste(glc_plan_sort_utf8(harmonized), collapse = ", "),
+      "\n",
+      sep = ""
+    )
+  }
   cat("Assurance: stored declarations only; no package or network access\n")
   invisible(x)
 }

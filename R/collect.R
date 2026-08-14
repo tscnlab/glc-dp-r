@@ -23,6 +23,124 @@ glc_factor_level_contracts <- function(data, columns) {
   })
 }
 
+glc_runtime_type_matches <- function(column, type) {
+  switch(
+    type,
+    string = is.character(column),
+    boolean = is.logical(column),
+    numeric = is.double(column),
+    integer = is.integer(column),
+    factor = is.factor(column),
+    guess = TRUE,
+    FALSE
+  )
+}
+
+glc_collection_validate_factor_payload <- function(payload, data) {
+  payload <- glc_validate_runtime_factor_contract(payload)
+  columns <- names(data)[!startsWith(names(data), ".glc_")]
+  variable_names <- vapply(
+    payload$variables,
+    function(variable) {
+      variable$name
+    },
+    character(1)
+  )
+  if (!identical(columns, variable_names)) {
+    glc_abort(
+      "The collection data columns do not match their factor-contract payload.",
+      class = "glcdp_factor_contract_tampered"
+    )
+  }
+  for (variable in payload$variables) {
+    column <- data[[variable$name]]
+    if (!glc_runtime_type_matches(column, variable$type)) {
+      glc_abort(
+        "Collection variable {.val {variable$name}} no longer matches its declared type.",
+        class = "glcdp_factor_contract_tampered"
+      )
+    }
+    if (identical(variable$type, "factor")) {
+      actual_ordered <- is.ordered(column)
+      if (
+        !identical(actual_ordered, variable$ordered) ||
+          !identical(levels(column), variable$factor_labels)
+      ) {
+        glc_abort(
+          "Collection variable {.val {variable$name}} no longer matches its declared factor levels.",
+          class = "glcdp_factor_contract_tampered"
+        )
+      }
+    }
+  }
+  payload
+}
+
+glc_collection_harmonize_factors <- function(x) {
+  if (!"factor_contract" %in% names(x)) {
+    return(x)
+  }
+  if (!is.list(x$factor_contract) || length(x$factor_contract) != nrow(x)) {
+    glc_abort(
+      "The collection contains an incomplete factor-contract column.",
+      class = "glcdp_factor_contract_invalid"
+    )
+  }
+  payloads <- lapply(seq_len(nrow(x)), function(index) {
+    glc_collection_validate_factor_payload(
+      x$factor_contract[[index]],
+      x$data[[index]]
+    )
+  })
+  variable_names <- lapply(payloads, function(payload) {
+    vapply(payload$variables, function(variable) variable$name, character(1))
+  })
+  if (
+    !all(vapply(
+      variable_names[-1L],
+      identical,
+      logical(1),
+      variable_names[[1L]]
+    ))
+  ) {
+    return(x)
+  }
+  for (position in seq_along(payloads[[1L]]$variables)) {
+    variables <- lapply(payloads, function(payload) {
+      payload$variables[[position]]
+    })
+    types <- unique(vapply(
+      variables,
+      function(variable) {
+        variable$type
+      },
+      character(1)
+    ))
+    if (length(types) != 1L || !identical(types[[1L]], "factor")) {
+      next
+    }
+    union <- glc_factor_union(variables)
+    if (!isTRUE(union$compatible)) {
+      glc_abort(
+        union$message,
+        class = c(
+          "glcdp_factor_harmonization_conflict",
+          "glcdp_incompatible_collection"
+        )
+      )
+    }
+    for (index in seq_len(nrow(x))) {
+      column <- x$data[[index]][[union$variable_name]]
+      x$data[[index]][[union$variable_name]] <- factor(
+        as.character(column),
+        levels = union$variable$factor_labels,
+        ordered = union$variable$ordered
+      )
+    }
+  }
+  x
+}
+
 glc_collection_mismatches <- function(x) {
   reference_data <- x$data[[1L]]
   reference_columns <- names(reference_data)[
@@ -121,23 +239,6 @@ glc_collection_mismatches <- function(x) {
     )
   }
 
-  multi_device_datasets <- dataset_ids[vapply(
-    dataset_ids,
-    function(dataset_id) {
-      rows <- !is.na(x$dataset_id) & x$dataset_id == dataset_id
-      device_ids <- unique(as.character(x$device_id[rows]))
-      device_ids <- device_ids[!is.na(device_ids) & nzchar(device_ids)]
-      length(device_ids) > 1L
-    },
-    logical(1)
-  )]
-  if (length(multi_device_datasets) > 0L) {
-    mismatches <- c(
-      mismatches,
-      paste0("multiple devices for ", multi_device_datasets)
-    )
-  }
-
   datetime_keys <- glc_datetime_compatibility_signature(
     x$datetime_source,
     x$datetime_date,
@@ -197,15 +298,33 @@ glc_add_standard_column <- function(
 #' Collect compatible file groups
 #'
 #' Explicitly combines file-group tibbles after checking their columns, types,
-#' factor-level contracts, time zones, modalities, roles, data states, and
-#' relationship consistency. Multiple non-missing device links within one
-#' dataset are rejected.
+#' factor contracts, time zones, modalities, roles, data states, and relationship
+#' consistency. Compatible unordered factor declarations are harmonized with the
+#' same deterministic union used by [glc_collection_plan()]. Conflicting value,
+#' label, description, or order mappings remain blocking. Distinct stable file
+#' groups in one dataset may reference different devices because device identity
+#' is resolved by `file_group_id`.
 #'
 #' @param x A collection returned by [glc_read()].
 #' @param standardize Either `"lightlogr"` to add the conventional `Id`,
 #'   `file_group_id`, `participant_Id`, `Datetime`, and `file.name` columns and
 #'   remove internal `.glc_*` provenance columns, or `"none"` to retain source
 #'   and provenance columns unchanged.
+#'
+#' @details
+#' Collections returned by current [glc_read()] carry fingerprinted raw factor
+#' declarations. `glc_collect()` first verifies those facts against each parsed
+#' factor, computes a safe active union, and recasts the factors before binding.
+#' Invalid, changed, or conflicting contracts use condition classes
+#' `glcdp_factor_contract_invalid`, `glcdp_factor_contract_tampered`, or
+#' `glcdp_factor_harmonization_conflict`. The latter also inherits from
+#' `glcdp_incompatible_collection`. Legacy `glc_data_collection` objects without
+#' a factor-contract payload retain strict exact factor-level comparison.
+#'
+#' A repeated `file_group_id` must still have one consistent dataset, study,
+#' participant, and device relationship. Each dataset must retain consistent
+#' study and participant relationships. These runtime checks are not weakened by
+#' file-group-scoped device identity.
 #'
 #' @return A combined tibble. In LightLogR-standardized output, `Id` contains
 #'   the dataset id, `file_group_id` identifies the source file group,
@@ -227,6 +346,7 @@ glc_collect <- function(x, standardize = c("lightlogr", "none")) {
     glc_abort("{.arg x} must be returned by {.fn glc_read}.")
   }
   standardize <- match.arg(standardize)
+  x <- glc_collection_harmonize_factors(x)
   mismatches <- glc_collection_mismatches(x)
   if (length(mismatches) > 0L) {
     glc_abort(
