@@ -93,28 +93,31 @@ narrowing. Build <code><a href="glc_collection_plan.html">glc_collection_plan()<
 <code>plan$compatibility_sets</code>, and filter its member groups through the typed
 tables in <code>plan$groups</code> and <code>plan$metadata</code>. Pass only the resulting stable
 file-group ids to this function. Input order does not affect the result.</p>
-<p>Refinement reapplies the stored relationship and device-slot rules and
-creates request-sensitive final unit ids. Its <code>units</code> table is identical to
+<p>Refinement reapplies the stored structural and relationship rules, recomputes
+the active deterministic factor union, and creates request-sensitive final
+unit ids. Its <code>units</code> table is identical to
 a fresh <code><a href="glc_collection_plan.html">glc_collection_plan()</a></code> call with the parent's original term,
 variable, dataset, and standardization request and with <code>file_group</code> set to
 the refined ids. The restriction-stable <code>compatibility_id</code> is retained. No
 full variable or metadata tables are rebuilt.</p>
-<p>A result with more than one final unit has <code>final_selection_required = TRUE</code>
-and an unresolved <code>"device_slot_allocation"</code> constraint. Narrow the stable
-group ids again and refine again. A deterministic <code>preferred_unit_id</code> is
-reported for display parity, but it does not override the final-selection
-gate.</p>
+<p>Device identity remains linked by stable file-group id, so different devices
+in one dataset do not split otherwise compatible groups. A safe active factor
+union is reported through the unit's <code>harmonization_required</code> and
+<code>harmonized_variables</code> fields. <code><a href="glc_read.html">glc_read()</a></code> and <code><a href="glc_collect.html">glc_collect()</a></code> still validate
+actual source values and apply the same union before binding.</p>
     </div>
     <div class="section level2">
     <h2 id="validation-and-conditions">Validation and conditions<a class="anchor" aria-label="anchor" href="#validation-and-conditions"></a></h2>
 
 
-<p>Refinement supports plan schema <code>"glc-collection-plan"</code> version <code>"1.1.0"</code>
+<p>Refinement supports plan schema <code>"glc-collection-plan"</code> version <code>"1.2.0"</code>
 and refinement-input schema <code>"glc-collection-refinement-input"</code> version
-<code>"1.0.0"</code>. It verifies the compact input fingerprint and checks it against
+<code>"1.1.0"</code>. It verifies the compact input fingerprint and checks it against
 the parent plan's provenance, request, and group membership. The fingerprint
-covers only facts needed for refinement, not the larger normalized metadata
-snapshot, so validation does not rehash the complete plan.</p>
+covers the structural-family contract, each member's declared factor contract,
+and relationship facts needed for refinement. It does not cover the larger
+normalized metadata snapshot, so validation does not rehash the complete plan.
+Earlier plan versions do not contain these facts and must be planned again.</p>
 <p>All refinement errors inherit from <code>glcdp_collection_refine_error</code>.
 More specific subclasses are:</p><ul><li><p><code>glcdp_collection_refine_plan</code> for a value that is not a collection plan;</p></li>
 <li><p><code>glcdp_collection_refine_version</code> for an unsupported schema or version;</p></li>
@@ -153,7 +156,7 @@ not probed, and measurement contents were neither transferred nor inspected.
 
 <p>The result is a plain serializable list with class
 <code>glc_collection_refinement</code>, schema <code>"glc-collection-refinement"</code>, and
-version <code>"1.0.0"</code>. It contains:</p><ul><li><p><code>parent</code>: <code>plan_schema</code>, <code>plan_version</code>, and the validated refinement-input
+version <code>"1.1.0"</code>. It contains:</p><ul><li><p><code>parent</code>: <code>plan_schema</code>, <code>plan_version</code>, and the validated refinement-input
 <code>fingerprint</code> linking this result to the retained parent plan;</p></li>
 <li><p><code>provenance</code>: <code>package_id</code>, <code>repository</code>, exact <code>source_revision</code>, and
 <code>package_schema_version</code>;</p></li>
@@ -163,7 +166,7 @@ the parent's compact <code>original</code> request;</p></li>
 measurement-transfer, measurement-inspection, and final-validation fields;</p></li>
 <li><p><code>compatibility_id</code>, <code>final_selection_required</code>, and <code>preferred_unit_id</code>;</p></li>
 <li><p><code>units</code>: the same stable final-unit columns documented for
-<code><a href="glc_collection_plan.html">glc_collection_plan()</a></code>;</p></li>
+<code><a href="glc_collection_plan.html">glc_collection_plan()</a></code>, including active factor harmonization fields;</p></li>
 <li><p><code>groups</code>: <code>status</code>, <code>unit_id</code>, <code>compatibility_id</code>, <code>dataset_id</code>, integer
 <code>file_group</code>, stable <code>file_group_id</code>, <code>study_id</code>, <code>participant_id</code>,
 <code>participant_associated</code>, <code>study_link_status</code>, <code>participant_link_status</code>,

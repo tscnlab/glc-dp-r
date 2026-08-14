@@ -169,14 +169,14 @@ light_collection
 #> <GLC data collection>
 #> File groups: 1
 #> Rows: 10000
-#> # A tibble: 1 × 17
+#> # A tibble: 1 × 18
 #>   dataset_id          file_group file_group_id study_id participant_id device_id
 #>   <chr>                    <int> <chr>         <chr>    <chr>          <chr>    
 #> 1 MELIDOS_IZTECH_S001         17 MELIDOS_IZTE… MELIDOS… IZTECH_S001    IZTECH_A…
-#> # ℹ 11 more variables: modalities <list>, role <chr>, data_state <chr>,
+#> # ℹ 12 more variables: modalities <list>, role <chr>, data_state <chr>,
 #> #   timezone <chr>, datetime_source <chr>, datetime_date <chr>,
 #> #   datetime_format <chr>, datetime_time <chr>, datetime_time_format <chr>,
-#> #   primary_variables <list>, files <list>
+#> #   primary_variables <list>, factor_contract <list>, files <list>
 ```
 
 When `variables` or `terms` are selected, the imported tables contain
@@ -302,14 +302,14 @@ light_collection[, setdiff(names(light_collection), "data")]
 #> File groups: 1
 #> Warning: Unknown or uninitialised column: `data`.
 #> Rows: 0
-#> # A tibble: 1 × 17
+#> # A tibble: 1 × 18
 #>   dataset_id          file_group file_group_id study_id participant_id device_id
 #>   <chr>                    <int> <chr>         <chr>    <chr>          <chr>    
 #> 1 MELIDOS_IZTECH_S001         17 MELIDOS_IZTE… MELIDOS… IZTECH_S001    IZTECH_A…
-#> # ℹ 11 more variables: modalities <list>, role <chr>, data_state <chr>,
+#> # ℹ 12 more variables: modalities <list>, role <chr>, data_state <chr>,
 #> #   timezone <chr>, datetime_source <chr>, datetime_date <chr>,
 #> #   datetime_format <chr>, datetime_time <chr>, datetime_time_format <chr>,
-#> #   primary_variables <list>, files <list>
+#> #   primary_variables <list>, factor_contract <list>, files <list>
 names(light_collection$data[[1]])
 #> [1] "MEDI"                ".glc_dataset_id"     ".glc_file_group"    
 #> [4] ".glc_participant_id" ".glc_source_file"    ".glc_datetime"
@@ -566,21 +566,21 @@ glc_download(iztech, metadata_dir)
 #> # A tibble: 15 × 6
 #>    path                                destination storage  bytes sha256 lfs_oid
 #>    <chr>                               <chr>       <chr>    <dbl> <chr>  <chr>  
-#>  1 datapackage.json                    /tmp/Rtmp3… git     1.58e3 510d0… NA     
-#>  2 data/study.json                     /tmp/Rtmp3… git     6.03e3 0ce90… NA     
-#>  3 data/participants.csv               /tmp/Rtmp3… git     5.27e2 70454… NA     
-#>  4 data/participant_characteristics.c… /tmp/Rtmp3… git     5.80e4 c018f… NA     
-#>  5 data/datasets.json                  /tmp/Rtmp3… git     3.94e6 03899… NA     
-#>  6 data/devices.json                   /tmp/Rtmp3… git     8.36e3 8798c… NA     
-#>  7 data/device_datasheets.json         /tmp/Rtmp3… git     9.13e3 e4a6b… NA     
-#>  8 schemas/3.0.2/glc-dp-profile.json   /tmp/Rtmp3… git     1.14e4 4b6bf… NA     
-#>  9 json-entity-resource.json           /tmp/Rtmp3… git     7.65e2 c89c1… NA     
-#> 10 schemas/3.0.2/study.schema.json     /tmp/Rtmp3… git     6.50e3 f1e71… NA     
-#> 11 schemas/3.0.2/participants.schema.… /tmp/Rtmp3… git     1.08e3 e7192… NA     
-#> 12 schemas/3.0.2/participant_characte… /tmp/Rtmp3… git     1.46e3 25351… NA     
-#> 13 schemas/3.0.2/dataset.schema.json   /tmp/Rtmp3… git     4.66e4 7c17e… NA     
-#> 14 schemas/3.0.2/device.schema.json    /tmp/Rtmp3… git     3.95e3 ea149… NA     
-#> 15 schemas/3.0.2/device_datasheet.sch… /tmp/Rtmp3… git     1.31e4 44d54… NA
+#>  1 datapackage.json                    /tmp/RtmpJ… git     1.58e3 510d0… NA     
+#>  2 data/study.json                     /tmp/RtmpJ… git     6.03e3 0ce90… NA     
+#>  3 data/participants.csv               /tmp/RtmpJ… git     5.27e2 70454… NA     
+#>  4 data/participant_characteristics.c… /tmp/RtmpJ… git     5.80e4 c018f… NA     
+#>  5 data/datasets.json                  /tmp/RtmpJ… git     3.94e6 03899… NA     
+#>  6 data/devices.json                   /tmp/RtmpJ… git     8.36e3 8798c… NA     
+#>  7 data/device_datasheets.json         /tmp/RtmpJ… git     9.13e3 e4a6b… NA     
+#>  8 schemas/3.0.2/glc-dp-profile.json   /tmp/RtmpJ… git     1.14e4 4b6bf… NA     
+#>  9 json-entity-resource.json           /tmp/RtmpJ… git     7.65e2 c89c1… NA     
+#> 10 schemas/3.0.2/study.schema.json     /tmp/RtmpJ… git     6.50e3 f1e71… NA     
+#> 11 schemas/3.0.2/participants.schema.… /tmp/RtmpJ… git     1.08e3 e7192… NA     
+#> 12 schemas/3.0.2/participant_characte… /tmp/RtmpJ… git     1.46e3 25351… NA     
+#> 13 schemas/3.0.2/dataset.schema.json   /tmp/RtmpJ… git     4.66e4 7c17e… NA     
+#> 14 schemas/3.0.2/device.schema.json    /tmp/RtmpJ… git     3.95e3 ea149… NA     
+#> 15 schemas/3.0.2/device_datasheet.sch… /tmp/RtmpJ… git     1.31e4 44d54… NA
 ```
 
 Request data explicitly and apply the same selectors used during
@@ -600,22 +600,22 @@ downloads
 #> # A tibble: 16 × 6
 #>    path                                destination storage  bytes sha256 lfs_oid
 #>    <chr>                               <chr>       <chr>    <dbl> <chr>  <chr>  
-#>  1 datapackage.json                    /tmp/Rtmp3… git     1.58e3 510d0… NA     
-#>  2 data/study.json                     /tmp/Rtmp3… git     6.03e3 0ce90… NA     
-#>  3 data/participants.csv               /tmp/Rtmp3… git     5.27e2 70454… NA     
-#>  4 data/participant_characteristics.c… /tmp/Rtmp3… git     5.80e4 c018f… NA     
-#>  5 data/datasets.json                  /tmp/Rtmp3… git     3.94e6 03899… NA     
-#>  6 data/devices.json                   /tmp/Rtmp3… git     8.36e3 8798c… NA     
-#>  7 data/device_datasheets.json         /tmp/Rtmp3… git     9.13e3 e4a6b… NA     
-#>  8 schemas/3.0.2/glc-dp-profile.json   /tmp/Rtmp3… git     1.14e4 4b6bf… NA     
-#>  9 json-entity-resource.json           /tmp/Rtmp3… git     7.65e2 c89c1… NA     
-#> 10 schemas/3.0.2/study.schema.json     /tmp/Rtmp3… git     6.50e3 f1e71… NA     
-#> 11 schemas/3.0.2/participants.schema.… /tmp/Rtmp3… git     1.08e3 e7192… NA     
-#> 12 schemas/3.0.2/participant_characte… /tmp/Rtmp3… git     1.46e3 25351… NA     
-#> 13 schemas/3.0.2/dataset.schema.json   /tmp/Rtmp3… git     4.66e4 7c17e… NA     
-#> 14 schemas/3.0.2/device.schema.json    /tmp/Rtmp3… git     3.95e3 ea149… NA     
-#> 15 schemas/3.0.2/device_datasheet.sch… /tmp/Rtmp3… git     1.31e4 44d54… NA     
-#> 16 data/files/questionnaires/IZTECH_S… /tmp/Rtmp3… git     1.3 e2 daaad… NA
+#>  1 datapackage.json                    /tmp/RtmpJ… git     1.58e3 510d0… NA     
+#>  2 data/study.json                     /tmp/RtmpJ… git     6.03e3 0ce90… NA     
+#>  3 data/participants.csv               /tmp/RtmpJ… git     5.27e2 70454… NA     
+#>  4 data/participant_characteristics.c… /tmp/RtmpJ… git     5.80e4 c018f… NA     
+#>  5 data/datasets.json                  /tmp/RtmpJ… git     3.94e6 03899… NA     
+#>  6 data/devices.json                   /tmp/RtmpJ… git     8.36e3 8798c… NA     
+#>  7 data/device_datasheets.json         /tmp/RtmpJ… git     9.13e3 e4a6b… NA     
+#>  8 schemas/3.0.2/glc-dp-profile.json   /tmp/RtmpJ… git     1.14e4 4b6bf… NA     
+#>  9 json-entity-resource.json           /tmp/RtmpJ… git     7.65e2 c89c1… NA     
+#> 10 schemas/3.0.2/study.schema.json     /tmp/RtmpJ… git     6.50e3 f1e71… NA     
+#> 11 schemas/3.0.2/participants.schema.… /tmp/RtmpJ… git     1.08e3 e7192… NA     
+#> 12 schemas/3.0.2/participant_characte… /tmp/RtmpJ… git     1.46e3 25351… NA     
+#> 13 schemas/3.0.2/dataset.schema.json   /tmp/RtmpJ… git     4.66e4 7c17e… NA     
+#> 14 schemas/3.0.2/device.schema.json    /tmp/RtmpJ… git     3.95e3 ea149… NA     
+#> 15 schemas/3.0.2/device_datasheet.sch… /tmp/RtmpJ… git     1.31e4 44d54… NA     
+#> 16 data/files/questionnaires/IZTECH_S… /tmp/RtmpJ… git     1.3 e2 daaad… NA
 ```
 
 Use `include = "all"` only when you intend to mirror every declared

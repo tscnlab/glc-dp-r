@@ -55,7 +55,7 @@ silently hiding packages with problems.
 packages <- glc_packages()
 packages
 #> <GLC registry>
-#> Generated: 2026-08-13T15:06:24.832902+00:00 
+#> Generated: 2026-08-14T18:27:57.058184+00:00 
 #> # A tibble: 3 × 17
 #>   id           repository branch repository_status current_status current_commit
 #>   <chr>        <chr>      <chr>  <chr>             <chr>          <chr>         
@@ -70,9 +70,9 @@ packages
 
 glc_search_packages("iztech", packages)
 #> <GLC registry>
-#> Generated: 2026-08-13T15:06:24.832902+00:00 
+#> Generated: 2026-08-14T18:27:57.058184+00:00 
 #> <GLC registry>
-#> Generated: 2026-08-13T15:06:24.832902+00:00 
+#> Generated: 2026-08-14T18:27:57.058184+00:00 
 #> # A tibble: 1 × 17
 #>   id           repository branch repository_status current_status current_commit
 #>   <chr>        <chr>      <chr>  <chr>             <chr>          <chr>         
@@ -91,9 +91,9 @@ recorded passing revision:
 
 glc_search_packages(packages = packages, status = "pass")
 #> <GLC registry>
-#> Generated: 2026-08-13T15:06:24.832902+00:00 
+#> Generated: 2026-08-14T18:27:57.058184+00:00 
 #> <GLC registry>
-#> Generated: 2026-08-13T15:06:24.832902+00:00 
+#> Generated: 2026-08-14T18:27:57.058184+00:00 
 #> # A tibble: 2 × 17
 #>   id           repository branch repository_status current_status current_commit
 #>   <chr>        <chr>      <chr>  <chr>             <chr>          <chr>         
@@ -106,9 +106,9 @@ glc_search_packages(packages = packages, status = "pass")
 #> #   registry_generated_at <chr>
 glc_search_packages(packages = packages, has_pass = TRUE)
 #> <GLC registry>
-#> Generated: 2026-08-13T15:06:24.832902+00:00 
+#> Generated: 2026-08-14T18:27:57.058184+00:00 
 #> <GLC registry>
-#> Generated: 2026-08-13T15:06:24.832902+00:00 
+#> Generated: 2026-08-14T18:27:57.058184+00:00 
 #> # A tibble: 2 × 17
 #>   id           repository branch repository_status current_status current_commit
 #>   <chr>        <chr>      <chr>  <chr>             <chr>          <chr>         
@@ -405,14 +405,14 @@ light_collection
 #> <GLC data collection>
 #> File groups: 1
 #> Rows: 10000
-#> # A tibble: 1 × 17
+#> # A tibble: 1 × 18
 #>   dataset_id          file_group file_group_id study_id participant_id device_id
 #>   <chr>                    <int> <chr>         <chr>    <chr>          <chr>    
 #> 1 MELIDOS_IZTECH_S001         17 MELIDOS_IZTE… MELIDOS… IZTECH_S001    IZTECH_A…
-#> # ℹ 11 more variables: modalities <list>, role <chr>, data_state <chr>,
+#> # ℹ 12 more variables: modalities <list>, role <chr>, data_state <chr>,
 #> #   timezone <chr>, datetime_source <chr>, datetime_date <chr>,
 #> #   datetime_format <chr>, datetime_time <chr>, datetime_time_format <chr>,
-#> #   primary_variables <list>, files <list>
+#> #   primary_variables <list>, factor_contract <list>, files <list>
 ```
 
 In interactive sessions,

@@ -114,7 +114,7 @@ compatibility partition.</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A serializable <code>glc_collection_plan</code> object using plan schema
-<code>"glc-collection-plan"</code> version <code>"1.1.0"</code>, as described in <strong>Return
+<code>"glc-collection-plan"</code> version <code>"1.2.0"</code>, as described in <strong>Return
 tables</strong>.</p>
     </div>
     <div class="section level2">
@@ -136,33 +136,48 @@ produce different unit identifiers.</p>
     <h2 id="structural-compatibility-and-final-units">Structural compatibility and final units<a class="anchor" aria-label="anchor" href="#structural-compatibility-and-final-units"></a></h2>
 
 
-<p>Included groups are first partitioned by selected source names and declaration
-order, declared types, factor values and labels in declaration order, time
-zone, ordered modalities, role, data state, and datetime contract.
-Collection-based datetime values are record-specific and are ignored when
-comparing otherwise identical collection-based contracts.</p>
+<p>Included groups are first compared by selected source names and declaration
+order, declared types, time zone, ordered modalities, role, data state, and
+datetime contract. Collection-based datetime values are record-specific and
+are ignored when comparing otherwise identical collection-based contracts.</p>
+<p>Unordered factor declarations can share a structural set when their raw
+values have compatible effective labels and descriptions and their declared
+order constraints form an acyclic graph. An absent label means the raw value;
+no text normalization or semantic inference is performed. The union order is
+deterministic and preserves every declared order constraint. Duplicate raw
+values, ambiguous labels, conflicting labels or non-missing descriptions,
+cyclic order constraints, and unsupported ordered factors remain blocking.
+Blocking families retain exact factor-contract partitions.</p>
 <p>Each structural set has a <code>compatibility_id</code> beginning with <code>"glcc_"</code>. It is
-a SHA-256 digest of length-prefixed canonical UTF-8 text containing the exact
-package identity, repository, source revision, package schema, and structural
-contract. It does not contain current membership, <code>dataset_id</code> or
-<code>file_group</code> restrictions, metadata facets, <code>standardize</code>, or device-slot
-allocation. The identifier therefore stays the same when an unchanged
-contract is narrowed at the same package revision. Wearing position, device
-location or type, participant characteristics, file description, site
-context, and other descriptive metadata do not split structural sets.</p>
-<p>A structural set is not itself declared finally collectable. Relationship
-allocation is applied next. Final units enforce consistent dataset and
-file-group links and permit at most one non-missing device per dataset. A
-structural set can therefore map to multiple final units. In that case,
-<code>final_selection_required</code> is <code>TRUE</code> and <code>constraint_codes</code> contains
-<code>"device_slot_allocation"</code>.</p>
-<p>Existing final unit identifiers retain their version 1.0 canonical identity.
-A <code>unit_id</code> begins with <code>"glcu_"</code> and hashes the package and revision, the
-normalized request including restrictions and <code>standardize</code>, the structural
-contract, and sorted member file-group identifiers. Final unit ids are thus
-request- and membership-sensitive, while structural ids are restriction
-stable. Both use canonical UTF-8 text rather than R serialized-object bytes,
-and both their values and table order are stable under input row reordering.</p>
+a version 2 SHA-256 digest of length-prefixed canonical UTF-8 text containing
+the exact package identity, repository, source revision, package schema, and
+the full structural-family contract computed before <code>dataset_id</code> and
+<code>file_group</code> restrictions are applied. It does not contain current membership,
+restrictions, metadata facets, or <code>standardize</code>. The identifier therefore
+stays the same when an unchanged family is narrowed at the same package
+revision. Wearing position, device identity or location, participant
+characteristics, file description, site context, and other descriptive
+metadata do not split structural sets.</p>
+<p>Final units enforce consistent stable file-group relationships and dataset
+study and participant relationships. Device identity is file-group-scoped,
+so distinct file groups in one dataset may reference different devices while
+remaining in one final unit. The active factor union is recomputed after
+restrictions. <code><a href="glc_read.html">glc_read()</a></code> carries the raw declaration contract and
+<code><a href="glc_collect.html">glc_collect()</a></code> validates and applies the same union to actual factors.</p>
+<p>A <code>unit_id</code> begins with <code>"glcu_"</code> and uses version 2 canonical identity. It
+hashes the package and revision, normalized request including restrictions
+and <code>standardize</code>, active structural contract, and sorted member file-group
+identifiers. Final unit ids are request- and membership-sensitive, while
+structural ids are restriction stable. Both use canonical UTF-8 text rather
+than R serialized-object bytes, and their values and table order are stable
+under input row reordering. Version 2 identifiers deliberately differ from
+earlier identifiers because factor equivalence and device allocation rules
+changed.</p>
+<p><code>compatibility_diagnostics</code> explains safe unions and blocking differences.
+Selected-variable diagnostics describe the current partition. Non-selected
+diagnostics disclose what would require harmonization or block a later
+expanded variable request without selecting those variables now. Re-plan an
+expanded request before reading or collecting additional variables.</p>
     </div>
     <div class="section level2">
     <h2 id="declaration-only-assurance">Declaration-only assurance<a class="anchor" aria-label="anchor" href="#declaration-only-assurance"></a></h2>
@@ -186,10 +201,11 @@ probes a remote object to discover its size; unavailable sizes remain <code>NA</
 A unit's <code>declared_bytes</code> is the sum of known sizes, and
 <code>declared_bytes_complete</code> records whether every file size is known.</p>
 <p>Compatibility is an assurance about validated declarations, not downloaded
-values. Actual columns, parsed classes, factor values, datetime values, and
+values. Actual columns, parsed classes and factor values, datetime values, and
 output-column collisions can only be checked after reading. <code><a href="glc_read.html">glc_read()</a></code>
-remains authoritative for source-file validation, and <code><a href="glc_collect.html">glc_collect()</a></code> remains
-authoritative for final collection compatibility and standardization.</p>
+remains authoritative for source-file validation. <code><a href="glc_collect.html">glc_collect()</a></code> validates
+the preserved raw factor declarations, harmonizes only safe unions, and
+remains authoritative for final compatibility and standardization.</p>
     </div>
     <div class="section level2">
     <h2 id="missing-values-and-relationship-links">Missing values and relationship links<a class="anchor" aria-label="anchor" href="#missing-values-and-relationship-links"></a></h2>
@@ -246,7 +262,8 @@ groups, then the lexically smallest unit id.</p></li>
 <li><p><code>units</code>: one row per final unit. Columns are <code>unit_id</code>,
 <code>compatibility_id</code>, <code>preferred</code>, <code>dataset_count</code>, <code>file_group_count</code>,
 <code>variable_count</code>, <code>file_count</code>, <code>declared_bytes</code>, <code>known_file_count</code>,
-<code>unknown_file_count</code>, <code>declared_bytes_complete</code>, and list-column
+<code>unknown_file_count</code>, <code>declared_bytes_complete</code>, <code>harmonization_required</code>,
+and list-columns <code>harmonized_variables</code>, <code>diagnostic_ids</code>, and
 <code>file_group_ids</code>.</p></li>
 <li><p><code>groups</code>: one row per declared file group. Columns are <code>status</code>, <code>unit_id</code>,
 <code>compatibility_id</code>, <code>dataset_id</code>, integer declaration index <code>file_group</code>,
@@ -281,8 +298,10 @@ still subject to <code><a href="glc_collect.html">glc_collect()</a></code> valid
 are <code>status</code>, <code>unit_id</code>, <code>dataset_id</code>, <code>file_group_id</code>, <code>position</code>,
 <code>declared_path</code>, <code>format</code>, <code>encoding</code>, <code>declared_bytes</code>, and <code>bytes_known</code>.</p></li>
 <li><p><code>compatibility</code>: one row per unit. Columns are <code>unit_id</code>, list-columns
-<code>selected_names</code>, <code>declared_types</code>, <code>factor_values</code>, and <code>factor_labels</code>,
-<code>timezone</code>, list-column <code>modalities</code>, <code>role</code>, <code>data_state</code>,
+<code>selected_names</code>, <code>declared_types</code>, <code>factor_values</code>, <code>factor_labels</code>, and
+<code>factor_descriptions</code>, <code>harmonization_required</code>, list-columns
+<code>harmonized_variables</code> and <code>diagnostic_ids</code>, <code>timezone</code>, list-column
+<code>modalities</code>, <code>role</code>, <code>data_state</code>,
 <code>datetime_source</code>, <code>datetime_signature</code>, <code>datetime_date</code>,
 <code>datetime_format</code>, <code>datetime_time</code>, <code>datetime_time_format</code>,
 <code>collection_values_ignored</code>, <code>relationship_rule</code>, <code>device_rule</code>,
@@ -293,23 +312,35 @@ assurance.</p></li>
 fields in the plain list-column <code>metadata</code>.</p></li>
 <li><p><code>compatibility_sets</code>: one row per structural set. Columns are
 <code>compatibility_id</code>, dataset, file-group, variable, and file counts; byte
-summaries; <code>final_unit_count</code>; <code>final_selection_required</code>; list-columns
-<code>constraint_codes</code>, <code>constraint_messages</code>, <code>file_group_ids</code>, and
+summaries; <code>harmonization_required</code>; list-columns <code>harmonized_variables</code>
+and <code>diagnostic_ids</code>; <code>final_unit_count</code>; <code>final_selection_required</code>;
+list-columns <code>constraint_codes</code>, <code>constraint_messages</code>, <code>file_group_ids</code>, and
 <code>final_unit_ids</code>; the selected-name, declared-type, factor, timezone,
 modality, role, data-state, and datetime contract columns also present in
 <code>compatibility</code>; <code>relationship_rule</code>; <code>device_rule</code>; and the fixed
 <code>standardize_affects_structure = FALSE</code> assurance.</p></li>
+<li><p><code>compatibility_diagnostics</code>: one row per stable diagnostic. Columns are
+<code>diagnostic_id</code>, <code>selection_scope</code>, <code>classification</code>, <code>code</code>,
+<code>variable_name</code>, <code>applies_to_current_plan</code>, list-column
+<code>prospective_scopes</code>, <code>message</code>, affected group, structure, and unit counts,
+and list-columns <code>file_group_ids</code>, <code>compatibility_ids</code>, <code>unit_ids</code>,
+<code>union_values</code>, <code>union_labels</code>, and <code>union_descriptions</code>.</p></li>
+<li><p><code>compatibility_diagnostic_groups</code>: one row per affected diagnostic and
+file-group pair. Columns are <code>diagnostic_id</code>, <code>dataset_id</code>, stable
+<code>file_group_id</code>, <code>current_status</code>, <code>compatibility_id</code>, <code>unit_id</code>,
+<code>variable_present</code>, <code>selected_by_request</code>, <code>declaration_position</code>,
+<code>declared_type</code>, and factor value, label, and description list-columns.</p></li>
 <li><p><code>metadata</code>: a normalized typed core-metadata snapshot described below.</p></li>
 <li><p><code>refinement_input</code>: a compact, serializable input used and validated by
 <code><a href="glc_collection_refine.html">glc_collection_refine()</a></code>. It contains <code>schema</code>, <code>version</code>,
 <code>canonicalization</code>, <code>digest_algorithm</code>, compact <code>provenance</code> and <code>request</code>
-lists, a <code>membership</code> table, plain-list structural <code>contracts</code> and
-relationship <code>groups</code>, and a SHA-256 <code>fingerprint</code>. Consumers should not
-modify or reconstruct it.</p></li>
+lists, a <code>membership</code> table, plain-list structural <code>contracts</code>, per-group
+declarations and relationship facts, and a SHA-256 <code>fingerprint</code>.
+Consumers should not modify or reconstruct it.</p></li>
 </ul><p>All tables are tibbles with stable columns, including when they have no rows.
 List-columns contain only plain serializable vectors and lists. <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code>
-shows a compact package, request, unit, byte, preferred-unit, and assurance
-summary and returns the plan invisibly.</p>
+shows a compact package, request, unit, diagnostic, harmonization, byte,
+preferred-unit, and assurance summary and returns the plan invisibly.</p>
     </div>
     <div class="section level2">
     <h2 id="normalized-metadata-tables">Normalized metadata tables<a class="anchor" aria-label="anchor" href="#normalized-metadata-tables"></a></h2>
@@ -379,8 +410,9 @@ fields. Standard fields never require parsing this column.</p></li>
 <p>Per-group declaration outcomes are returned rather than thrown. Stable reason
 codes are <code>included</code>, <code>scope_dataset</code>, <code>scope_file_group</code>,
 <code>reserved_provenance_column</code>, <code>term_missing</code>, <code>variable_missing</code>,
-<code>no_declared_files</code>, <code>unsupported_format</code>, <code>invalid_timezone</code>, and
-<code>incomplete_datetime</code>; each has a plain-language message.</p>
+<code>invalid_factor_contract</code>, <code>no_declared_files</code>, <code>unsupported_format</code>,
+<code>invalid_timezone</code>, and <code>incomplete_datetime</code>; each has a plain-language
+message.</p>
 <p>Invalid argument types, empty values, duplicates, and inconsistent
 <code>variable_scope</code>/selector combinations error before planning. Programmatically
 useful condition subclasses include <code>glcdp_unknown_dataset</code>,

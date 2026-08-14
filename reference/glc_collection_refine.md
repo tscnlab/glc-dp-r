@@ -50,30 +50,38 @@ groups through the typed tables in `plan$groups` and `plan$metadata`.
 Pass only the resulting stable file-group ids to this function. Input
 order does not affect the result.
 
-Refinement reapplies the stored relationship and device-slot rules and
-creates request-sensitive final unit ids. Its `units` table is identical
-to a fresh
+Refinement reapplies the stored structural and relationship rules,
+recomputes the active deterministic factor union, and creates
+request-sensitive final unit ids. Its `units` table is identical to a
+fresh
 [`glc_collection_plan()`](https://tscnlab.github.io/glc-dp-r/reference/glc_collection_plan.md)
 call with the parent's original term, variable, dataset, and
 standardization request and with `file_group` set to the refined ids.
 The restriction-stable `compatibility_id` is retained. No full variable
 or metadata tables are rebuilt.
 
-A result with more than one final unit has
-`final_selection_required = TRUE` and an unresolved
-`"device_slot_allocation"` constraint. Narrow the stable group ids again
-and refine again. A deterministic `preferred_unit_id` is reported for
-display parity, but it does not override the final-selection gate.
+Device identity remains linked by stable file-group id, so different
+devices in one dataset do not split otherwise compatible groups. A safe
+active factor union is reported through the unit's
+`harmonization_required` and `harmonized_variables` fields.
+[`glc_read()`](https://tscnlab.github.io/glc-dp-r/reference/glc_read.md)
+and
+[`glc_collect()`](https://tscnlab.github.io/glc-dp-r/reference/glc_collect.md)
+still validate actual source values and apply the same union before
+binding.
 
 ## Validation and conditions
 
 Refinement supports plan schema `"glc-collection-plan"` version
-`"1.1.0"` and refinement-input schema
-`"glc-collection-refinement-input"` version `"1.0.0"`. It verifies the
+`"1.2.0"` and refinement-input schema
+`"glc-collection-refinement-input"` version `"1.1.0"`. It verifies the
 compact input fingerprint and checks it against the parent plan's
-provenance, request, and group membership. The fingerprint covers only
-facts needed for refinement, not the larger normalized metadata
-snapshot, so validation does not rehash the complete plan.
+provenance, request, and group membership. The fingerprint covers the
+structural-family contract, each member's declared factor contract, and
+relationship facts needed for refinement. It does not cover the larger
+normalized metadata snapshot, so validation does not rehash the complete
+plan. Earlier plan versions do not contain these facts and must be
+planned again.
 
 All refinement errors inherit from `glcdp_collection_refine_error`. More
 specific subclasses are:
@@ -129,7 +137,7 @@ remain authoritative after refinement.
 
 The result is a plain serializable list with class
 `glc_collection_refinement`, schema `"glc-collection-refinement"`, and
-version `"1.0.0"`. It contains:
+version `"1.1.0"`. It contains:
 
 - `parent`: `plan_schema`, `plan_version`, and the validated
   refinement-input `fingerprint` linking this result to the retained
@@ -149,7 +157,8 @@ version `"1.0.0"`. It contains:
   `preferred_unit_id`;
 
 - `units`: the same stable final-unit columns documented for
-  [`glc_collection_plan()`](https://tscnlab.github.io/glc-dp-r/reference/glc_collection_plan.md);
+  [`glc_collection_plan()`](https://tscnlab.github.io/glc-dp-r/reference/glc_collection_plan.md),
+  including active factor harmonization fields;
 
 - `groups`: `status`, `unit_id`, `compatibility_id`, `dataset_id`,
   integer `file_group`, stable `file_group_id`, `study_id`,

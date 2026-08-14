@@ -2,16 +2,20 @@
 
 ## glcdp 1.0.0.9000
 
-- Added
+- Updated
   [`glc_collection_plan()`](https://tscnlab.github.io/glc-dp-r/reference/glc_collection_plan.md)
-  with plan schema 1.1.0 to create deterministic, serializable plans
-  from validated declarations. Plans expose restriction-stable
-  structural compatibility sets while preserving request-sensitive final
-  `unit_id` semantics, device-safe relationship allocation, exclusion
-  reasons, required read and output columns, byte summaries, and exact
-  package, schema, and revision provenance. Structural sets that map to
-  multiple final units report the unresolved constraint and require
-  further selection.
+  to plan schema 1.2.0. Compatible unordered factor declarations now use
+  a deterministic union of raw values, labels, descriptions, and
+  declaration-order constraints. Plans report typed, serializable
+  diagnostics for safe harmonization, blocking conflicts, and
+  non-selected variables. Restriction-stable `compatibility_id` and
+  request-sensitive `unit_id` values use version 2 identity because
+  these compatibility rules changed.
+- Device identity is now scoped by stable `file_group_id`. Structurally
+  compatible file groups in one dataset can reference different devices
+  without being split into artificial device slots. File-group and
+  dataset relationship checks remain authoritative, and device
+  provenance remains available through the stable file-group join.
 - Collection plans now include a complete, typed, serializable snapshot
   of descriptor-declared core metadata for studies, contributors,
   datasets, participants and their characteristics, devices and
@@ -37,11 +41,13 @@
   uses the same declaration-compatibility engine as
   [`glc_collection_plan()`](https://tscnlab.github.io/glc-dp-r/reference/glc_collection_plan.md).
   [`glc_read()`](https://tscnlab.github.io/glc-dp-r/reference/glc_read.md)
-  and
+  now preserves fingerprinted raw factor contracts, and
   [`glc_collect()`](https://tscnlab.github.io/glc-dp-r/reference/glc_collect.md)
-  remain the runtime authorities for downloaded columns, parsed types,
-  factor values, datetime values, output collisions, standardization,
-  and final collection compatibility.
+  validates and applies only planner-compatible factor unions before
+  binding. Legacy collections retain strict factor-level matching. Both
+  functions remain the runtime authorities for downloaded columns,
+  parsed types and values, datetime values, output collisions,
+  relationships, standardization, and final collection compatibility.
 
 ## glcdp 1.0.0
 

@@ -108,7 +108,8 @@ in interactive sessions and <code>FALSE</code> otherwise.</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A <code>glc_data_collection</code> tibble with one data list-column per file
-group.</p>
+group and one serializable <code>factor_contract</code> list-column. The contract
+contains no package handle, token, cache path, or temporary path.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -117,6 +118,13 @@ datetimes are used internally but omitted unless selected by the filters.
 Declared files that are absent from a local package subset are skipped. When
 a local package contains fewer datasets or files than declared,
 <code>glc_read()</code> reports the discrepancy and reads the available files.</p>
+<p>Each returned file-group row includes a plain serializable <code>factor_contract</code>
+payload for the selected variables. It preserves raw factor values, effective
+labels, descriptions, unordered status, schema version, and a SHA-256
+fingerprint. <code><a href="glc_collect.html">glc_collect()</a></code> validates this payload against the parsed data
+before applying any safe factor-level union. Invalid declarations error with
+class <code>glcdp_factor_contract_invalid</code>; changed payloads or parsed factors are
+rejected later with class <code>glcdp_factor_contract_tampered</code>.</p>
     </div>
 
     <div class="section level2">

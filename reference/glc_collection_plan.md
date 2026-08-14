@@ -73,7 +73,7 @@ glc_collection_plan(
 ## Value
 
 A serializable `glc_collection_plan` object using plan schema
-`"glc-collection-plan"` version `"1.1.0"`, as described in **Return
+`"glc-collection-plan"` version `"1.2.0"`, as described in **Return
 tables**.
 
 ## Details
@@ -95,39 +95,60 @@ therefore may produce different unit identifiers.
 
 ## Structural compatibility and final units
 
-Included groups are first partitioned by selected source names and
-declaration order, declared types, factor values and labels in
-declaration order, time zone, ordered modalities, role, data state, and
-datetime contract. Collection-based datetime values are record-specific
-and are ignored when comparing otherwise identical collection-based
-contracts.
+Included groups are first compared by selected source names and
+declaration order, declared types, time zone, ordered modalities, role,
+data state, and datetime contract. Collection-based datetime values are
+record-specific and are ignored when comparing otherwise identical
+collection-based contracts.
+
+Unordered factor declarations can share a structural set when their raw
+values have compatible effective labels and descriptions and their
+declared order constraints form an acyclic graph. An absent label means
+the raw value; no text normalization or semantic inference is performed.
+The union order is deterministic and preserves every declared order
+constraint. Duplicate raw values, ambiguous labels, conflicting labels
+or non-missing descriptions, cyclic order constraints, and unsupported
+ordered factors remain blocking. Blocking families retain exact
+factor-contract partitions.
 
 Each structural set has a `compatibility_id` beginning with `"glcc_"`.
-It is a SHA-256 digest of length-prefixed canonical UTF-8 text
+It is a version 2 SHA-256 digest of length-prefixed canonical UTF-8 text
 containing the exact package identity, repository, source revision,
-package schema, and structural contract. It does not contain current
-membership, `dataset_id` or `file_group` restrictions, metadata facets,
-`standardize`, or device-slot allocation. The identifier therefore stays
-the same when an unchanged contract is narrowed at the same package
-revision. Wearing position, device location or type, participant
-characteristics, file description, site context, and other descriptive
-metadata do not split structural sets.
+package schema, and the full structural-family contract computed before
+`dataset_id` and `file_group` restrictions are applied. It does not
+contain current membership, restrictions, metadata facets, or
+`standardize`. The identifier therefore stays the same when an unchanged
+family is narrowed at the same package revision. Wearing position,
+device identity or location, participant characteristics, file
+description, site context, and other descriptive metadata do not split
+structural sets.
 
-A structural set is not itself declared finally collectable.
-Relationship allocation is applied next. Final units enforce consistent
-dataset and file-group links and permit at most one non-missing device
-per dataset. A structural set can therefore map to multiple final units.
-In that case, `final_selection_required` is `TRUE` and
-`constraint_codes` contains `"device_slot_allocation"`.
+Final units enforce consistent stable file-group relationships and
+dataset study and participant relationships. Device identity is
+file-group-scoped, so distinct file groups in one dataset may reference
+different devices while remaining in one final unit. The active factor
+union is recomputed after restrictions.
+[`glc_read()`](https://tscnlab.github.io/glc-dp-r/reference/glc_read.md)
+carries the raw declaration contract and
+[`glc_collect()`](https://tscnlab.github.io/glc-dp-r/reference/glc_collect.md)
+validates and applies the same union to actual factors.
 
-Existing final unit identifiers retain their version 1.0 canonical
-identity. A `unit_id` begins with `"glcu_"` and hashes the package and
-revision, the normalized request including restrictions and
-`standardize`, the structural contract, and sorted member file-group
-identifiers. Final unit ids are thus request- and membership-sensitive,
-while structural ids are restriction stable. Both use canonical UTF-8
-text rather than R serialized-object bytes, and both their values and
-table order are stable under input row reordering.
+A `unit_id` begins with `"glcu_"` and uses version 2 canonical identity.
+It hashes the package and revision, normalized request including
+restrictions and `standardize`, active structural contract, and sorted
+member file-group identifiers. Final unit ids are request- and
+membership-sensitive, while structural ids are restriction stable. Both
+use canonical UTF-8 text rather than R serialized-object bytes, and
+their values and table order are stable under input row reordering.
+Version 2 identifiers deliberately differ from earlier identifiers
+because factor equivalence and device allocation rules changed.
+
+`compatibility_diagnostics` explains safe unions and blocking
+differences. Selected-variable diagnostics describe the current
+partition. Non-selected diagnostics disclose what would require
+harmonization or block a later expanded variable request without
+selecting those variables now. Re-plan an expanded request before
+reading or collecting additional variables.
 
 ## Declaration-only assurance
 
@@ -158,13 +179,14 @@ remain `NA`. A unit's `declared_bytes` is the sum of known sizes, and
 `declared_bytes_complete` records whether every file size is known.
 
 Compatibility is an assurance about validated declarations, not
-downloaded values. Actual columns, parsed classes, factor values,
+downloaded values. Actual columns, parsed classes and factor values,
 datetime values, and output-column collisions can only be checked after
 reading.
 [`glc_read()`](https://tscnlab.github.io/glc-dp-r/reference/glc_read.md)
-remains authoritative for source-file validation, and
+remains authoritative for source-file validation.
 [`glc_collect()`](https://tscnlab.github.io/glc-dp-r/reference/glc_collect.md)
-remains authoritative for final collection compatibility and
+validates the preserved raw factor declarations, harmonizes only safe
+unions, and remains authoritative for final compatibility and
 standardization.
 
 ## Missing values and relationship links
@@ -227,8 +249,9 @@ The result is a plain, serializable list with class
 - `units`: one row per final unit. Columns are `unit_id`,
   `compatibility_id`, `preferred`, `dataset_count`, `file_group_count`,
   `variable_count`, `file_count`, `declared_bytes`, `known_file_count`,
-  `unknown_file_count`, `declared_bytes_complete`, and list-column
-  `file_group_ids`.
+  `unknown_file_count`, `declared_bytes_complete`,
+  `harmonization_required`, and list-columns `harmonized_variables`,
+  `diagnostic_ids`, and `file_group_ids`.
 
 - `groups`: one row per declared file group. Columns are `status`,
   `unit_id`, `compatibility_id`, `dataset_id`, integer declaration index
@@ -273,11 +296,12 @@ The result is a plain, serializable list with class
   and `bytes_known`.
 
 - `compatibility`: one row per unit. Columns are `unit_id`, list-columns
-  `selected_names`, `declared_types`, `factor_values`, and
-  `factor_labels`, `timezone`, list-column `modalities`, `role`,
-  `data_state`, `datetime_source`, `datetime_signature`,
-  `datetime_date`, `datetime_format`, `datetime_time`,
-  `datetime_time_format`, `collection_values_ignored`,
+  `selected_names`, `declared_types`, `factor_values`, `factor_labels`,
+  and `factor_descriptions`, `harmonization_required`, list-columns
+  `harmonized_variables` and `diagnostic_ids`, `timezone`, list-column
+  `modalities`, `role`, `data_state`, `datetime_source`,
+  `datetime_signature`, `datetime_date`, `datetime_format`,
+  `datetime_time`, `datetime_time_format`, `collection_values_ignored`,
   `relationship_rule`, `device_rule`, `standardize`, and the fixed
   `standardize_affects_partition = FALSE` assurance.
 
@@ -287,13 +311,28 @@ The result is a plain, serializable list with class
 
 - `compatibility_sets`: one row per structural set. Columns are
   `compatibility_id`, dataset, file-group, variable, and file counts;
-  byte summaries; `final_unit_count`; `final_selection_required`;
-  list-columns `constraint_codes`, `constraint_messages`,
-  `file_group_ids`, and `final_unit_ids`; the selected-name,
-  declared-type, factor, timezone, modality, role, data-state, and
-  datetime contract columns also present in `compatibility`;
-  `relationship_rule`; `device_rule`; and the fixed
+  byte summaries; `harmonization_required`; list-columns
+  `harmonized_variables` and `diagnostic_ids`; `final_unit_count`;
+  `final_selection_required`; list-columns `constraint_codes`,
+  `constraint_messages`, `file_group_ids`, and `final_unit_ids`; the
+  selected-name, declared-type, factor, timezone, modality, role,
+  data-state, and datetime contract columns also present in
+  `compatibility`; `relationship_rule`; `device_rule`; and the fixed
   `standardize_affects_structure = FALSE` assurance.
+
+- `compatibility_diagnostics`: one row per stable diagnostic. Columns
+  are `diagnostic_id`, `selection_scope`, `classification`, `code`,
+  `variable_name`, `applies_to_current_plan`, list-column
+  `prospective_scopes`, `message`, affected group, structure, and unit
+  counts, and list-columns `file_group_ids`, `compatibility_ids`,
+  `unit_ids`, `union_values`, `union_labels`, and `union_descriptions`.
+
+- `compatibility_diagnostic_groups`: one row per affected diagnostic and
+  file-group pair. Columns are `diagnostic_id`, `dataset_id`, stable
+  `file_group_id`, `current_status`, `compatibility_id`, `unit_id`,
+  `variable_present`, `selected_by_request`, `declaration_position`,
+  `declared_type`, and factor value, label, and description
+  list-columns.
 
 - `metadata`: a normalized typed core-metadata snapshot described below.
 
@@ -302,15 +341,15 @@ The result is a plain, serializable list with class
   [`glc_collection_refine()`](https://tscnlab.github.io/glc-dp-r/reference/glc_collection_refine.md).
   It contains `schema`, `version`, `canonicalization`,
   `digest_algorithm`, compact `provenance` and `request` lists, a
-  `membership` table, plain-list structural `contracts` and relationship
-  `groups`, and a SHA-256 `fingerprint`. Consumers should not modify or
-  reconstruct it.
+  `membership` table, plain-list structural `contracts`, per-group
+  declarations and relationship facts, and a SHA-256 `fingerprint`.
+  Consumers should not modify or reconstruct it.
 
 All tables are tibbles with stable columns, including when they have no
 rows. List-columns contain only plain serializable vectors and lists.
 [`print()`](https://rdrr.io/r/base/print.html) shows a compact package,
-request, unit, byte, preferred-unit, and assurance summary and returns
-the plan invisibly.
+request, unit, diagnostic, harmonization, byte, preferred-unit, and
+assurance summary and returns the plan invisibly.
 
 ## Normalized metadata tables
 
@@ -400,8 +439,9 @@ id.
 Per-group declaration outcomes are returned rather than thrown. Stable
 reason codes are `included`, `scope_dataset`, `scope_file_group`,
 `reserved_provenance_column`, `term_missing`, `variable_missing`,
-`no_declared_files`, `unsupported_format`, `invalid_timezone`, and
-`incomplete_datetime`; each has a plain-language message.
+`invalid_factor_contract`, `no_declared_files`, `unsupported_format`,
+`invalid_timezone`, and `incomplete_datetime`; each has a plain-language
+message.
 
 Invalid argument types, empty values, duplicates, and inconsistent
 `variable_scope`/selector combinations error before planning.

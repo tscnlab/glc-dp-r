@@ -34,7 +34,7 @@ packages[, c(
   "attestation_verified"
 )]
 #> <GLC registry>
-#> Generated: 2026-08-13T15:06:24.832902+00:00 
+#> Generated: 2026-08-14T18:27:57.058184+00:00 
 #> # A tibble: 3 × 5
 #>   id              repository current_status has_latest_pass attestation_verified
 #>   <chr>           <chr>      <chr>          <lgl>           <lgl>               
@@ -57,9 +57,9 @@ Searches are fixed and case-insensitive by default:
 
 glc_search_packages("iztech", packages)
 #> <GLC registry>
-#> Generated: 2026-08-13T15:06:24.832902+00:00 
+#> Generated: 2026-08-14T18:27:57.058184+00:00 
 #> <GLC registry>
-#> Generated: 2026-08-13T15:06:24.832902+00:00 
+#> Generated: 2026-08-14T18:27:57.058184+00:00 
 #> # A tibble: 1 × 17
 #>   id           repository branch repository_status current_status current_commit
 #>   <chr>        <chr>      <chr>  <chr>             <chr>          <chr>         
@@ -71,9 +71,9 @@ glc_search_packages("iztech", packages)
 #> #   registry_generated_at <chr>
 glc_search_packages(packages = packages, status = c("pass", "fail"))
 #> <GLC registry>
-#> Generated: 2026-08-13T15:06:24.832902+00:00 
+#> Generated: 2026-08-14T18:27:57.058184+00:00 
 #> <GLC registry>
-#> Generated: 2026-08-13T15:06:24.832902+00:00 
+#> Generated: 2026-08-14T18:27:57.058184+00:00 
 #> # A tibble: 2 × 17
 #>   id           repository branch repository_status current_status current_commit
 #>   <chr>        <chr>      <chr>  <chr>             <chr>          <chr>         
@@ -86,9 +86,9 @@ glc_search_packages(packages = packages, status = c("pass", "fail"))
 #> #   registry_generated_at <chr>
 glc_search_packages(packages = packages, has_pass = FALSE)
 #> <GLC registry>
-#> Generated: 2026-08-13T15:06:24.832902+00:00 
+#> Generated: 2026-08-14T18:27:57.058184+00:00 
 #> <GLC registry>
-#> Generated: 2026-08-13T15:06:24.832902+00:00 
+#> Generated: 2026-08-14T18:27:57.058184+00:00 
 #> # A tibble: 1 × 17
 #>   id           repository branch repository_status current_status current_commit
 #>   <chr>        <chr>      <chr>  <chr>             <chr>          <chr>         
