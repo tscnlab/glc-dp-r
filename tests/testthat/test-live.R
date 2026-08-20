@@ -36,11 +36,11 @@ test_that("validated schema 3 package supports the complete live workflow", {
       datasets = 17L,
       files = 323L,
       variables = 5554L,
-      metadata = 64862L
+      metadata = 63983L
     )
   )
   expected_metadata_counts <- c(
-    datasets = 62416L,
+    datasets = 61537L,
     device_datasheets = 164L,
     devices = 144L,
     participant_characteristics = 1955L,
@@ -197,10 +197,11 @@ test_that("validated schema 3 package supports the complete live workflow", {
   )
   expect_true(medi_plan$script_ready)
   expect_equal(medi_plan$group_filter$candidate_count, 323L)
-  expect_equal(medi_plan$group_filter$included_count, 17L)
-  expect_equal(medi_plan$group_filter$excluded_count, 306L)
+  expect_equal(medi_plan$group_filter$matching_count, 52L)
+  expect_equal(medi_plan$group_filter$included_count, 52L)
+  expect_equal(medi_plan$group_filter$excluded_count, 271L)
   expect_equal(length(medi_plan$datasets), 17L)
-  expect_equal(length(medi_plan$file_groups), 17L)
+  expect_equal(length(medi_plan$file_groups), 52L)
   expect_equal(medi_plan$variables, "MEDI")
 
   medi_term_plan <- glcdp:::glc_explorer_build_selection_plan(
