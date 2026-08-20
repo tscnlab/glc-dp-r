@@ -34,13 +34,19 @@ packages[, c(
   "attestation_verified"
 )]
 #> <GLC registry>
-#> Generated: 2026-08-14T18:27:57.058184+00:00 
-#> # A tibble: 3 × 5
+#> Generated: 2026-08-20T06:19:24.276595+00:00 
+#> # A tibble: 9 × 5
 #>   id              repository current_status has_latest_pass attestation_verified
 #>   <chr>           <chr>      <chr>          <lgl>           <lgl>               
-#> 1 guidolin-glee-… tscnlab/g… missing_artif… FALSE           FALSE               
-#> 2 melidos-iztech… tscnlab/m… pass           TRUE            TRUE                
-#> 3 melidos-knust-… tscnlab/m… pass           TRUE            TRUE
+#> 1 melidos-iztech… tscnlab/m… pass           TRUE            TRUE                
+#> 2 melidos-knust-… tscnlab/m… pass           TRUE            TRUE                
+#> 3 melidos-baua-g… tscnlab/m… pass           TRUE            TRUE                
+#> 4 melidos-ucr-gl… tscnlab/m… pass           TRUE            TRUE                
+#> 5 melidos-fuspce… tscnlab/m… pass           TRUE            TRUE                
+#> 6 melidos-rise-g… tscnlab/m… pass           TRUE            TRUE                
+#> 7 melidos-tum-gl… tscnlab/m… pass           TRUE            TRUE                
+#> 8 melidos-thuas-… tscnlab/m… pass           TRUE            TRUE                
+#> 9 melidos-mpi-gl… tscnlab/m… pass           TRUE            TRUE
 ```
 
 Registry results are cached for the R session. Set `refresh = TRUE` only
@@ -57,13 +63,13 @@ Searches are fixed and case-insensitive by default:
 
 glc_search_packages("iztech", packages)
 #> <GLC registry>
-#> Generated: 2026-08-14T18:27:57.058184+00:00 
+#> Generated: 2026-08-20T06:19:24.276595+00:00 
 #> <GLC registry>
-#> Generated: 2026-08-14T18:27:57.058184+00:00 
+#> Generated: 2026-08-20T06:19:24.276595+00:00 
 #> # A tibble: 1 × 17
 #>   id           repository branch repository_status current_status current_commit
 #>   <chr>        <chr>      <chr>  <chr>             <chr>          <chr>         
-#> 1 melidos-izt… tscnlab/m… main   active            pass           9353a0c4287d4…
+#> 1 melidos-izt… tscnlab/m… main   active            pass           abc456bdb418e…
 #> # ℹ 11 more variables: current_validator <chr>, current_validated_at <chr>,
 #> #   current_errors <int>, current_warnings <int>, latest_pass_commit <chr>,
 #> #   latest_pass_validator <chr>, latest_pass_validated_at <chr>,
@@ -71,14 +77,21 @@ glc_search_packages("iztech", packages)
 #> #   registry_generated_at <chr>
 glc_search_packages(packages = packages, status = c("pass", "fail"))
 #> <GLC registry>
-#> Generated: 2026-08-14T18:27:57.058184+00:00 
+#> Generated: 2026-08-20T06:19:24.276595+00:00 
 #> <GLC registry>
-#> Generated: 2026-08-14T18:27:57.058184+00:00 
-#> # A tibble: 2 × 17
+#> Generated: 2026-08-20T06:19:24.276595+00:00 
+#> # A tibble: 9 × 17
 #>   id           repository branch repository_status current_status current_commit
 #>   <chr>        <chr>      <chr>  <chr>             <chr>          <chr>         
-#> 1 melidos-izt… tscnlab/m… main   active            pass           9353a0c4287d4…
-#> 2 melidos-knu… tscnlab/m… main   active            pass           a7e4d17a7ea7f…
+#> 1 melidos-izt… tscnlab/m… main   active            pass           abc456bdb418e…
+#> 2 melidos-knu… tscnlab/m… main   active            pass           7fd1dd9e1df17…
+#> 3 melidos-bau… tscnlab/m… main   active            pass           643a12126b5e3…
+#> 4 melidos-ucr… tscnlab/m… main   active            pass           1d1309c969b9c…
+#> 5 melidos-fus… tscnlab/m… main   active            pass           47b7c6aa38d77…
+#> 6 melidos-ris… tscnlab/m… main   active            pass           4af2cb284a5bd…
+#> 7 melidos-tum… tscnlab/m… main   active            pass           1187d19b7f614…
+#> 8 melidos-thu… tscnlab/m… main   active            pass           a0f1057932fbe…
+#> 9 melidos-mpi… tscnlab/m… main   active            pass           7ac2c3fe700e0…
 #> # ℹ 11 more variables: current_validator <chr>, current_validated_at <chr>,
 #> #   current_errors <int>, current_warnings <int>, latest_pass_commit <chr>,
 #> #   latest_pass_validator <chr>, latest_pass_validated_at <chr>,
@@ -86,15 +99,14 @@ glc_search_packages(packages = packages, status = c("pass", "fail"))
 #> #   registry_generated_at <chr>
 glc_search_packages(packages = packages, has_pass = FALSE)
 #> <GLC registry>
-#> Generated: 2026-08-14T18:27:57.058184+00:00 
+#> Generated: 2026-08-20T06:19:24.276595+00:00 
 #> <GLC registry>
-#> Generated: 2026-08-14T18:27:57.058184+00:00 
-#> # A tibble: 1 × 17
-#>   id           repository branch repository_status current_status current_commit
-#>   <chr>        <chr>      <chr>  <chr>             <chr>          <chr>         
-#> 1 guidolin-gl… tscnlab/g… main   active            missing_artif… 8ec9034a3d967…
-#> # ℹ 11 more variables: current_validator <chr>, current_validated_at <chr>,
-#> #   current_errors <int>, current_warnings <int>, latest_pass_commit <chr>,
+#> Generated: 2026-08-20T06:19:24.276595+00:00 
+#> # A tibble: 0 × 17
+#> # ℹ 17 variables: id <chr>, repository <chr>, branch <chr>,
+#> #   repository_status <chr>, current_status <chr>, current_commit <chr>,
+#> #   current_validator <chr>, current_validated_at <chr>, current_errors <int>,
+#> #   current_warnings <int>, latest_pass_commit <chr>,
 #> #   latest_pass_validator <chr>, latest_pass_validated_at <chr>,
 #> #   has_latest_pass <lgl>, is_current_pass <lgl>, attestation_verified <lgl>,
 #> #   registry_generated_at <chr>
@@ -111,7 +123,7 @@ iztech_repository <- "tscnlab/melidos-iztech-glc-dataset"
 iztech <- glc_open(iztech_repository)
 iztech
 #> <GLC data package>
-#> Source: tscnlab/melidos-iztech-glc-dataset@9353a0c4287d
+#> Source: tscnlab/melidos-iztech-glc-dataset@abc456bdb418
 #> Schema: 3.0.2
 #> Registry revision: verified
 ```
@@ -129,7 +141,7 @@ current <- glc_open(
 )
 current
 #> <GLC data package>
-#> Source: tscnlab/melidos-iztech-glc-dataset@9353a0c4287d
+#> Source: tscnlab/melidos-iztech-glc-dataset@abc456bdb418
 #> Schema: 3.0.2
 #> Registry revision: verified
 
@@ -137,7 +149,7 @@ registry_row <- glc_search_packages("melidos-iztech", packages)
 registry_row$repository[[1]]
 #> [1] "tscnlab/melidos-iztech-glc-dataset"
 registry_row$latest_pass_commit[[1]]
-#> [1] "9353a0c4287d44cb400d30f45d7dbcf9910f9bde"
+#> [1] "abc456bdb418e6250b9c973813a190dc062c6e76"
 
 pinned <- glc_open(
   registry_row$repository[[1]],
@@ -145,7 +157,7 @@ pinned <- glc_open(
 )
 pinned
 #> <GLC data package>
-#> Source: tscnlab/melidos-iztech-glc-dataset@9353a0c4287d
+#> Source: tscnlab/melidos-iztech-glc-dataset@abc456bdb418
 #> Schema: 3.0.2
 #> Registry revision: verified
 ```

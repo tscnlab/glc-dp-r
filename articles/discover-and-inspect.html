@@ -106,13 +106,19 @@ attestation was verified.</li>
 <span>  <span class="st">"attestation_verified"</span></span>
 <span><span class="op">)</span><span class="op">]</span></span>
 <span><span class="co">#&gt; &lt;GLC registry&gt;</span></span>
-<span><span class="co">#&gt; Generated: 2026-08-14T18:27:57.058184+00:00 </span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 3 × 5</span></span></span>
+<span><span class="co">#&gt; Generated: 2026-08-20T06:19:24.276595+00:00 </span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 9 × 5</span></span></span>
 <span><span class="co">#&gt;   id              repository current_status has_latest_pass attestation_verified</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>               </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> guidolin-glee-… tscnlab/g… missing_artif… FALSE           FALSE               </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> melidos-iztech… tscnlab/m… pass           TRUE            TRUE                </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> melidos-knust-… tscnlab/m… pass           TRUE            TRUE</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> melidos-iztech… tscnlab/m… pass           TRUE            TRUE                </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> melidos-knust-… tscnlab/m… pass           TRUE            TRUE                </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> melidos-baua-g… tscnlab/m… pass           TRUE            TRUE                </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> melidos-ucr-gl… tscnlab/m… pass           TRUE            TRUE                </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> melidos-fuspce… tscnlab/m… pass           TRUE            TRUE                </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> melidos-rise-g… tscnlab/m… pass           TRUE            TRUE                </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">7</span> melidos-tum-gl… tscnlab/m… pass           TRUE            TRUE                </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">8</span> melidos-thuas-… tscnlab/m… pass           TRUE            TRUE                </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">9</span> melidos-mpi-gl… tscnlab/m… pass           TRUE            TRUE</span></span></code></pre></div>
 <p>Registry results are cached for the R session. Set
 <code>refresh = TRUE</code> only when you need to fetch the registry
 again.</p>
@@ -122,13 +128,13 @@ again.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/glc_search_packages.html">glc_search_packages</a></span><span class="op">(</span><span class="st">"iztech"</span>, <span class="va">packages</span><span class="op">)</span></span>
 <span><span class="co">#&gt; &lt;GLC registry&gt;</span></span>
-<span><span class="co">#&gt; Generated: 2026-08-14T18:27:57.058184+00:00 </span></span>
+<span><span class="co">#&gt; Generated: 2026-08-20T06:19:24.276595+00:00 </span></span>
 <span><span class="co">#&gt; &lt;GLC registry&gt;</span></span>
-<span><span class="co">#&gt; Generated: 2026-08-14T18:27:57.058184+00:00 </span></span>
+<span><span class="co">#&gt; Generated: 2026-08-20T06:19:24.276595+00:00 </span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 17</span></span></span>
 <span><span class="co">#&gt;   id           repository branch repository_status current_status current_commit</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> melidos-izt… tscnlab/m… main   active            pass           9353a0c4287d4…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> melidos-izt… tscnlab/m… main   active            pass           abc456bdb418e…</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 11 more variables: current_validator &lt;chr&gt;, current_validated_at &lt;chr&gt;,</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;">#   current_errors &lt;int&gt;, current_warnings &lt;int&gt;, latest_pass_commit &lt;chr&gt;,</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;">#   latest_pass_validator &lt;chr&gt;, latest_pass_validated_at &lt;chr&gt;,</span></span></span>
@@ -136,14 +142,21 @@ again.</p>
 <span><span class="co">#&gt; <span style="color: #949494;">#   registry_generated_at &lt;chr&gt;</span></span></span>
 <span><span class="fu"><a href="../reference/glc_search_packages.html">glc_search_packages</a></span><span class="op">(</span>packages <span class="op">=</span> <span class="va">packages</span>, status <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pass"</span>, <span class="st">"fail"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; &lt;GLC registry&gt;</span></span>
-<span><span class="co">#&gt; Generated: 2026-08-14T18:27:57.058184+00:00 </span></span>
+<span><span class="co">#&gt; Generated: 2026-08-20T06:19:24.276595+00:00 </span></span>
 <span><span class="co">#&gt; &lt;GLC registry&gt;</span></span>
-<span><span class="co">#&gt; Generated: 2026-08-14T18:27:57.058184+00:00 </span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 2 × 17</span></span></span>
+<span><span class="co">#&gt; Generated: 2026-08-20T06:19:24.276595+00:00 </span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 9 × 17</span></span></span>
 <span><span class="co">#&gt;   id           repository branch repository_status current_status current_commit</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> melidos-izt… tscnlab/m… main   active            pass           9353a0c4287d4…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> melidos-knu… tscnlab/m… main   active            pass           a7e4d17a7ea7f…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> melidos-izt… tscnlab/m… main   active            pass           abc456bdb418e…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> melidos-knu… tscnlab/m… main   active            pass           7fd1dd9e1df17…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> melidos-bau… tscnlab/m… main   active            pass           643a12126b5e3…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> melidos-ucr… tscnlab/m… main   active            pass           1d1309c969b9c…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> melidos-fus… tscnlab/m… main   active            pass           47b7c6aa38d77…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> melidos-ris… tscnlab/m… main   active            pass           4af2cb284a5bd…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">7</span> melidos-tum… tscnlab/m… main   active            pass           1187d19b7f614…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">8</span> melidos-thu… tscnlab/m… main   active            pass           a0f1057932fbe…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">9</span> melidos-mpi… tscnlab/m… main   active            pass           7ac2c3fe700e0…</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 11 more variables: current_validator &lt;chr&gt;, current_validated_at &lt;chr&gt;,</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;">#   current_errors &lt;int&gt;, current_warnings &lt;int&gt;, latest_pass_commit &lt;chr&gt;,</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;">#   latest_pass_validator &lt;chr&gt;, latest_pass_validated_at &lt;chr&gt;,</span></span></span>
@@ -151,15 +164,14 @@ again.</p>
 <span><span class="co">#&gt; <span style="color: #949494;">#   registry_generated_at &lt;chr&gt;</span></span></span>
 <span><span class="fu"><a href="../reference/glc_search_packages.html">glc_search_packages</a></span><span class="op">(</span>packages <span class="op">=</span> <span class="va">packages</span>, has_pass <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co">#&gt; &lt;GLC registry&gt;</span></span>
-<span><span class="co">#&gt; Generated: 2026-08-14T18:27:57.058184+00:00 </span></span>
+<span><span class="co">#&gt; Generated: 2026-08-20T06:19:24.276595+00:00 </span></span>
 <span><span class="co">#&gt; &lt;GLC registry&gt;</span></span>
-<span><span class="co">#&gt; Generated: 2026-08-14T18:27:57.058184+00:00 </span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 17</span></span></span>
-<span><span class="co">#&gt;   id           repository branch repository_status current_status current_commit</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> guidolin-gl… tscnlab/g… main   active            missing_artif… 8ec9034a3d967…</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 11 more variables: current_validator &lt;chr&gt;, current_validated_at &lt;chr&gt;,</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;">#   current_errors &lt;int&gt;, current_warnings &lt;int&gt;, latest_pass_commit &lt;chr&gt;,</span></span></span>
+<span><span class="co">#&gt; Generated: 2026-08-20T06:19:24.276595+00:00 </span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 0 × 17</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 17 variables: id &lt;chr&gt;, repository &lt;chr&gt;, branch &lt;chr&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   repository_status &lt;chr&gt;, current_status &lt;chr&gt;, current_commit &lt;chr&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   current_validator &lt;chr&gt;, current_validated_at &lt;chr&gt;, current_errors &lt;int&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   current_warnings &lt;int&gt;, latest_pass_commit &lt;chr&gt;,</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;">#   latest_pass_validator &lt;chr&gt;, latest_pass_validated_at &lt;chr&gt;,</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;">#   has_latest_pass &lt;lgl&gt;, is_current_pass &lt;lgl&gt;, attestation_verified &lt;lgl&gt;,</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;">#   registry_generated_at &lt;chr&gt;</span></span></span></code></pre></div>
@@ -175,7 +187,7 @@ moving branch:</p>
 <span><span class="va">iztech</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/glc_open.html">glc_open</a></span><span class="op">(</span><span class="va">iztech_repository</span><span class="op">)</span></span>
 <span><span class="va">iztech</span></span>
 <span><span class="co">#&gt; &lt;GLC data package&gt;</span></span>
-<span><span class="co">#&gt; Source: tscnlab/melidos-iztech-glc-dataset@9353a0c4287d</span></span>
+<span><span class="co">#&gt; Source: tscnlab/melidos-iztech-glc-dataset@abc456bdb418</span></span>
 <span><span class="co">#&gt; Schema: 3.0.2</span></span>
 <span><span class="co">#&gt; Registry revision: verified</span></span></code></pre></div>
 <p>Use <code>ref = "current"</code> when you explicitly need the
@@ -190,7 +202,7 @@ marked as unverified.</p>
 <span><span class="op">)</span></span>
 <span><span class="va">current</span></span>
 <span><span class="co">#&gt; &lt;GLC data package&gt;</span></span>
-<span><span class="co">#&gt; Source: tscnlab/melidos-iztech-glc-dataset@9353a0c4287d</span></span>
+<span><span class="co">#&gt; Source: tscnlab/melidos-iztech-glc-dataset@abc456bdb418</span></span>
 <span><span class="co">#&gt; Schema: 3.0.2</span></span>
 <span><span class="co">#&gt; Registry revision: verified</span></span>
 <span></span>
@@ -198,7 +210,7 @@ marked as unverified.</p>
 <span><span class="va">registry_row</span><span class="op">$</span><span class="va">repository</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span></span>
 <span><span class="co">#&gt; [1] "tscnlab/melidos-iztech-glc-dataset"</span></span>
 <span><span class="va">registry_row</span><span class="op">$</span><span class="va">latest_pass_commit</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span></span>
-<span><span class="co">#&gt; [1] "9353a0c4287d44cb400d30f45d7dbcf9910f9bde"</span></span>
+<span><span class="co">#&gt; [1] "abc456bdb418e6250b9c973813a190dc062c6e76"</span></span>
 <span></span>
 <span><span class="va">pinned</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/glc_open.html">glc_open</a></span><span class="op">(</span></span>
 <span>  <span class="va">registry_row</span><span class="op">$</span><span class="va">repository</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span>,</span>
@@ -206,7 +218,7 @@ marked as unverified.</p>
 <span><span class="op">)</span></span>
 <span><span class="va">pinned</span></span>
 <span><span class="co">#&gt; &lt;GLC data package&gt;</span></span>
-<span><span class="co">#&gt; Source: tscnlab/melidos-iztech-glc-dataset@9353a0c4287d</span></span>
+<span><span class="co">#&gt; Source: tscnlab/melidos-iztech-glc-dataset@abc456bdb418</span></span>
 <span><span class="co">#&gt; Schema: 3.0.2</span></span>
 <span><span class="co">#&gt; Registry revision: verified</span></span></code></pre></div>
 <p>For private repositories, pass <code>token</code> directly or define
