@@ -34,6 +34,13 @@ test_that("malformed registries fail clearly", {
   )
 })
 
+test_that("default registry points to the official endpoint", {
+  expect_equal(
+    glc_default_registry(),
+    "https://registry.globallightcommons.org/registry.json"
+  )
+})
+
 test_that("remote opening selects immutable registry revisions", {
   registry_path <- make_registry_fixture()
   descriptor <- charToRaw('{"schema_version":"2.0.0","resources":[]}')
