@@ -1,7 +1,7 @@
 glc_default_registry <- function() {
   getOption(
     "glcdp.registry_url",
-    "https://tscnlab.github.io/glc-registry/registry.json"
+    "https://registry.globallightcommons.org/registry.json"
   )
 }
 

@@ -1,3 +1,15 @@
+test_that("default registry points to the official registry endpoint", {
+  expect_identical(
+    glc_default_registry(),
+    "https://registry.globallightcommons.org/registry.json"
+  )
+})
+
+test_that("default registry can be overridden via options", {
+  testthat::local_options(glcdp.registry_url = "https://example.test/registry.json")
+  expect_identical(glc_default_registry(), "https://example.test/registry.json")
+})
+
 test_that("registry is flattened without hiding failures", {
   path <- make_registry_fixture()
   registry <- glc_packages(path, refresh = TRUE)
