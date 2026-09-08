@@ -566,21 +566,21 @@ glc_download(iztech, metadata_dir)
 #> # A tibble: 15 × 6
 #>    path                                destination storage  bytes sha256 lfs_oid
 #>    <chr>                               <chr>       <chr>    <dbl> <chr>  <chr>  
-#>  1 datapackage.json                    /tmp/RtmpJ… git     1.58e3 510d0… NA     
-#>  2 data/study.json                     /tmp/RtmpJ… git     6.03e3 0ce90… NA     
-#>  3 data/participants.csv               /tmp/RtmpJ… git     5.27e2 70454… NA     
-#>  4 data/participant_characteristics.c… /tmp/RtmpJ… git     5.80e4 c018f… NA     
-#>  5 data/datasets.json                  /tmp/RtmpJ… git     3.89e6 00f1d… NA     
-#>  6 data/devices.json                   /tmp/RtmpJ… git     8.36e3 8798c… NA     
-#>  7 data/device_datasheets.json         /tmp/RtmpJ… git     9.13e3 e4a6b… NA     
-#>  8 schemas/3.0.2/glc-dp-profile.json   /tmp/RtmpJ… git     1.14e4 4b6bf… NA     
-#>  9 json-entity-resource.json           /tmp/RtmpJ… git     7.65e2 c89c1… NA     
-#> 10 schemas/3.0.2/study.schema.json     /tmp/RtmpJ… git     6.50e3 f1e71… NA     
-#> 11 schemas/3.0.2/participants.schema.… /tmp/RtmpJ… git     1.08e3 e7192… NA     
-#> 12 schemas/3.0.2/participant_characte… /tmp/RtmpJ… git     1.46e3 25351… NA     
-#> 13 schemas/3.0.2/dataset.schema.json   /tmp/RtmpJ… git     4.66e4 7c17e… NA     
-#> 14 schemas/3.0.2/device.schema.json    /tmp/RtmpJ… git     3.95e3 ea149… NA     
-#> 15 schemas/3.0.2/device_datasheet.sch… /tmp/RtmpJ… git     1.31e4 44d54… NA
+#>  1 datapackage.json                    /tmp/Rtmpo… git     1.58e3 510d0… NA     
+#>  2 data/study.json                     /tmp/Rtmpo… git     6.03e3 0ce90… NA     
+#>  3 data/participants.csv               /tmp/Rtmpo… git     5.27e2 70454… NA     
+#>  4 data/participant_characteristics.c… /tmp/Rtmpo… git     5.80e4 c018f… NA     
+#>  5 data/datasets.json                  /tmp/Rtmpo… git     3.89e6 00f1d… NA     
+#>  6 data/devices.json                   /tmp/Rtmpo… git     8.36e3 8798c… NA     
+#>  7 data/device_datasheets.json         /tmp/Rtmpo… git     9.13e3 e4a6b… NA     
+#>  8 schemas/3.0.2/glc-dp-profile.json   /tmp/Rtmpo… git     1.14e4 4b6bf… NA     
+#>  9 json-entity-resource.json           /tmp/Rtmpo… git     7.65e2 c89c1… NA     
+#> 10 schemas/3.0.2/study.schema.json     /tmp/Rtmpo… git     6.50e3 f1e71… NA     
+#> 11 schemas/3.0.2/participants.schema.… /tmp/Rtmpo… git     1.08e3 e7192… NA     
+#> 12 schemas/3.0.2/participant_characte… /tmp/Rtmpo… git     1.46e3 25351… NA     
+#> 13 schemas/3.0.2/dataset.schema.json   /tmp/Rtmpo… git     4.66e4 7c17e… NA     
+#> 14 schemas/3.0.2/device.schema.json    /tmp/Rtmpo… git     3.95e3 ea149… NA     
+#> 15 schemas/3.0.2/device_datasheet.sch… /tmp/Rtmpo… git     1.31e4 44d54… NA
 ```
 
 Request data explicitly and apply the same selectors used during
@@ -600,22 +600,22 @@ downloads
 #> # A tibble: 16 × 6
 #>    path                                destination storage  bytes sha256 lfs_oid
 #>    <chr>                               <chr>       <chr>    <dbl> <chr>  <chr>  
-#>  1 datapackage.json                    /tmp/RtmpJ… git     1.58e3 510d0… NA     
-#>  2 data/study.json                     /tmp/RtmpJ… git     6.03e3 0ce90… NA     
-#>  3 data/participants.csv               /tmp/RtmpJ… git     5.27e2 70454… NA     
-#>  4 data/participant_characteristics.c… /tmp/RtmpJ… git     5.80e4 c018f… NA     
-#>  5 data/datasets.json                  /tmp/RtmpJ… git     3.89e6 00f1d… NA     
-#>  6 data/devices.json                   /tmp/RtmpJ… git     8.36e3 8798c… NA     
-#>  7 data/device_datasheets.json         /tmp/RtmpJ… git     9.13e3 e4a6b… NA     
-#>  8 schemas/3.0.2/glc-dp-profile.json   /tmp/RtmpJ… git     1.14e4 4b6bf… NA     
-#>  9 json-entity-resource.json           /tmp/RtmpJ… git     7.65e2 c89c1… NA     
-#> 10 schemas/3.0.2/study.schema.json     /tmp/RtmpJ… git     6.50e3 f1e71… NA     
-#> 11 schemas/3.0.2/participants.schema.… /tmp/RtmpJ… git     1.08e3 e7192… NA     
-#> 12 schemas/3.0.2/participant_characte… /tmp/RtmpJ… git     1.46e3 25351… NA     
-#> 13 schemas/3.0.2/dataset.schema.json   /tmp/RtmpJ… git     4.66e4 7c17e… NA     
-#> 14 schemas/3.0.2/device.schema.json    /tmp/RtmpJ… git     3.95e3 ea149… NA     
-#> 15 schemas/3.0.2/device_datasheet.sch… /tmp/RtmpJ… git     1.31e4 44d54… NA     
-#> 16 data/files/questionnaires/IZTECH_S… /tmp/RtmpJ… git     1.3 e2 daaad… NA
+#>  1 datapackage.json                    /tmp/Rtmpo… git     1.58e3 510d0… NA     
+#>  2 data/study.json                     /tmp/Rtmpo… git     6.03e3 0ce90… NA     
+#>  3 data/participants.csv               /tmp/Rtmpo… git     5.27e2 70454… NA     
+#>  4 data/participant_characteristics.c… /tmp/Rtmpo… git     5.80e4 c018f… NA     
+#>  5 data/datasets.json                  /tmp/Rtmpo… git     3.89e6 00f1d… NA     
+#>  6 data/devices.json                   /tmp/Rtmpo… git     8.36e3 8798c… NA     
+#>  7 data/device_datasheets.json         /tmp/Rtmpo… git     9.13e3 e4a6b… NA     
+#>  8 schemas/3.0.2/glc-dp-profile.json   /tmp/Rtmpo… git     1.14e4 4b6bf… NA     
+#>  9 json-entity-resource.json           /tmp/Rtmpo… git     7.65e2 c89c1… NA     
+#> 10 schemas/3.0.2/study.schema.json     /tmp/Rtmpo… git     6.50e3 f1e71… NA     
+#> 11 schemas/3.0.2/participants.schema.… /tmp/Rtmpo… git     1.08e3 e7192… NA     
+#> 12 schemas/3.0.2/participant_characte… /tmp/Rtmpo… git     1.46e3 25351… NA     
+#> 13 schemas/3.0.2/dataset.schema.json   /tmp/Rtmpo… git     4.66e4 7c17e… NA     
+#> 14 schemas/3.0.2/device.schema.json    /tmp/Rtmpo… git     3.95e3 ea149… NA     
+#> 15 schemas/3.0.2/device_datasheet.sch… /tmp/Rtmpo… git     1.31e4 44d54… NA     
+#> 16 data/files/questionnaires/IZTECH_S… /tmp/Rtmpo… git     1.3 e2 daaad… NA
 ```
 
 Use `include = "all"` only when you intend to mirror every declared
