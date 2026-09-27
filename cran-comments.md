@@ -1,20 +1,33 @@
+## Update
+
+This updates glcdp from 1.0.0 to 1.1.0. It adds collection planning and
+refinement, improves factor and device compatibility, and updates the default
+registry URL. See NEWS.md for the complete changes.
+
 ## Test environments
 
-* Local: macOS 26.5.2, R 4.6.1
+* Local: macOS 27.0 arm64, R 4.6.1
 * GitHub Actions:
-  * macOS, R-release
-  * Windows, R-release
-  * Ubuntu, R-devel
-  * Ubuntu, R-release
-  * Ubuntu, R-oldrel-1
+  * macOS 26.6.2, R 4.6.1
+  * Windows Server 2022, R 4.6.1
+  * Ubuntu 24.04.5, R 4.6.1
+  * Ubuntu 24.04.5, R 4.5.3
+  * Ubuntu 24.04.5, R-devel (2026-09-25 r90590)
 
 ## R CMD check results
 
-0 errors | 0 warnings | 1 note
+The built source tarball passed R CMD check --as-cran --run-donttest locally:
 
-* This is a new submission.
-* There are no references describing methods implemented by the package.
+0 errors | 0 warnings | 0 notes
 
-## Downstream dependencies
+GitHub Actions also reported Status: OK on all five environments above:
+https://github.com/tscnlab/glc-dp-r/actions/runs/36348400285
 
-There are no downstream dependencies because this is a new submission.
+The check included examples, tests, rebuilt vignettes, and PDF and HTML
+manuals. Documentation URL checks also passed. The optional live integration
+test passed separately; it is skipped during CRAN checks.
+
+## Reverse dependencies
+
+CRAN lists no reverse dependencies, including suggested and enhanced
+dependencies, as checked on 2026-09-27.
