@@ -1,11 +1,25 @@
-# glcdp 1.0.0.9000
+# glcdp 1.1.0
 
-* Updated `glc_collection_plan()` to plan schema 1.2.0. Compatible unordered factor declarations now use a deterministic union of raw values, labels, descriptions, and declaration-order constraints. Plans report typed, serializable diagnostics for safe harmonization, blocking conflicts, and non-selected variables. Restriction-stable `compatibility_id` and request-sensitive `unit_id` values use version 2 identity because these compatibility rules changed.
-* Device identity is now scoped by stable `file_group_id`. Structurally compatible file groups in one dataset can reference different devices without being split into artificial device slots. File-group and dataset relationship checks remain authoritative, and device provenance remains available through the stable file-group join.
-* Collection plans now include a complete, typed, serializable snapshot of descriptor-declared core metadata for studies, contributors, datasets, participants and their characteristics, devices and datasheets, instruments, and all declared file-group variables and factor levels. Source types and missing values are preserved, relationship status is explicit, and unknown extension fields remain available separately.
-* Added `glc_collection_refine()` to refine stable file-group identifiers from one structural compatibility set using a validated plan already in memory. Refinement performs no HTTP request, package reopen, availability probe, metadata reload, or measurement access, and returns final units with the same identifiers and membership as a fresh restricted plan.
-* One explicit `glc_collection_plan()` call may load only descriptor-declared core metadata at the package's exact verified revision. It never accesses measurement paths or probes their availability. Applications can build one plan, filter its public metadata tables in memory, and refine the selected file-group identifiers without repeatedly rebuilding the full plan.
-* `glc_explore()` uses the same declaration-compatibility engine as `glc_collection_plan()`. `glc_read()` now preserves fingerprinted raw factor contracts, and `glc_collect()` validates and applies only planner-compatible factor unions before binding. Legacy collections retain strict factor-level matching. Both functions remain the runtime authorities for downloaded columns, parsed types and values, datetime values, output collisions, relationships, standardization, and final collection compatibility.
+* Added `glc_collection_plan()` to find compatible file groups before reading
+  measurement data. Plans include clear reasons when groups cannot be combined.
+* Collection plans include study, contributor, dataset, participant, device,
+  instrument, and variable metadata for filtering. Planning only loads declared
+  core metadata at the verified package revision.
+* Added `glc_collection_refine()` to update a selection from an existing plan
+  without downloading or reloading anything.
+* Compatible unordered factors can now be combined using a consistent set of
+  levels. Conflicting values, labels, descriptions, or ordering still prevent
+  collection. `glc_read()` preserves the declarations needed for these checks.
+* File groups from different devices can now be collected within one dataset.
+  Device information remains linked through `file_group_id`.
+* The Explorer, collection planner, and `glc_collect()` now use the same
+  compatibility rules. Actual data are still checked when read and collected.
+* Collection plans use format 1.2.0 and version 2 identifiers. Rebuild plans
+  saved with earlier development versions.
+* Updated the default registry URL to the official Global Light Commons
+  endpoint and refreshed the Posit Connect deployment manifest.
+* Added documentation and tests for planning, refinement, and factor handling,
+  and updated the live Schema 3 integration test expectations.
 
 # glcdp 1.0.0
 

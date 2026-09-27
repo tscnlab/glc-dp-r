@@ -36,10 +36,10 @@ independent of network availability. Website maintainers can also set
 
 ## Install and load
 
-Install the development version from GitHub and attach the package:
+Install the released version from CRAN and attach the package:
 
 ```{r install, eval = FALSE}
-pak::pak("tscnlab/glc-dp-r")
+install.packages("glcdp")
 library(glcdp)
 ```
 

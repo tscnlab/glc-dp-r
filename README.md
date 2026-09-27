@@ -25,7 +25,7 @@ Install the development version from GitHub:
 pak::pak("tscnlab/glc-dp-r")
 ```
 
-The development version targets GLC schema 3.0.2 as its current default,
+The package targets GLC schema 3.0.2 as its current default,
 including metadata-driven column types, factor levels in schema-declared
 order, and per-file encodings. Schemas 3.0.0 and 3.0.1 remain compatible
 stable predecessors;
