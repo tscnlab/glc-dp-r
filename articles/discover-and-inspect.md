@@ -34,14 +34,14 @@ packages[, c(
   "attestation_verified"
 )]
 #> <GLC registry>
-#> Generated: 2026-09-08T00:15:26.985020+00:00 
+#> Generated: 2026-09-27T17:58:34.791670+00:00 
 #> # A tibble: 9 × 5
 #>   id              repository current_status has_latest_pass attestation_verified
 #>   <chr>           <chr>      <chr>          <lgl>           <lgl>               
 #> 1 melidos-iztech… tscnlab/m… pass           TRUE            TRUE                
 #> 2 melidos-knust-… tscnlab/m… pass           TRUE            TRUE                
 #> 3 melidos-baua-g… tscnlab/m… pass           TRUE            TRUE                
-#> 4 melidos-ucr-gl… tscnlab/m… pass           TRUE            TRUE                
+#> 4 melidos-ucr-gl… tscnlab/m… fail           TRUE            TRUE                
 #> 5 melidos-fuspce… tscnlab/m… pass           TRUE            TRUE                
 #> 6 melidos-rise-g… tscnlab/m… pass           TRUE            TRUE                
 #> 7 melidos-tum-gl… tscnlab/m… pass           TRUE            TRUE                
@@ -63,9 +63,9 @@ Searches are fixed and case-insensitive by default:
 
 glc_search_packages("iztech", packages)
 #> <GLC registry>
-#> Generated: 2026-09-08T00:15:26.985020+00:00 
+#> Generated: 2026-09-27T17:58:34.791670+00:00 
 #> <GLC registry>
-#> Generated: 2026-09-08T00:15:26.985020+00:00 
+#> Generated: 2026-09-27T17:58:34.791670+00:00 
 #> # A tibble: 1 × 17
 #>   id           repository branch repository_status current_status current_commit
 #>   <chr>        <chr>      <chr>  <chr>             <chr>          <chr>         
@@ -77,16 +77,16 @@ glc_search_packages("iztech", packages)
 #> #   registry_generated_at <chr>
 glc_search_packages(packages = packages, status = c("pass", "fail"))
 #> <GLC registry>
-#> Generated: 2026-09-08T00:15:26.985020+00:00 
+#> Generated: 2026-09-27T17:58:34.791670+00:00 
 #> <GLC registry>
-#> Generated: 2026-09-08T00:15:26.985020+00:00 
+#> Generated: 2026-09-27T17:58:34.791670+00:00 
 #> # A tibble: 9 × 17
 #>   id           repository branch repository_status current_status current_commit
 #>   <chr>        <chr>      <chr>  <chr>             <chr>          <chr>         
 #> 1 melidos-izt… tscnlab/m… main   active            pass           abc456bdb418e…
 #> 2 melidos-knu… tscnlab/m… main   active            pass           7fd1dd9e1df17…
 #> 3 melidos-bau… tscnlab/m… main   active            pass           643a12126b5e3…
-#> 4 melidos-ucr… tscnlab/m… main   active            pass           1d1309c969b9c…
+#> 4 melidos-ucr… tscnlab/m… main   active            fail           2011eb678e7e0…
 #> 5 melidos-fus… tscnlab/m… main   active            pass           47b7c6aa38d77…
 #> 6 melidos-ris… tscnlab/m… main   active            pass           4af2cb284a5bd…
 #> 7 melidos-tum… tscnlab/m… main   active            pass           1187d19b7f614…
@@ -99,9 +99,9 @@ glc_search_packages(packages = packages, status = c("pass", "fail"))
 #> #   registry_generated_at <chr>
 glc_search_packages(packages = packages, has_pass = FALSE)
 #> <GLC registry>
-#> Generated: 2026-09-08T00:15:26.985020+00:00 
+#> Generated: 2026-09-27T17:58:34.791670+00:00 
 #> <GLC registry>
-#> Generated: 2026-09-08T00:15:26.985020+00:00 
+#> Generated: 2026-09-27T17:58:34.791670+00:00 
 #> # A tibble: 0 × 17
 #> # ℹ 17 variables: id <chr>, repository <chr>, branch <chr>,
 #> #   repository_status <chr>, current_status <chr>, current_commit <chr>,

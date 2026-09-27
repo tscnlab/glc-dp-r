@@ -22,12 +22,12 @@ Install the development version from GitHub:
 pak::pak("tscnlab/glc-dp-r")
 ```
 
-The development version targets GLC schema 3.0.2 as its current default,
-including metadata-driven column types, factor levels in schema-declared
-order, and per-file encodings. Schemas 3.0.0 and 3.0.1 remain compatible
-stable predecessors; schemas 1.0.0 and 2.0.0 have barebones legacy
-support. The package also supports immutable registry revisions,
-selective downloads, and GitHub-hosted Git LFS objects.
+The package targets GLC schema 3.0.2 as its current default, including
+metadata-driven column types, factor levels in schema-declared order,
+and per-file encodings. Schemas 3.0.0 and 3.0.1 remain compatible stable
+predecessors; schemas 1.0.0 and 2.0.0 have barebones legacy support. The
+package also supports immutable registry revisions, selective downloads,
+and GitHub-hosted Git LFS objects.
 
 ``` r
 

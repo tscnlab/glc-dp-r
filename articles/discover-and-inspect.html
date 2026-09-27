@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">glcdp</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -106,14 +106,14 @@ attestation was verified.</li>
 <span>  <span class="st">"attestation_verified"</span></span>
 <span><span class="op">)</span><span class="op">]</span></span>
 <span><span class="co">#&gt; &lt;GLC registry&gt;</span></span>
-<span><span class="co">#&gt; Generated: 2026-09-08T00:15:26.985020+00:00 </span></span>
+<span><span class="co">#&gt; Generated: 2026-09-27T17:58:34.791670+00:00 </span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 9 × 5</span></span></span>
 <span><span class="co">#&gt;   id              repository current_status has_latest_pass attestation_verified</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>               </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> melidos-iztech… tscnlab/m… pass           TRUE            TRUE                </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> melidos-knust-… tscnlab/m… pass           TRUE            TRUE                </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> melidos-baua-g… tscnlab/m… pass           TRUE            TRUE                </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> melidos-ucr-gl… tscnlab/m… pass           TRUE            TRUE                </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> melidos-ucr-gl… tscnlab/m… fail           TRUE            TRUE                </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> melidos-fuspce… tscnlab/m… pass           TRUE            TRUE                </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> melidos-rise-g… tscnlab/m… pass           TRUE            TRUE                </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">7</span> melidos-tum-gl… tscnlab/m… pass           TRUE            TRUE                </span></span>
@@ -128,9 +128,9 @@ again.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/glc_search_packages.html">glc_search_packages</a></span><span class="op">(</span><span class="st">"iztech"</span>, <span class="va">packages</span><span class="op">)</span></span>
 <span><span class="co">#&gt; &lt;GLC registry&gt;</span></span>
-<span><span class="co">#&gt; Generated: 2026-09-08T00:15:26.985020+00:00 </span></span>
+<span><span class="co">#&gt; Generated: 2026-09-27T17:58:34.791670+00:00 </span></span>
 <span><span class="co">#&gt; &lt;GLC registry&gt;</span></span>
-<span><span class="co">#&gt; Generated: 2026-09-08T00:15:26.985020+00:00 </span></span>
+<span><span class="co">#&gt; Generated: 2026-09-27T17:58:34.791670+00:00 </span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 17</span></span></span>
 <span><span class="co">#&gt;   id           repository branch repository_status current_status current_commit</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         </span></span>
@@ -142,16 +142,16 @@ again.</p>
 <span><span class="co">#&gt; <span style="color: #949494;">#   registry_generated_at &lt;chr&gt;</span></span></span>
 <span><span class="fu"><a href="../reference/glc_search_packages.html">glc_search_packages</a></span><span class="op">(</span>packages <span class="op">=</span> <span class="va">packages</span>, status <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pass"</span>, <span class="st">"fail"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; &lt;GLC registry&gt;</span></span>
-<span><span class="co">#&gt; Generated: 2026-09-08T00:15:26.985020+00:00 </span></span>
+<span><span class="co">#&gt; Generated: 2026-09-27T17:58:34.791670+00:00 </span></span>
 <span><span class="co">#&gt; &lt;GLC registry&gt;</span></span>
-<span><span class="co">#&gt; Generated: 2026-09-08T00:15:26.985020+00:00 </span></span>
+<span><span class="co">#&gt; Generated: 2026-09-27T17:58:34.791670+00:00 </span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 9 × 17</span></span></span>
 <span><span class="co">#&gt;   id           repository branch repository_status current_status current_commit</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> melidos-izt… tscnlab/m… main   active            pass           abc456bdb418e…</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> melidos-knu… tscnlab/m… main   active            pass           7fd1dd9e1df17…</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> melidos-bau… tscnlab/m… main   active            pass           643a12126b5e3…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> melidos-ucr… tscnlab/m… main   active            pass           1d1309c969b9c…</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> melidos-ucr… tscnlab/m… main   active            fail           2011eb678e7e0…</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> melidos-fus… tscnlab/m… main   active            pass           47b7c6aa38d77…</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> melidos-ris… tscnlab/m… main   active            pass           4af2cb284a5bd…</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">7</span> melidos-tum… tscnlab/m… main   active            pass           1187d19b7f614…</span></span>
@@ -164,9 +164,9 @@ again.</p>
 <span><span class="co">#&gt; <span style="color: #949494;">#   registry_generated_at &lt;chr&gt;</span></span></span>
 <span><span class="fu"><a href="../reference/glc_search_packages.html">glc_search_packages</a></span><span class="op">(</span>packages <span class="op">=</span> <span class="va">packages</span>, has_pass <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co">#&gt; &lt;GLC registry&gt;</span></span>
-<span><span class="co">#&gt; Generated: 2026-09-08T00:15:26.985020+00:00 </span></span>
+<span><span class="co">#&gt; Generated: 2026-09-27T17:58:34.791670+00:00 </span></span>
 <span><span class="co">#&gt; &lt;GLC registry&gt;</span></span>
-<span><span class="co">#&gt; Generated: 2026-09-08T00:15:26.985020+00:00 </span></span>
+<span><span class="co">#&gt; Generated: 2026-09-27T17:58:34.791670+00:00 </span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 0 × 17</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 17 variables: id &lt;chr&gt;, repository &lt;chr&gt;, branch &lt;chr&gt;,</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;">#   repository_status &lt;chr&gt;, current_status &lt;chr&gt;, current_commit &lt;chr&gt;,</span></span></span>

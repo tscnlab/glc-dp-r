@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="index.html">glcdp</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -79,7 +79,7 @@
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># install.packages("pak")</span></span>
 <span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"tscnlab/glc-dp-r"</span><span class="op">)</span></span></code></pre></div>
-<p>The development version targets GLC schema 3.0.2 as its current default, including metadata-driven column types, factor levels in schema-declared order, and per-file encodings. Schemas 3.0.0 and 3.0.1 remain compatible stable predecessors; schemas 1.0.0 and 2.0.0 have barebones legacy support. The package also supports immutable registry revisions, selective downloads, and GitHub-hosted Git LFS objects.</p>
+<p>The package targets GLC schema 3.0.2 as its current default, including metadata-driven column types, factor levels in schema-declared order, and per-file encodings. Schemas 3.0.0 and 3.0.1 remain compatible stable predecessors; schemas 1.0.0 and 2.0.0 have barebones legacy support. The package also supports immutable registry revisions, selective downloads, and GitHub-hosted Git LFS objects.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">packages</span> <span class="op">&lt;-</span> <span class="fu">glcdp</span><span class="fu">::</span><span class="fu"><a href="reference/glc_packages.html">glc_packages</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="va">melidos</span> <span class="op">&lt;-</span> <span class="fu">glcdp</span><span class="fu">::</span><span class="fu"><a href="reference/glc_open.html">glc_open</a></span><span class="op">(</span><span class="st">"tscnlab/melidos-iztech-glc-dataset"</span><span class="op">)</span></span>
